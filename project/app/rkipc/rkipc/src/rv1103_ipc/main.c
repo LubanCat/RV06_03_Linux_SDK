@@ -48,7 +48,7 @@ char *manufacture = "lbc-4G-ipc";
 
 
 // char *server_id = "41010500002000000001";
-// char *server_ip = "8.137.12.122";
+// char *server_ip = "47.108.227.19";
 // int server_port = 8116;
 // int device_port = 5064;
 // char *device_id_head = "4101050000200000";
@@ -408,11 +408,12 @@ static void *signal_quality(void *arg) {
         char *start = strstr(buf, "+CSQ: ");
         if (start) {
             sscanf(start, "+CSQ: %d,%d", &rssi, &ber);
-            printf("Extracted signal quality: RSSI=%d, BER=%d\n", rssi, ber);
+            LOG_INFO("Extracted signal quality: RSSI=%d, BER=%d\n", rssi, ber);
         } else {
-            printf("No +CSQ response found\n");
+            LOG_INFO("No +CSQ response found\n");
         }
 
+		// osd_signal_update(rssi, ber);
 		// // 将信号强度信息格式化为宽字符字符串
 		// swprintf(result, r_size, L"RSSI=%d, BER=%d", rssi, ber);
 
@@ -431,7 +432,7 @@ static void *signal_quality(void *arg) {
     }
 
     close(tty_fd);
-    LOG_DEBUG("Signal quality thread exiting");
+    LOG_INFO("Signal quality thread exiting");
     return NULL;
 }
 
@@ -493,9 +494,8 @@ int main(int argc, char **argv) {
 	RK_MPI_SYS_Init();
 	// 视频，模块初始化
 	rk_video_init();
-	if (rk_param_get_int("audio.0:enable", 0))
-		//音频模块初始化
-		rkipc_audio_init();
+	//音频模块初始化
+	rkipc_audio_init();
 	// rkipc 信号处理服务
 	rkipc_server_init();
 	// 存储模块初始化
