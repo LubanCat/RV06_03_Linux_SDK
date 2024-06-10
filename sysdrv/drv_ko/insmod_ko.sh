@@ -38,6 +38,8 @@ __chk_camera_sensor_height()
 	done
 }
 
+__insmod rtc-pcf8563.ko
+
 __insmod rk_dvbm.ko
 
 __insmod videobuf2-memops.ko
@@ -54,6 +56,7 @@ __insmod sc530ai.ko
 __insmod gc2053.ko
 __insmod sc200ai.ko
 __insmod sc401ai.ko
+__insmod sc431hai.ko
 __insmod sc450ai.ko
 __insmod techpoint.ko
 
