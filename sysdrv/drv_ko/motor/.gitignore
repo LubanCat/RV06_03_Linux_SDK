@@ -1,0 +1,5 @@
+*.o
+*.ko
+sample/motor_24byj48_test
+sample/rk_motor_test
+
