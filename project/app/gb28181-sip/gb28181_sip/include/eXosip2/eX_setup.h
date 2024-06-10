@@ -1,17 +1,17 @@
 /*
   eXosip - This is the eXtended osip library.
   Copyright (C) 2001-2012 Aymeric MOIZARD amoizard@antisip.com
-
+  
   eXosip is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-
+  
   eXosip is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
+  
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -68,42 +68,42 @@ extern "C" {
 
 /**
  * Allocate an eXosip context.
- *
+ * 
  * @return  a new allocated eXosip_t instance.
  */
   struct eXosip_t *eXosip_malloc (void);
 
 /**
  * Initiate the eXtented oSIP library.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   int eXosip_init (struct eXosip_t *excontext);
 
 /**
  * Release ressource used by the eXtented oSIP library.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   void eXosip_quit (struct eXosip_t *excontext);
 
 /**
  * Lock the eXtented oSIP library.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   int eXosip_lock (struct eXosip_t *excontext);
 
 /**
  * UnLock the eXtented oSIP library.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   int eXosip_unlock (struct eXosip_t *excontext);
 
 /**
  * Process (non-threaded mode ONLY) eXosip events.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   int eXosip_execute (struct eXosip_t *excontext);
@@ -164,7 +164,7 @@ extern "C" {
  * @param excontext    eXosip_t instance.
  * @param opt     option to configure.
  * @param value   value for options.
- *
+ * 
  */
   int eXosip_set_option (struct eXosip_t *excontext, int opt, const void *value);
 
@@ -208,7 +208,7 @@ extern "C" {
 /**
  * Start and return osip_naptr context.
  * Note that DNS results might not yet be available.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param domain         domain name for NAPTR record
  * @param protocol       protocol to use ("SIP")
@@ -219,7 +219,7 @@ extern "C" {
 
 /**
  * Continue to process asynchronous DNS request (if implemented).
- *
+ * 
  * @param output_record  result structure.
  * @param force          force waiting for final answer if >0
  */
@@ -227,14 +227,14 @@ extern "C" {
 
 /**
  * Rotate first SRV entry to last SRV entry.
- *
+ * 
  * @param output_record  result structure.
  */
   int eXosip_dnsutils_rotate_srv (struct osip_srv_record *output_record);
 
 /**
  * Listen on a specified socket.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param transport IPPROTO_UDP for udp. (soon to come: TCP/TLS?)
  * @param addr      the address to bind (NULL for all interface)
@@ -246,7 +246,7 @@ extern "C" {
 
 /**
  * Reset transport sockets.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   int eXosip_reset_transports (struct eXosip_t *excontext);
@@ -254,7 +254,7 @@ extern "C" {
 
 /**
  * Listen on a specified socket.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param transport IPPROTO_UDP for udp. (soon to come: TCP/TLS?)
  * @param socket socket to use for listening to UDP sip messages.
@@ -295,7 +295,7 @@ extern "C" {
  * **THIS CODE DOES NOTHING, REPLACE WITH**
  *
  * eXosip_set_option(excontext, EXOSIP_OPT_ENABLE_IPV6, &val);
- *
+ * 
  * @param ipv6_enable  This paramter should be set to 1 to enable IPv6 mode.
  */
   void eXosip_enable_ipv6 (int ipv6_enable);
@@ -310,8 +310,8 @@ extern "C" {
  * @param excontext    eXosip_t instance.
  * @param public_address 	the ip address.
  * @param port          	the port for masquerading.
- *
- * If set to NULL, then the local ip address will be guessed
+ * 
+ * If set to NULL, then the local ip address will be guessed 
  * automatically (returns to default mode).
  */
   void eXosip_masquerade_contact (struct eXosip_t *excontext, const char *public_address, int port);
@@ -322,7 +322,7 @@ extern "C" {
  * @param excontext    eXosip_t instance.
  * @param free_port          	initial port for search.
  * @param transport          	IPPROTO_UDP or IPPROTO_TCP protocol.
- *
+ * 
  */
   int eXosip_find_free_port (struct eXosip_t *excontext, int free_port, int transport);
 
@@ -330,7 +330,7 @@ extern "C" {
 
 /**
  * Wake Up the eXosip_event_wait method.
- *
+ * 
  * @param excontext    eXosip_t instance.
  */
   void eXosip_wakeup_event (struct eXosip_t *excontext);
@@ -348,7 +348,7 @@ extern "C" {
 
 /**
  * Modify the transport protocol used to send SIP message.
- *
+ * 
  * @param msg         The SIP message to modify
  * @param transport   transport protocol to use ("UDP", "TCP" or "TLS")
  */
@@ -356,7 +356,7 @@ extern "C" {
 
 /**
  * Find the current localip (interface with default route).
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param family    AF_INET or AF_INET6
  * @param address   a string containing the local IP address.

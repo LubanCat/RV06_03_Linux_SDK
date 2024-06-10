@@ -1,17 +1,17 @@
 /*
   The oSIP library implements the Session Initiation Protocol (SIP -rfc3261-)
   Copyright (C) 2001-2012 Aymeric MOIZARD amoizard@antisip.com
-
+  
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
   version 2.1 of the License, or (at your option) any later version.
-
+  
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   Lesser General Public License for more details.
-
+  
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -582,7 +582,7 @@ extern "C" {
   };
 
 /**
- * Set a callback for each transaction operation.
+ * Set a callback for each transaction operation. 
  * @param osip The element to work on.
  * @param type The event type to hook on.
  * @param cb The method to be called upon the event.
@@ -590,7 +590,7 @@ extern "C" {
   int osip_set_message_callback (osip_t * osip, int type, osip_message_cb_t cb);
 
 /**
- * Set a callback for transaction operation related to the end of transactions.
+ * Set a callback for transaction operation related to the end of transactions. 
  * @param osip The element to work on.
  * @param type The event type to hook on.
  * @param cb The method to be called upon the event.
@@ -846,7 +846,7 @@ extern "C" {
 
 
 
-/**
+/** 
  * Allocate an osip_t element.
  * @param osip the element to allocate.
  */
@@ -906,7 +906,7 @@ extern "C" {
  * Retreive the minimum timer value to be used by an application
  * so that the osip_timer_*_execute method don't have to be called
  * often.
- *
+ * 
  * @param osip The element to work on.
  * @param lower_tv The minimum timer when the application should wake up.
  */
@@ -1111,7 +1111,7 @@ extern "C" {
  * @param event the event to check.
  */
 #define EVT_IS_INCOMINGMSG(event)      (event->type>=RCV_REQINVITE \
-			               &&event->type<=RCV_STATUS_3456XX)
+                	               &&event->type<=RCV_STATUS_3456XX)
 /**
  * Check if the sipevent is of an incoming SIP REQUEST.
  * @param event the event to check.
@@ -1131,7 +1131,7 @@ extern "C" {
  * @param event the event to check.
  */
 #define EVT_IS_OUTGOINGMSG(event)      (event->type>=SND_REQINVITE \
-			               &&event->type<=SND_STATUS_3456XX)
+                	               &&event->type<=SND_STATUS_3456XX)
 /**
  * Check if the sipevent is of an outgoing SIP REQUEST.
  * @param event the event to check.
@@ -1152,7 +1152,7 @@ extern "C" {
  * @param event the event to check.
  */
 #define EVT_IS_MSG(event)              (event->type>=RCV_REQINVITE \
-			               &&event->type<=SND_STATUS_3456XX)
+                	               &&event->type<=SND_STATUS_3456XX)
 /**
  * Check if the sipevent is of type KILL_TRANSACTION.
  * NOTE: THIS IS AN INTERNAL METHOD ONLY

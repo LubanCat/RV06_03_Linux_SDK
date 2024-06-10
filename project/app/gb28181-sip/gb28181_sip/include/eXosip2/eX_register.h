@@ -1,17 +1,17 @@
 /*
   eXosip - This is the eXtended osip library.
   Copyright (C) 2001-2012 Aymeric MOIZARD amoizard@antisip.com
-
+  
   eXosip is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-
+  
   eXosip is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
+  
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -70,7 +70,7 @@ extern "C" {
 
 /**
  * Build initial REGISTER request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param from      SIP url for caller.
  * @param proxy     Proxy used for registration.
@@ -82,7 +82,7 @@ extern "C" {
 
 /**
  * Build initial REGISTER request with qvalue for contact.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param from      SIP url for caller.
  * @param proxy     Proxy used for registration.
@@ -95,7 +95,7 @@ extern "C" {
 
 /**
  * Build a new REGISTER request for an existing registration.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param rid       A unique identifier for the registration context
  * @param expires   The expires value for registration.
@@ -105,7 +105,7 @@ extern "C" {
 
 /**
  * Send a REGISTER request for an existing registration.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param rid       A unique identifier for the registration context
  * @param reg       The SIP request to build. (NULL for default REGISTER)
@@ -114,7 +114,7 @@ extern "C" {
 
 /**
  * Remove existing registration without sending REGISTER.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param rid       A unique identifier for the registration context
  */

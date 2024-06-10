@@ -1,17 +1,17 @@
 /*
   eXosip - This is the eXtended osip library.
   Copyright (C) 2001-2012 Aymeric MOIZARD amoizard@antisip.com
-
+  
   eXosip is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-
+  
   eXosip is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
+  
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -68,7 +68,7 @@ extern "C" {
 
 /**
  * Build a default request message.
- *
+ * 
  * This method will be updated to send any message outside of dialog
  * In this later case, you'll specify the method to use in the second
  * argument.
@@ -85,7 +85,7 @@ extern "C" {
 
 /**
  * Send an request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param message          SIP request to send.
  */
@@ -93,7 +93,7 @@ extern "C" {
 
 /**
  * Build answer for a request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid             id of transaction.
  * @param status          status for SIP answer to build.
@@ -103,7 +103,7 @@ extern "C" {
 
 /**
  * Send answer for a request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid             id of transaction.
  * @param status          status for SIP answer to send.

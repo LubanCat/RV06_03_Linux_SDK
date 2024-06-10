@@ -1,21 +1,21 @@
 /*
   eXosip - This is the eXtended osip library.
   Copyright (C) 2001-2012 Aymeric MOIZARD amoizard@antisip.com
-
+  
   eXosip is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-
+  
   eXosip is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
+  
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+  
   In addition, as a special exception, the copyright holders give
   permission to link the code of portions of this program with the
   OpenSSL library under certain conditions as described in each
@@ -85,7 +85,7 @@ extern "C" {
 
 /**
  * Get the application context pointer for an existing call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param cid            id of the call.
  * @return               Application context reference
@@ -94,7 +94,7 @@ extern "C" {
 
 /**
  * Build a default INVITE message for a new call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param invite    Pointer for the SIP element to hold.
  * @param to        SIP url for callee.
@@ -106,7 +106,7 @@ extern "C" {
 
 /**
  * Initiate a call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param invite          SIP INVITE message to send.
  */
@@ -114,7 +114,7 @@ extern "C" {
 
 /**
  * Build a default request within a call. (INVITE, OPTIONS, INFO, REFER)
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param method       request type to build.
@@ -124,7 +124,7 @@ extern "C" {
 
 /**
  * Build a default ACK for a 200ok received.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param ack          The sip request to build.
@@ -133,7 +133,7 @@ extern "C" {
 
 /**
  * Send the ACK for the 200ok received..
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param ack          SIP ACK message to send.
@@ -142,7 +142,7 @@ extern "C" {
 
 /**
  * Build a default REFER for a call transfer.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param refer_to     url for call transfer (Refer-To header).
@@ -152,7 +152,7 @@ extern "C" {
 
 /**
  * Build a default INFO within a call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param request      The sip request to build.
@@ -161,7 +161,7 @@ extern "C" {
 
 /**
  * Build a default OPTIONS within a call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param request      The sip request to build.
@@ -170,7 +170,7 @@ extern "C" {
 
 /**
  * Build a default UPDATE within a call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param request      The sip request to build.
@@ -179,7 +179,7 @@ extern "C" {
 
 /**
  * Build a default NOTIFY within a call.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did                   dialog id of call.
  * @param subscription_status   Subscription status of the request.
@@ -189,7 +189,7 @@ extern "C" {
 
 /**
  * send the request within call. (INVITE, OPTIONS, INFO, REFER, UPDATE)
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          dialog id of call.
  * @param request      The sip request to send.
@@ -198,7 +198,7 @@ extern "C" {
 
 /**
  * Build default Answer for request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid          id of transaction to answer.
  * @param status       Status code to use.
@@ -208,7 +208,7 @@ extern "C" {
 
 /**
  * Send Answer for invite.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid          id of transaction to answer.
  * @param status       response status if answer is NULL. (not allowed for 2XX)
@@ -219,7 +219,7 @@ extern "C" {
 /**
  * Terminate a call.
  * send CANCEL, BYE or 603 Decline.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param cid          call id of call.
  * @param did          dialog id of call.
@@ -228,7 +228,7 @@ extern "C" {
 
 /**
  * Build a PRACK for invite.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid          id of the invite transaction.
  * @param prack        The sip prack to build.
@@ -237,7 +237,7 @@ extern "C" {
 
 /**
  * Send a PRACK for invite.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid          id of the invite transaction.
  * @param prack        The sip prack to send.
@@ -246,7 +246,7 @@ extern "C" {
 
 /**
  * Get Refer-To header with Replace parameter from dialog.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          id of the dialog.
  * @param refer_to     buffer to be filled with refer-to info.
@@ -257,7 +257,7 @@ extern "C" {
 
 /**
  * Return did (or cid) for the replace header.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param replaces     buffer to be filled with refer-to info.
  */

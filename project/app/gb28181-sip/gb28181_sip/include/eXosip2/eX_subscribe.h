@@ -1,17 +1,17 @@
 /*
   eXosip - This is the eXtended osip library.
   Copyright (C) 2001-2012 Aymeric MOIZARD amoizard@antisip.com
-
+  
   eXosip is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-
+  
   eXosip is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
+  
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -111,7 +111,7 @@ extern "C" {
 
 /**
  * Build a default initial SUBSCRIBE request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param subscribe Pointer for the SIP request to build.
  * @param to        SIP url for callee.
@@ -124,7 +124,7 @@ extern "C" {
 
 /**
  * Send an initial SUBSCRIBE request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param subscribe          SIP SUBSCRIBE message to send.
  */
@@ -132,7 +132,7 @@ extern "C" {
 
 /**
  * Build a default new SUBSCRIBE message.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did      identifier of the subscription.
  * @param sub      Pointer for the SIP request to build.
@@ -141,7 +141,7 @@ extern "C" {
 
 /**
  * Send a new SUBSCRIBE request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          identifier of the subscription.
  * @param sub          SIP SUBSCRIBE message to send.
@@ -150,7 +150,7 @@ extern "C" {
 
 /**
  * Remove outgoing subscription context.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          identifier of the subscription.
  */
@@ -166,7 +166,7 @@ extern "C" {
 
 /**
  * Build answer for an SUBSCRIBE request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid             id of SUBSCRIBE transaction.
  * @param status          status for SIP answer to build.
@@ -176,7 +176,7 @@ extern "C" {
 
 /**
  * Send answer for an SUBSCRIBE request.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param tid             id of SUBSCRIBE transaction.
  * @param status          status for SIP answer to send.
@@ -186,7 +186,7 @@ extern "C" {
 
 /**
  * Build a request within subscription.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did             id of incoming subscription.
  * @param method          request method to build.
@@ -196,7 +196,7 @@ extern "C" {
 
 /**
  * Build a NOTIFY request within subscription.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did                  id of incoming subscription.
  * @param subscription_status  subscription status (pending, active, terminated)
@@ -207,7 +207,7 @@ extern "C" {
 
 /**
  * Send a request within subscription.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did             id of incoming subscription.
  * @param request         The SIP request to send.
@@ -216,7 +216,7 @@ extern "C" {
 
 /**
  * Remove incoming subscription context.
- *
+ * 
  * @param excontext    eXosip_t instance.
  * @param did          identifier of the subscription.
  */
