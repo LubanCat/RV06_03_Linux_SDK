@@ -1,0 +1,3 @@
+[submodule "sysdrv/source/buildroot/dl"]
+	path = sysdrv/source/buildroot/dl
+	url = git@gitlab.ebf.loca:rockchip/test_code/rv1103_ipc/dl.git

@@ -1,6 +1,6 @@
 out
 source/busybox/
-source/buildroot/
+source/buildroot/buildroot-*
 tools/board/android-tools/android-tools/
 tools/board/dosfstools/dosfstools*
 tools/board/e2fsprogs/e2fsprogs*

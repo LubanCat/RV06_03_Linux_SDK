@@ -543,7 +543,10 @@ buildroot: prepare
 		mkdir -p $(BUILDROOT_DIR) ;\
 		tar xzf $(SYSDRV_DIR)/tools/board/buildroot/$(BUILDROOT_VER).tar.gz -C $(BUILDROOT_DIR) ;\
 		cp -v $(SYSDRV_DIR)/tools/board/buildroot/patch/busybox/* $(BUILDROOT_DIR)/$(BUILDROOT_VER)/package/busybox/ ;\
-		mkdir -p $(BUILDROOT_DIR)/dl ;\
+	);
+
+	test -d $(BUILDROOT_DIR)/dl && (\
+		rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER)/dl ;\
 		ln -sf $(BUILDROOT_DIR)/dl $(BUILDROOT_DIR)/$(BUILDROOT_VER)/dl ;\
 	);
 
