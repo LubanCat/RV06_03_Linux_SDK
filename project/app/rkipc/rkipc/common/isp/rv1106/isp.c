@@ -24,8 +24,10 @@
 char g_iq_file_dir_[256];
 char main_scene[32];
 char sub_scene[32];
-static int light_level = -1;
+static int night_state = -1;
+static int light_level = 0;
 static int light_state = -1;
+static int ir_state = -1;
 static int current_scenario_id = 0;
 static int fastboot_fd, file_size;
 static void *iq_mem;
@@ -261,6 +263,8 @@ int rk_isp_set_light_strength(uint32_t pwm, uint32_t period, uint32_t duty,
 int rk_isp_close_light(uint32_t pwm) {
 	int ret;
 	light_state = 0;
+	// 关闭使能
+	rk_pwm_set_enable(pwm, false);
 	ret = rk_pwm_deinit(pwm);
 	if (ret)
 		LOG_ERROR("pwm%d deinit failed %d\n", pwm, ret);
@@ -601,13 +605,30 @@ int rk_isp_set_night_to_day(int cam_id, const char *value) {
 	aie_attrib_t attr;
 	rk_aiq_user_api2_aie_GetAttrib(rkipc_aiq_get_ctx(cam_id), &attr);
 	if (!strcmp(value, "night")) {
+		night_state=1;
+		LOG_INFO("switch night mode, light_level=%d\n",light_level);
 		attr.mode = RK_AIQ_IE_EFFECT_BW;
 		rk_aiq_user_api2_aie_SetAttrib(rkipc_aiq_get_ctx(cam_id), &attr);
+		// 夜晚关滤光片
 		rk_isp_enable_ircut(false);
+		// 配置补光灯为关闭前的状态
+		rk_isp_set_light_brightness(rkipc_get_scenario_id(cam_id), light_level);
 	} else {
+		night_state=0;
+		//白天开滤光片
 		rk_isp_enable_ircut(true);
-		if (light_state == 1)
-			rk_isp_close_light(3);
+		if (light_state == 1){
+			if (ir_state == 1){
+				LOG_INFO("switch day mode, close ir pwm0\n");
+				// 红外补光灯
+				rk_isp_close_light(0);
+			} else {
+				LOG_INFO("switch day mode, close ir pwm1\n");
+				// 白光补光灯
+				rk_isp_close_light(1);
+			}
+		}
+
 		attr.mode = RK_AIQ_IE_EFFECT_NONE;
 		rk_aiq_user_api2_aie_SetAttrib(rkipc_aiq_get_ctx(cam_id), &attr);
 	}
@@ -631,12 +652,24 @@ int rk_isp_get_fill_light_mode(int cam_id, const char **value) {
 int rk_isp_set_fill_light_mode(int cam_id, const char *value) {
 	int ret;
 	RK_ISP_CHECK_CAMERA_ID(cam_id);
-#if 0
+#if 1
 	rk_aiq_cpsl_cfg_t cpsl_cfg;
 	if (!strcmp(value, "IR")) {
+		ir_state=1;
 		cpsl_cfg.lght_src = RK_AIQ_CPSLS_IR;
+		LOG_INFO("fill light mode set:IR, close LED pwm1\n");
+		// 白光补光灯
+		rk_isp_close_light(1);
+		// 关滤光片
+		// rk_isp_enable_ircut(false);
 	} else if (!strcmp(value, "LED")) {
+		ir_state=0;
 		cpsl_cfg.lght_src = RK_AIQ_CPSLS_LED;
+		LOG_INFO("fill light mode set:LED, close ir pwm0\n");
+		// 关滤光片
+		// rk_isp_enable_ircut(true);
+		// 红外补光灯
+		rk_isp_close_light(0);
 	}
 	ret = rk_aiq_uapi2_sysctl_setCpsLtCfg(rkipc_aiq_get_ctx(cam_id), &cpsl_cfg);
 #endif
@@ -657,16 +690,23 @@ int rk_isp_get_light_brightness(int cam_id, int *value) {
 }
 
 int rk_isp_set_light_brightness(int cam_id, int value) {
-	if (light_level == value) {
-		LOG_INFO("light brightness unchanged\n");
+	// 白天模式不调整亮度
+	if (night_state == 0) {
 		return 0;
 	}
 	int ret;
 	uint32_t pwm, period, duty = 0;
 	RK_ISP_CHECK_CAMERA_ID(cam_id);
-	pwm = 3;
-	period = 10000;
-	duty = 5000;
+	LOG_INFO("light brightness value:%d\n",value);
+
+	if (ir_state == 1) {
+		pwm = 0;
+	} else{
+		pwm = 1;
+	}
+
+	period = 1000000;
+	duty = 10000*value;
 	ret = rk_isp_set_light_strength(pwm, period, duty, PWM_POLARITY_NORMAL);
 	char entry[128] = {'\0'};
 	snprintf(entry, 127, "isp.%d.night_to_day:light_brightness", rkipc_get_scenario_id(cam_id));
@@ -1899,12 +1939,15 @@ int rk_isp_set_from_ini(int cam_id) {
 
 int rk_isp_init(int cam_id, char *iqfile_path) {
 	int ret;
+	// 加载iqfile
 	if (iqfile_path)
 		memcpy(g_iq_file_dir_, iqfile_path, strlen(iqfile_path));
 	else
 		memcpy(g_iq_file_dir_, "/etc/iqfiles", strlen("/etc/iqfiles"));
 	LOG_INFO("g_iq_file_dir_ is %s\n", g_iq_file_dir_);
 
+	// 从ini获取默认场景是够为normal
+							// 获取字符型参数                    //参数不存在时默认返回值
 	const char *scenario = rk_param_get_string("isp:scenario", "normal");
 	if (!strcmp(scenario, "normal")) {
 		current_scenario_id = 0;
@@ -1915,10 +1958,12 @@ int rk_isp_init(int cam_id, char *iqfile_path) {
 	}
 
 	char entry[128] = {'\0'};
+							// 计算场景编号
 	snprintf(entry, 127, "isp.%d.blc:hdr", rkipc_get_scenario_id(cam_id));
 	const char *hdr_mode = rk_param_get_string(entry, "close");
 	LOG_INFO("cam_id is %d, hdr_mode is %s, scenario is %s\n", cam_id, hdr_mode, scenario);
 
+	// 是否开启hdr
 	if (!strcmp(hdr_mode, "HDR2")) {
 		ret = sample_common_isp_init(cam_id, RK_AIQ_WORKING_MODE_ISP_HDR2, true, g_iq_file_dir_);
 	} else {

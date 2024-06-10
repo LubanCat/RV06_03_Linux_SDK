@@ -27,7 +27,33 @@
 #include "rk_mpi_tde.h"
 #include <rga/im2d.h>
 #include <rga/rga.h>
+#include "device.h"
 
+typedef enum {
+    STREAM_TYPE_AUDIO = 1,
+    STREAM_TYPE_VIDEO = 2,
+} stream_type;
+
+typedef enum {
+    VIDEO_TYPE_H264 = 1,
+    VIDEO_TYPE_H265 = 2,
+} video_type;
+
+typedef enum {
+    AUDIO_TYPE_G711A = 1,
+    AUDIO_TYPE_G711U = 2,
+} audio_type;
+
+typedef struct {
+    stream_type packect_type;
+    video_type video_type;
+    Nalu_t nalu;
+    audio_type audio_type;
+    int audio_size;
+    char *audio_frame;
+} rtp_packet_t;
+
+int send_rtp(rtp_packet_t rp);
 int rk_video_init();
 int rk_video_deinit();
 int rk_video_restart();

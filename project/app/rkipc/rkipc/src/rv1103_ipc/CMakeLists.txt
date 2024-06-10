@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
 include_directories(${PROJECT_SOURCE_DIR}/./include
+					${PROJECT_SOURCE_DIR}/common/gb28181/include
+					${PROJECT_SOURCE_DIR}/common/gb28181/src
 					${CMAKE_SYSROOT}/usr/include/rkaiq/
 					${CMAKE_SYSROOT}/usr/include/rkaiq/uAPI
 					${CMAKE_SYSROOT}/usr/include/rkaiq/uAPI2
@@ -31,9 +33,12 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/common/storage SRCS)
 aux_source_directory(${PROJECT_SOURCE_DIR}/common/rockiva SRCS)
 aux_source_directory(${PROJECT_SOURCE_DIR}/common/event SRCS)
 aux_source_directory(${PROJECT_SOURCE_DIR}/common/region_clip SRCS)
+aux_source_directory(${PROJECT_SOURCE_DIR}/common/gb28181/src SRCS)
 
 include_directories(video
 					server
+					${PROJECT_SOURCE_DIR}/common/gb28181/include
+					${PROJECT_SOURCE_DIR}/common/gb28181/src
 					${PROJECT_SOURCE_DIR}/common
 					${PROJECT_SOURCE_DIR}/common/audio/rv1106
 					${PROJECT_SOURCE_DIR}/common/isp/rv1106
@@ -52,7 +57,9 @@ include_directories(video
 					${PROJECT_SOURCE_DIR}/common/region_clip
 					)
 
-link_directories(${PROJECT_SOURCE_DIR}/lib/arm-rockchip830-linux-uclibcgnueabihf)
+link_directories(${PROJECT_SOURCE_DIR}/lib/arm-rockchip830-linux-uclibcgnueabihf
+				${PROJECT_SOURCE_DIR}/common/gb28181/lib
+				)
 
 add_definitions(-DISP_HW_V32)
 #add_definitions(-g -ggdb)
@@ -63,7 +70,7 @@ add_definitions(-DISP_HW_V32)
 # link_libraries(asan)
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} pthread rockit rockchip_mpp rkaiq rtsp rkaudio_detect aec_bf_process wpa_client m rkmuxer freetype rockiva iconv rknnmrt rga stdc++ rksysutils rkaudio)
+target_link_libraries(${PROJECT_NAME} pthread rockit rockchip_mpp rkaiq rtsp rkaudio_detect aec_bf_process wpa_client m rkmuxer freetype rockiva iconv rknnmrt rga stdc++ rksysutils rkaudio eXosip2 osip2 mxml4 osipparser2)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(FILES rkipc-300w.ini DESTINATION share)
@@ -74,3 +81,4 @@ install(PROGRAMS RkLunch-stop.sh DESTINATION bin)
 install(FILES ${PROJECT_SOURCE_DIR}/common/osd/image.bmp DESTINATION share)
 install(FILES ${PROJECT_SOURCE_DIR}/common/osd/simsun_en.ttf DESTINATION share)
 install(FILES ${PROJECT_SOURCE_DIR}/lib/arm-rockchip830-linux-uclibcgnueabihf/libwpa_client.so DESTINATION lib)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/common/gb28181/lib/ DESTINATION lib)

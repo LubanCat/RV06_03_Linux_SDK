@@ -15,6 +15,7 @@
 #undef LOG_TAG
 #endif
 #define LOG_TAG "video.c"
+#include "device.h"
 
 #define RKISP_MAINPATH 0
 #define RKISP_SELFPATH 1
@@ -42,10 +43,22 @@
 #define RTMP_URL_1 "rtmp://127.0.0.1:1935/live/substream"
 #define RTMP_URL_2 "rtmp://127.0.0.1:1935/live/thirdstream"
 
+# define TIME_BASE 90000
+# define FPS 25
+# define RTP_PACKECT_MAX_LENGTH 1400
+
+int aduio_packect_size=8000 / FPS;
+int send_packet_interval = 1000 / FPS;
+int interval = TIME_BASE / FPS;
+int pes_packect_size = 65535 / RTP_PACKECT_MAX_LENGTH * RTP_PACKECT_MAX_LENGTH;
+
 static int get_jpeg_cnt = 0;
 static int enable_ivs, enable_jpeg, enable_venc_0, enable_venc_1, enable_rtsp, enable_rtmp;
 static int g_enable_vo, g_vo_dev_id, g_vi_chn_id, enable_npu, enable_wrap, enable_osd;
-static int g_video_run_ = 1;
+extern int g_audio_run_;
+extern int aenc_chn_id;
+extern int audio_finish;
+int g_video_run_ = 1;
 static int pipe_id_ = 0;
 static int dev_id_ = 0;
 static int g_nn_osd_run_ = 0;
@@ -66,6 +79,15 @@ typedef enum rkCOLOR_INDEX_E {
 	RGN_COLOR_LUT_INDEX_0 = 0,
 	RGN_COLOR_LUT_INDEX_1 = 1,
 } COLOR_INDEX_E;
+
+long pts;
+int rtp_seq;
+
+extern bool is_pushing;
+extern rtp_net_t rtp_net;
+extern char ssrc[20];
+extern pthread_mutex_t lock;
+extern pthread_cond_t cond;
 
 #if HAS_VO
 static void *get_vi_send_vo(void *arg) {
@@ -112,6 +134,103 @@ static void *get_vi_send_vo(void *arg) {
 }
 #endif
 
+
+int send_rtp(rtp_packet_t rp){
+
+	char ps_header[PS_HDR_LEN];
+	char ps_system_header[SYS_HDR_LEN];
+	char ps_map_header[PSM_HDR_LEN];
+	char pes_header[PES_HDR_LEN];
+	char rtp_header[RTP_HDR_LEN];
+
+    char rtp_packet[RTP_HDR_LEN+1400+2];
+    int pes_packet_num;
+    int frame_length;
+    char *frame;
+    char frame_head[128];
+    int index = 0;
+    char *send_frame;
+
+    if(rp.packect_type == STREAM_TYPE_AUDIO ){
+        send_frame = rp.audio_frame;
+        frame_length = rp.audio_size;
+    }
+
+    else if(rp.packect_type == STREAM_TYPE_VIDEO){
+        if (rp.nalu.type == NALU_TYPE_IDR || rp.nalu.type == H265E_NALU_IDRSLICE) {
+            gb28181_make_ps_header(ps_header, pts);
+            gb28181_make_sys_header(ps_system_header, 0x3f);
+            gb28181_make_psm_header(ps_map_header);
+
+            memcpy(frame_head,ps_header,PS_HDR_LEN);
+            index += PS_HDR_LEN;
+            memcpy(frame_head+ index, ps_system_header, SYS_HDR_LEN);
+            index += SYS_HDR_LEN;
+            memcpy(frame_head + index, ps_map_header, PSM_HDR_LEN);
+            index += PSM_HDR_LEN;
+        } else {
+            gb28181_make_ps_header(ps_header, pts);
+
+            memcpy(frame_head, ps_header, PS_HDR_LEN);
+            index += PS_HDR_LEN;
+        }
+        frame_length = rp.nalu.length;
+        send_frame = rp.nalu.packet;
+    }
+
+    if(frame_length > pes_packect_size)
+        pes_packet_num = frame_length / pes_packect_size + 1;
+    else
+        pes_packet_num=1;
+
+    frame = malloc(frame_length  + index + pes_packet_num * PES_HDR_LEN);
+    memcpy(frame, frame_head, index);
+
+    for(int j=0;j<pes_packet_num;j++){
+        int frame_packet_length;
+        if(j == pes_packet_num - 1)
+            frame_packet_length = frame_length - j*pes_packect_size;
+        else
+            frame_packet_length = pes_packect_size;
+        if(rp.packect_type == STREAM_TYPE_AUDIO)
+            gb28181_make_pes_header(pes_header, 0xc0, frame_packet_length, pts, pts);
+        else if(rp.packect_type == STREAM_TYPE_VIDEO)
+            gb28181_make_pes_header(pes_header, 0xe0, frame_packet_length, pts, pts);
+        memcpy(frame+index, pes_header, PES_HDR_LEN);
+        index += PES_HDR_LEN;
+        memcpy(frame + index, send_frame + j*pes_packect_size, frame_packet_length);
+        index += frame_packet_length;
+    }
+
+    int rtp_packet_count = ((index - 1) / RTP_PACKECT_MAX_LENGTH) + 1;
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < rtp_packet_count; i++) {
+        gb28181_make_rtp_header(rtp_header, rtp_seq, pts, atoi(ssrc), i == (rtp_packet_count - 1));
+        int writed_count = RTP_PACKECT_MAX_LENGTH;
+
+        if ((i + 1)*RTP_PACKECT_MAX_LENGTH > index)
+            writed_count = index - (i* RTP_PACKECT_MAX_LENGTH);
+        //添加包长字节
+        int rtp_start_index=0;
+
+        unsigned short rtp_packet_length = RTP_HDR_LEN + writed_count;
+        if (strcmp(rtp_net.rtp_protocol, "TCP/RTP/AVP") == 0) {
+            unsigned char packt_length_ary[2];
+            packt_length_ary[0] = (rtp_packet_length >> 8) & 0xff;
+            packt_length_ary[1] = rtp_packet_length & 0xff;
+            memcpy(rtp_packet, packt_length_ary, 2);
+            rtp_start_index = 2;
+        }
+
+        memcpy(rtp_packet+ rtp_start_index, rtp_header, RTP_HDR_LEN);
+        memcpy(rtp_packet + rtp_start_index + RTP_HDR_LEN, frame+ (i* RTP_PACKECT_MAX_LENGTH), writed_count);
+        rtp_seq++;
+        device_send_network_packet(rtp_packet , rtp_packet_length+rtp_start_index);
+	}
+	free(frame);
+	pthread_mutex_unlock(&lock);
+}
+
 static void *rkipc_get_venc_0(void *arg) {
 	LOG_DEBUG("#Start %s thread, arg:%p\n", __func__, arg);
 	prctl(PR_SET_NAME, "RkipcVenc0", 0, 0, 0);
@@ -119,45 +238,103 @@ static void *rkipc_get_venc_0(void *arg) {
 	VI_CHN_STATUS_S stChnStatus;
 	int loopCount = 0;
 	int ret = 0;
-	// FILE *fp = fopen("/data/venc.h265", "wb");
-	stFrame.pstPack = malloc(sizeof(VENC_PACK_S));
+	int i=0;
+	pts = 0;
+	rtp_seq= 0;
 
+	bool start_flag=false;
+	Nalu_t nalu_sps;
+	Nalu_t nalu_pps;
+	Nalu_t nalu_vps;
+	Nalu_t nalu_idr;
+
+	stFrame.pstPack = malloc(sizeof(VENC_PACK_S));
 	while (g_video_run_) {
 		// 5.get the frame
-		ret = RK_MPI_VENC_GetStream(VIDEO_PIPE_0, &stFrame, 2500);
+		ret = RK_MPI_VENC_GetStream(VIDEO_PIPE_0, &stFrame, 1000);
 		if (ret == RK_SUCCESS) {
 			void *data = RK_MPI_MB_Handle2VirAddr(stFrame.pstPack->pMbBlk);
-			// fwrite(data, 1, stFrame.pstPack->u32Len, fp);
-			// fflush(fp);
-			// LOG_DEBUG("Count:%d, Len:%d, PTS is %" PRId64", enH264EType is %d\n", loopCount,
-			// stFrame.pstPack->u32Len, stFrame.pstPack->u64PTS,
-			// stFrame.pstPack->DataType.enH264EType);
-			rkipc_rtsp_write_video_frame(0, data, stFrame.pstPack->u32Len, stFrame.pstPack->u64PTS);
-			if ((stFrame.pstPack->DataType.enH264EType == H264E_NALU_IDRSLICE) ||
-			    (stFrame.pstPack->DataType.enH264EType == H264E_NALU_ISLICE) ||
-			    (stFrame.pstPack->DataType.enH265EType == H265E_NALU_IDRSLICE) ||
-			    (stFrame.pstPack->DataType.enH265EType == H265E_NALU_ISLICE)) {
-				rk_storage_write_video_frame(0, data, stFrame.pstPack->u32Len,
-				                             stFrame.pstPack->u64PTS, 1);
-				if (enable_rtmp)
-					rk_rtmp_write_video_frame(0, data, stFrame.pstPack->u32Len,
-					                          stFrame.pstPack->u64PTS, 1);
-			} else {
-				rk_storage_write_video_frame(0, data, stFrame.pstPack->u32Len,
-				                             stFrame.pstPack->u64PTS, 0);
-				if (enable_rtmp)
-					rk_rtmp_write_video_frame(0, data, stFrame.pstPack->u32Len,
-					                          stFrame.pstPack->u64PTS, 0);
+			Nalu_t nalu;
+			switch (stFrame.pstPack->DataType.enH265EType){
+				case H265E_NALU_ISLICE:
+				case H265E_NALU_IDRSLICE:{
+					nalu_idr.packet = (char *)realloc(nalu_idr.packet, stFrame.pstPack->u32Len);
+					nalu_idr.type = H265E_NALU_IDRSLICE;
+					nalu_idr.length = stFrame.pstPack->u32Len;
+					memcpy(nalu_idr.packet,data,stFrame.pstPack->u32Len);
+				}
+				case H265E_NALU_VPS:{
+					nalu_vps.packet = (char *)realloc(nalu_vps.packet, stFrame.pstPack->u32Len);
+					nalu_vps.type = H265E_NALU_VPS;
+					nalu_vps.length = stFrame.pstPack->u32Len;
+					memcpy(nalu_vps.packet,data,stFrame.pstPack->u32Len);
+					break;
+				}
+				case H265E_NALU_SPS:{
+					nalu_sps.packet = (char *)realloc(nalu_sps.packet, stFrame.pstPack->u32Len);
+					nalu_sps.type = H265E_NALU_SPS;
+					nalu_sps.length = stFrame.pstPack->u32Len;
+					memcpy(nalu_sps.packet,data,stFrame.pstPack->u32Len);
+					break;
+				}
+				case H265E_NALU_PPS:{
+					nalu_pps.packet = (char *)realloc(nalu_pps.packet, stFrame.pstPack->u32Len);
+					nalu_pps.type = H265E_NALU_PPS;
+					nalu_pps.length = stFrame.pstPack->u32Len;
+					memcpy(nalu_pps.packet,data,stFrame.pstPack->u32Len);
+					break;
+				}
+				case H265E_NALU_BSLICE:
+				case H265E_NALU_PSLICE:
+				case H265E_NALU_SEI:
+				default:{
+					break;
+				}
 			}
-			// 7.release the frame
+			if(is_pushing == true){
+				if(start_flag == false){
+					nalu.packet = malloc(nalu_vps.length + nalu_sps.length + nalu_pps.length + nalu_idr.length);
+					nalu.type = H265E_NALU_IDRSLICE;
+					nalu.length = nalu_vps.length + nalu_sps.length + nalu_pps.length + nalu_idr.length;
+					memcpy(nalu.packet,nalu_vps.packet,nalu_vps.length);
+					memcpy(nalu.packet + nalu_vps.length,nalu_sps.packet,nalu_sps.length);
+					memcpy(nalu.packet + nalu_vps.length + nalu_sps.length ,nalu_pps.packet,nalu_pps.length);
+					memcpy(nalu.packet + nalu_vps.length + nalu_sps.length + nalu_pps.length ,nalu_idr.packet,nalu_idr.length);
+					start_flag=true;
+				}else{
+					if (nalu.type == H265E_NALU_IDRSLICE){
+						nalu.packet = malloc(nalu_vps.length + nalu_sps.length + nalu_pps.length + nalu_idr.length);
+						nalu.type = H265E_NALU_IDRSLICE;
+						nalu.length = nalu_vps.length + nalu_sps.length + nalu_pps.length + nalu_idr.length;
+						memcpy(nalu.packet,nalu_vps.packet,nalu_vps.length);
+						memcpy(nalu.packet + nalu_vps.length,nalu_sps.packet,nalu_sps.length);
+						memcpy(nalu.packet + nalu_vps.length + nalu_sps.length ,nalu_pps.packet,nalu_pps.length);
+						memcpy(nalu.packet + nalu_vps.length + nalu_sps.length + nalu_pps.length ,nalu_idr.packet,nalu_idr.length);
+					}else{
+						nalu.packet = malloc(stFrame.pstPack->u32Len);
+						nalu.type = stFrame.pstPack->DataType.enH265EType;
+						nalu.length = stFrame.pstPack->u32Len;
+						memcpy(nalu.packet,data,stFrame.pstPack->u32Len);
+					}
+				}
+				rtp_packet_t rp;
+				rp.packect_type = STREAM_TYPE_VIDEO;
+		rp.video_type = VIDEO_TYPE_H265;
+				rp.nalu = nalu;
+				send_rtp(rp);
+				free(nalu.packet);
+			}else
+				start_flag=false;
 			ret = RK_MPI_VENC_ReleaseStream(VIDEO_PIPE_0, &stFrame);
 			if (ret != RK_SUCCESS) {
 				LOG_ERROR("RK_MPI_VENC_ReleaseStream fail %x\n", ret);
 			}
 			loopCount++;
+
 		} else {
 			LOG_ERROR("RK_MPI_VENC_GetStream timeout %x\n", ret);
 		}
+		pts += interval;
 	}
 	if (stFrame.pstPack)
 		free(stFrame.pstPack);
@@ -497,14 +674,14 @@ static void *rkipc_ivs_get_results(void *arg) {
 			resultscount++;
 			if (md == 1) {
 				if (stResults.pstResults->stMdInfo.u32Square > md_area_threshold) {
-					LOG_INFO("MD: md_area is %d, md_area_threshold is %d\n",
+					LOG_DEBUG("MD: md_area is %d, md_area_threshold is %d\n",
 					         stResults.pstResults->stMdInfo.u32Square, md_area_threshold);
 				}
 			}
 			if (od == 1) {
 				if (stResults.s32ResultNum > 0) {
 					if (stResults.pstResults->stOdInfo.u32Flag)
-						LOG_INFO("OD flag:%d\n", stResults.pstResults->stOdInfo.u32Flag);
+						LOG_DEBUG("OD flag:%d\n", stResults.pstResults->stOdInfo.u32Flag);
 				}
 			}
 			RK_MPI_IVS_ReleaseResults(0, &stResults);

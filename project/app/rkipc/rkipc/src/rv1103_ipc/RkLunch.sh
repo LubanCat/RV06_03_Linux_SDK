@@ -86,6 +86,10 @@ post_chk()
 		if [ $? -eq 0 ] ;then
 			ln -s -f /oem/usr/share/rkipc-400w.ini $default_rkipc_ini
 		fi
+		lsmod | grep sc431hai
+		if [ $? -eq 0 ] ;then
+			ln -s -f /oem/usr/share/rkipc-400w.ini $default_rkipc_ini
+		fi
 		lsmod | grep sc3336
 		if [ $? -eq 0 ] ;then
 			ln -s -f /oem/usr/share/rkipc-300w.ini $default_rkipc_ini

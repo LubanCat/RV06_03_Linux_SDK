@@ -16,6 +16,8 @@
 #include "mp3_enc_table1.h"
 #include "mp3_enc_table2.h"
 #include "mp3_enc_types.h"
+#include "device.h"
+#include "video.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -26,8 +28,16 @@ pthread_t save_ai_tid, save_aenc_tid, ai_get_detect_result_tid;
 static int ai_dev_id = 0;
 static int ai_chn_id = 0;
 static int aenc_dev_id = 0;
-static int aenc_chn_id = 0;
-static int g_audio_run_ = 1;
+int aenc_chn_id = 0;
+int g_audio_run_ = 1;
+int audio_finish = 0;
+
+extern bool is_pushing;
+extern rtp_net_t rtp_net;
+extern char ssrc[20];
+extern long pts;
+extern int rtp_seq;
+
 static int enable_aed, enable_bcd, enable_vqe;
 MPP_CHN_S ai_chn, aenc_chn;
 
@@ -66,12 +76,6 @@ void *save_aenc_thread(void *ptr) {
 	int count = 0;
 	const char *encode_type = rk_param_get_string("audio.0:encode_type", NULL);
 
-	// file = fopen("/tmp/aenc.mp3", "wb+");
-	// if (file == RK_NULL) {
-	// 	LOG_ERROR("failed to open /tmp/aenc.mp3, error: %s\n", strerror(errno));
-	// 	return RK_NULL;
-	// }
-
 	while (g_audio_run_) {
 		s32ret = RK_MPI_AENC_GetStream(aenc_chn_id, &pstStream, 1000);
 		if (s32ret == 0) {
@@ -79,19 +83,18 @@ void *save_aenc_thread(void *ptr) {
 			void *buffer = RK_MPI_MB_Handle2VirAddr(bBlk);
 			eos = (pstStream.u32Len <= 0) ? 1 : 0;
 			if (buffer) {
-				// LOG_INFO("get frame data = %p, size = %d, pts is %lld, seq is %d\n", buffer,
-				//          pstStream.u32Len, pstStream.u64TimeStamp, pstStream.u32Seq);
-				if (!strcmp(encode_type, "MP2") || !strcmp(encode_type, "MP3")) {
-					rk_storage_write_audio_frame(0, buffer, pstStream.u32Len, pstStream.u64TimeStamp);
-					rk_storage_write_audio_frame(1, buffer, pstStream.u32Len, pstStream.u64TimeStamp);
-					rk_storage_write_audio_frame(2, buffer, pstStream.u32Len, pstStream.u64TimeStamp);
-				} else if (!strcmp(encode_type, "G711A")) {
-					rkipc_rtsp_write_audio_frame(0, buffer, pstStream.u32Len, pstStream.u64TimeStamp);
+				// LOG_INFO("get frame aenc_chn_id = %d data = %p, size = %d, pts is %lld, seq is %d\n", aenc_chn_id,buffer,
+				// 			pstStream.u32Len, pstStream.u64TimeStamp, pstStream.u32Seq);
+				if(is_pushing == true){
+					rtp_packet_t rp;
+					rp.packect_type = STREAM_TYPE_AUDIO;
+					rp.audio_type = AUDIO_TYPE_G711A;
+					rp.audio_frame = malloc(pstStream.u32Len);
+				rp.audio_size = pstStream.u32Len;
+					memcpy(rp.audio_frame ,buffer,rp.audio_size);
+					send_rtp(rp);
+					free(rp.audio_frame);
 				}
-				// if (file) {
-				// 	fwrite(buffer, pstStream.u32Len, 1, file);
-				// 	fflush(file);
-				// }
 				RK_MPI_AENC_ReleaseStream(aenc_chn_id, &pstStream);
 				count++;
 			}
@@ -103,11 +106,6 @@ void *save_aenc_thread(void *ptr) {
 			break;
 		}
 	}
-	// if (file) {
-	// 	fclose(file);
-	// 	file = RK_NULL;
-	// }
-
 	return RK_NULL;
 }
 

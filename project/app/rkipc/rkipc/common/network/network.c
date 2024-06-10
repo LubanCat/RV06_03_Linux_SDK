@@ -812,6 +812,7 @@ static void *ntp_client_thread() {
 	const char *ntp_server = rk_param_get_string("network:ntp.ntp_server", "119.28.183.184");
 	LOG_INFO("refresh_time_s is %d, ntp_server is %s\n", refresh_time_s, ntp_server);
 
+	// 循坏获取时间
 	while (g_network_run_) {
 		rk_signal_wait(g_ntp_signal, refresh_time_s * 1000); // 60s
 		rkipc_ntp_update(ntp_server);
@@ -824,9 +825,11 @@ void rk_network_init(rk_network_cb func) { // func_cb func
 	g_network_run_ = 1;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
+	// 线程在终止时自动释放资源
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	pthread_t Net_trd;
+	// 创建网络处理线程
 	if (pthread_create(&Net_trd, &attr, rk_net_proc, NULL) != 0) {
 		LOG_INFO("Creat thread failed!\n");
 	}
@@ -840,7 +843,7 @@ void rk_network_init(rk_network_cb func) { // func_cb func
 		LOG_ERROR("create signal fail\n");
 		return;
 	}
-
+	// 创建ntp线程
 	if (rk_param_get_int("network.ntp:enable", 0)) {
 		pthread_create(&ntp_client_thread_id, NULL, ntp_client_thread, NULL);
 	}
