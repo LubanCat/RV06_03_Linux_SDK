@@ -341,6 +341,21 @@
     pinctrl-names = "default";
     pinctrl-0 = <&i2c4m2_xfer>;
 
+	gt911: touchscreen@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		interrupt-parent = <&gpio0>;
+		interrupts = <RK_PA2 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tp_int &tp_rst>;
+		reset-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_LOW>;
+		touchscreen-size-y = <480>;
+		touchscreen-size-x = <480>;
+		// touchscreen-inverted-x;
+		// touchscreen-inverted-y;
+		// touchscreen-swapped-x-y;
+	};
+
     ft5316: touchscreen@38 {
         compatible = "edt,edt-ft5306";
         reg = <0x38>;
