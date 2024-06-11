@@ -2,3 +2,8 @@
 hostapd-2.6/hostapd/hostapd
 hostapd-2.6/hostapd/hostapd_cli
 wifi/librkwifibt.so
+wifi/test/rkwifi_server
+install_out/
+libnl-3.4.0/
+wpa_supplicant_hostapd-*
+wpa_supplicant-2.6/

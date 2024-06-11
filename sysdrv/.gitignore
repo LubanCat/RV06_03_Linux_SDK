@@ -21,3 +21,4 @@ tools/board/toolkits/zlib/zlib*
 tools/board/valgrind/valgrind-*
 tools/pc/toolkits/resource_tool
 tools/board/eudev/util-linux-*
+tools/board/i2c-tools/i2c-tools-*
