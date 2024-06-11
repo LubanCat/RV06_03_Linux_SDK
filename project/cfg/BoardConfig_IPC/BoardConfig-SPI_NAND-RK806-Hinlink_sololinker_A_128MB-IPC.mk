@@ -28,7 +28,7 @@ export RK_KERNEL_DEFCONFIG=rv1106_linux_sololinker_defconfig
 export RK_KERNEL_DTS=rv1106g-hinlink-sololinker-a.dts
 
 # buildroot defconfig
-export RK_BUILDROOT_DEFCONFIG=rv1103_lbc_defconfig
+export RK_BUILDROOT_DEFCONFIG=rv1106_lbc_defconfig
 
 #misc image
 export RK_MISC=wipe_all-misc.img
@@ -76,7 +76,7 @@ export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs
 export RK_APP_TYPE=RKIPC_RV1106
 
 # build ipc web backend
-export RK_APP_IPCWEB_BACKEND=y
+# export RK_APP_IPCWEB_BACKEND=y
 
 # enable install app to oem partition
 export RK_BUILD_APP_TO_OEM_PARTITION=n
@@ -89,9 +89,8 @@ export RK_ENABLE_WIFI=y
 export RK_ENABLE_WIFI_CHIP=AIC8800DW_USB
 export RK_ENABLE_ADBD=y
 
-export RK_ENABLE_I2C_TOOLS=y
-
-export RK_ENABLE_LVGL=y
+# enable lvgl app
+export RK_LVGL_APP_CONFIG=y
 
 # Config SPI NAND or SLC NAND
 # RK_NAND_BLOCK_SIZE: block size (default 128 KB)
