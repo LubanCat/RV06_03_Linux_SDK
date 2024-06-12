@@ -204,8 +204,17 @@
 		regulator-name = "vccio_sd";
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <3300000>;
-		states = <3300000 1
-			  1800000 0>;
+		states = <3300000 1 1800000 0>;
+	};
+
+	wireless_wlan: wireless-wlan {
+		compatible = "wlan-platdata";
+        wifi_chip_type = "AIC8800D80";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_host_wake_irq>;
+        WIFI,poweren_gpio = <&gpio0 RK_PA4 GPIO_ACTIVE_HIGH>;
+		WIFI,host_wake_irq = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 
     ext_sc16is7xx: external-sc16is7xx-clock {
@@ -501,9 +510,6 @@
 	wireless-wlan {
 		wifi_host_wake_irq: wifi-host-wake-irq {
 			rockchip,pins = <1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-        host_wake_wifi: host-wake-wifi {
-			rockchip,pins = <0 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
