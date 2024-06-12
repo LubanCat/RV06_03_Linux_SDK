@@ -1,5 +1,7 @@
 #include <linux/module.h>
 #include <linux/inetdevice.h>
+#include <linux/version.h>
+
 #include "aicwf_usb.h"
 #include "rwnx_version_gen.h"
 #include "aicwf_rx_prealloc.h"
@@ -18,13 +20,19 @@ int adap_test = 0;
 char paringid[100];
 int n_para = 1;
 int ble_scan_wakeup_reboot_time = 1000;
-int aicwf_dbg_level = LOGERROR|LOGINFO|LOGDEBUG|LOGTRACE;
+// int aicwf_dbg_level = LOGERROR|LOGINFO;
+int aicwf_dbg_level = LOGERROR;
+int flash_erase_len = 0x400000;
+uint32_t ad_data_filter_mask = 0;
+uint32_t gpio_num = 2;//default select gpiob2 for fw_wakeup_host
+uint32_t gpio_dft_lvl = 0;//0:defalut pull down,  1:default pull up
 
 module_param(aicwf_dbg_level, int, 0660);
 module_param(ble_scan_wakeup_reboot_time, int, 0660);
 module_param(testmode, int, 0660);
 module_param(adap_test, int, 0660);
 module_param_string(paringid, paringid, 100, 0660);
+module_param(flash_erase_len, int, 0660);
 
 
 static void aicsmac_driver_register(void)
@@ -61,7 +69,10 @@ static void __exit aic_bluetooth_mod_exit(void)
 
 module_init(aic_bluetooth_mod_init);
 module_exit(aic_bluetooth_mod_exit);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+#endif
 
 MODULE_FIRMWARE(DRV_CONFIG_FW_NAME);
 MODULE_DESCRIPTION(DRV_DESCRIPTION);

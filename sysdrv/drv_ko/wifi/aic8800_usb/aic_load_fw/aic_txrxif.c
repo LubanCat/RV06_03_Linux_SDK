@@ -245,6 +245,7 @@ int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv)
             }
         }
 
+		dev_kfree_skb(skb_inblock);
         dev_kfree_skb(skb);
         atomic_dec(&rx_priv->rx_cnt);
     }

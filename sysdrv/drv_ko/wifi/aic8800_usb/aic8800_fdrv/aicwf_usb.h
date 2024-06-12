@@ -35,7 +35,7 @@ enum AICWF_IC{
 };
 
 
-#define AICWF_USB_RX_URBS               (200)//(200)
+#define AICWF_USB_RX_URBS               (20)//(200)
 #ifdef CONFIG_USB_MSG_IN_EP
 #define AICWF_USB_MSG_RX_URBS           (100)
 #endif
@@ -47,11 +47,8 @@ enum AICWF_IC{
 #endif
 #define AICWF_USB_TX_LOW_WATER         (AICWF_USB_TX_URBS/4)//25%
 #define AICWF_USB_TX_HIGH_WATER        (AICWF_USB_TX_LOW_WATER*3)//75%
-#ifdef CONFIG_USB_RX_AGGR
-#define AICWF_USB_MAX_PKT_SIZE          (2048*30)
-#else
+#define AICWF_USB_AGGR_MAX_PKT_SIZE     (2048*1)
 #define AICWF_USB_MAX_PKT_SIZE          (2048)
-#endif
 #define AICWF_USB_FC_PERSTA_HIGH_WATER		64
 #define AICWF_USB_FC_PERSTA_LOW_WATER		16
 
@@ -135,9 +132,15 @@ struct aic_usb_dev {
 
     int tx_free_count;
     int tx_post_count;
-
+    bool rx_prepare_ready;
+#if 0
     struct aicwf_usb_buf usb_tx_buf[AICWF_USB_TX_URBS];
     struct aicwf_usb_buf usb_rx_buf[AICWF_USB_RX_URBS];
+#else
+    struct aicwf_usb_buf *usb_tx_buf;
+    struct aicwf_usb_buf *usb_rx_buf;
+#endif
+
 #ifdef CONFIG_USB_MSG_IN_EP
 	struct aicwf_usb_buf usb_msg_rx_buf[AICWF_USB_MSG_RX_URBS];
 #endif

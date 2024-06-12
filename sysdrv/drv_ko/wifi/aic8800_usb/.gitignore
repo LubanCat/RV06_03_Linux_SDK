@@ -1,0 +1,6 @@
+*.symvers
+*.order
+*.symvers.cmd
+*.order.cmd
+*.o.d
+.tmp_versions/

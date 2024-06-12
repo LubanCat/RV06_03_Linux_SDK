@@ -12,6 +12,7 @@
 #include "rwnx_tx.h"
 #include "ipc_host.h"
 #include "rwnx_events.h"
+#include "rwnx_gki.h"
 
 /******************************************************************************
  * Utils functions
@@ -22,7 +23,7 @@ const int nx_tid_prio[NX_NB_TID_PER_STA] = {7, 6, 5, 4, 3, 0, 2, 1};
 static inline int rwnx_txq_sta_idx(struct rwnx_sta *sta, u8 tid)
 {
     if (is_multicast_sta(sta->sta_idx)){
-        if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) || 
+        if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
             ((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
             g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DW) && chip_id < 3)){
                 return NX_FIRST_VIF_TXQ_IDX_FOR_OLD_IC + sta->vif_idx;
@@ -36,7 +37,7 @@ static inline int rwnx_txq_sta_idx(struct rwnx_sta *sta, u8 tid)
 
 static inline int rwnx_txq_vif_idx(struct rwnx_vif *vif, u8 type)
 {
-    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) || 
+    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
         ((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
         g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DW) && chip_id < 3)){
             return NX_FIRST_VIF_TXQ_IDX_FOR_OLD_IC + master_vif_idx(vif) + (type * NX_VIRT_DEV_MAX);
@@ -97,7 +98,7 @@ static void rwnx_txq_init(struct rwnx_txq *txq, int idx, u8 status,
     int nx_bcmc_txq_ndev_idx = NX_BCMC_TXQ_NDEV_IDX;
     int nx_first_vif_txq_idx = NX_FIRST_VIF_TXQ_IDX;
 	
-    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) || 
+    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
         ((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
         g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DW) && chip_id < 3)){
             nx_first_unk_txq_idx = NX_FIRST_UNK_TXQ_IDX_FOR_OLD_IC;
@@ -343,7 +344,7 @@ void rwnx_txq_offchan_init(struct rwnx_vif *rwnx_vif)
     struct rwnx_txq *txq;
     int nx_off_chan_txq_idx = NX_OFF_CHAN_TXQ_IDX;
 
-    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) || 
+    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
         ((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
         g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DW) && chip_id < 3)){
             nx_off_chan_txq_idx = NX_OFF_CHAN_TXQ_IDX_FOR_OLD_IC;
@@ -368,7 +369,7 @@ void rwnx_txq_offchan_deinit(struct rwnx_vif *rwnx_vif)
     struct rwnx_txq *txq;
     int nx_off_chan_txq_idx = NX_OFF_CHAN_TXQ_IDX;
 
-    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) || 
+    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
         ((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
         g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DW) && chip_id < 3)){
             nx_off_chan_txq_idx = NX_OFF_CHAN_TXQ_IDX_FOR_OLD_IC;
@@ -752,7 +753,7 @@ void rwnx_txq_offchan_start(struct rwnx_hw *rwnx_hw)
     struct rwnx_txq *txq;
     int nx_off_chan_txq_idx = NX_OFF_CHAN_TXQ_IDX;
 
-    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) || 
+    if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
         ((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
         g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8800DW) && chip_id < 3)){
             nx_off_chan_txq_idx = NX_OFF_CHAN_TXQ_IDX_FOR_OLD_IC;
@@ -844,7 +845,7 @@ int rwnx_txq_queue_skb(struct sk_buff *skb, struct rwnx_txq *txq,
         skb_queue_tail(&txq->sk_list, skb);
     } else {
         if (txq->last_retry_skb)
-            skb_append(txq->last_retry_skb, skb, &txq->sk_list);
+            rwnx_skb_append(txq->last_retry_skb, skb, &txq->sk_list);
         else
             skb_queue_head(&txq->sk_list, skb);
 
@@ -1255,7 +1256,9 @@ void rwnx_hwq_process(struct rwnx_hw *rwnx_hw, struct rwnx_hwq *hwq)
         /* sanity check for debug */
         BUG_ON(!(txq->status & RWNX_TXQ_IN_HWQ_LIST));
 		if(txq->idx == TXQ_INACTIVE){
-			printk("%s txq->idx == TXQ_INACTIVE \r\n", __func__);
+			AICWFDBG(LOGERROR, "%s txq->idx == TXQ_INACTIVE \r\n", __func__);
+            rwnx_txq_del_from_hw_list(txq);
+            rwnx_txq_flush(rwnx_hw, txq);            
 			continue;
 		}
         BUG_ON(txq->idx == TXQ_INACTIVE);

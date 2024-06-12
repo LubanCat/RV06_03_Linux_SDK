@@ -24,6 +24,7 @@
 #define USB_DEVICE_ID_AIC               0x8800
 #define USB_DEVICE_ID_AIC_8801		    0x8801
 
+#define CHIP_REV_U01        0x1
 #define CHIP_REV_U02        0x3
 #define CHIP_REV_U03        0x7
 #define CHIP_SUB_REV_U04    0x20
@@ -52,6 +53,8 @@ enum AICWF_IC{
 #define FW_ADID_BASE_NAME               "fw_adid.bin"
 #define FW_BASE_NAME                    "fmacfw.bin"
 #define FW_BLE_SCAN_WAKEUP_NAME         "fw_ble_scan.bin"
+#define FW_BLE_SCAN_AD_FILTER_NAME      "fw_ble_scan_ad_filter.bin"
+
 #define FW_PATCH_BASE_NAME_PC           "fw_patch.bin"
 #define FW_ADID_BASE_NAME_PC            "fw_adid.bin"
 #define FW_BASE_NAME_PC                 "fmacfw.bin"
@@ -73,6 +76,8 @@ enum AICWF_IC{
 #define FW_USERCONFIG_NAME              "aic_userconfig.txt"
 #define FW_M2D_OTA_NAME                 "m2d_ota.bin"
 
+   /*8800 use 0x100000, 8800D80 use 0x160000*/
+#define RAM_FW_BLE_SCAN_WAKEUP_ADDR_8800D80		0x00160000
 #define RAM_FW_BLE_SCAN_WAKEUP_ADDR		0x00100000
 #define RAM_FW_ADDR                     0x00110000
 #define FW_RAM_ADID_BASE_ADDR           0x00161928
@@ -85,6 +90,8 @@ enum {
     FW_TEST_MODE,
     FW_BLE_SCAN_WAKEUP_MODE,
     FW_M2D_OTA_MODE,
+    FW_DPDCALIB_MODE,
+    FW_BLE_SCAN_AD_FILTER_MODE,
 };
 
 
@@ -105,6 +112,46 @@ enum aicwf_usb_state {
     USB_DOWN_ST,
     USB_UP_ST,
     USB_SLEEP_ST
+};
+
+#define MAX_AD_FILTER_NUM        5// Max AD Filter num
+#define MAX_GPIO_TRIGGER_NUM     2// Max user config num of gpio
+#define MAX_ROLE_COMNO_IDX_NUM   2// Max num of ad role type combo,form( enum gpio_combo_idx) 
+
+#define AD_ROLE_FLAG         0x0f
+#define ROLE_COMBO_IDX_FLAG  0xf0
+
+enum ad_role_type {
+    ROLE_ONLY,// ROLE_ONLY will trigger wake up immediately.
+    ROLE_COMBO,//ROLE_COMBO will trigger When all the conditions (ad_role == ROLE_COMBO,and ad_filter is matching)are met.
+};
+
+enum gpio_combo_idx {
+    COMBO_0,
+    COMBO_1,
+};
+
+enum gpio_trigger_bit {
+    TG_IDX_0 = (1<<0),
+    TG_IDX_1 = (1<<1),
+};
+
+struct wakeup_ad_data_filter {
+    uint32_t ad_data_mask;
+    uint8_t gpio_trigger_idx;
+    uint8_t ad_role;//from enum ad_role_type 
+    uint8_t ad_len;
+    uint8_t ad_type;
+    uint8_t ad_data[31];
+};
+
+struct ble_wakeup_param_t {
+    uint32_t magic_num;// "BLES" = 0x53454C42
+    uint32_t delay_scan_to;// timeout for start scan in ms
+    uint32_t reboot_to;// timeout for reboot in ms
+    uint32_t gpio_num[MAX_GPIO_TRIGGER_NUM];
+    uint32_t gpio_dft_lvl[MAX_GPIO_TRIGGER_NUM];
+    struct wakeup_ad_data_filter ad_filter[MAX_AD_FILTER_NUM];
 };
 
 struct aicwf_usb_buf {

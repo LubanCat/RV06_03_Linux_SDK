@@ -28,6 +28,21 @@ if [ "${1}"x = "y"x ];then
 	exit 0
 fi
 
+#AIC8800D40
+cat /proc/device-tree/wireless-wlan/wifi_chip_type | grep "AIC8800D80"
+if [ $? -eq 0 ];then
+	#usb_SEL短接3v3
+	echo 6 > /sys/class/gpio/export
+	echo out > /sys/class/gpio/gpio6/direction
+	echo 1 > /sys/class/gpio/gpio6/value
+	echo host > /sys/devices/platform/ff3e0000.usb2-phy/otg_mode
+
+	insmod cfg80211.ko
+	insmod aic_load_fw.ko aic_fw_path=/oem/usr/ko/aic8800D80
+	insmod aic8800_fdrv.ko
+	insmod aic_btusb.ko
+fi
+
 #AIC8800DW
 cat /sys/bus/sdio/devices/*/uevent | grep "8800"
 if [ $? -eq 0 ];then

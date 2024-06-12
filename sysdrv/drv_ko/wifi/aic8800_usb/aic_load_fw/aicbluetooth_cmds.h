@@ -57,6 +57,27 @@ struct lmac_msg
     u32        param[];   ///< Parameter embedded struct. Must be word-aligned.
 };
 
+struct aicbt_patch_info_t {
+    uint32_t info_len;
+    uint32_t adid_addrinf;
+    uint32_t addr_adid;
+    uint32_t patch_addrinf;
+    uint32_t addr_patch;
+    uint32_t reset_addr;
+    uint32_t reset_val;
+    uint32_t adid_flag_addr;
+    uint32_t adid_flag;
+};
+
+
+#define AICBT_PT_TAG          "AICBT_PT_TAG"
+#define AICBT_PT_INF          0x0
+#define AICBT_PT_TRAP         0x01
+#define AICBT_PT_B4           0x02
+#define AICBT_PT_BTMODE       0x03
+#define AICBT_PT_PWRON        0x04
+#define AICBT_PT_AF           0x05
+
 #define rwnx_cmd_e2amsg ipc_e2a_msg
 #define rwnx_cmd_a2emsg lmac_msg
 #define RWNX_CMD_A2EMSG_LEN(m) (sizeof(struct lmac_msg) + m->param_len)

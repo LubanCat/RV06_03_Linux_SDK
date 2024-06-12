@@ -400,7 +400,10 @@ static char *aicwf_get_iwe_stream_mac_addr(struct rwnx_hw* rwnx_hw,
 	iwe->cmd = SIOCGIWAP;
 	iwe->u.ap_addr.sa_family = ARPHRD_ETHER;
 
+	if(scan_re->bss && scan_re->bss->bssid){
 	memcpy(iwe->u.ap_addr.sa_data, scan_re->bss->bssid, ETH_ALEN);
+	}
+
 	start = iwe_stream_add_event(info, start, stop, iwe, IW_EV_ADDR_LEN);
 	return start;
 }
@@ -878,19 +881,21 @@ static char *translate_scan(struct rwnx_hw* rwnx_hw,
 	struct iw_event iwe;
 	memset(&iwe, 0, sizeof(iwe));
 
-	
-	start = aicwf_get_iwe_stream_mac_addr(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_essid(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_protocol(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_chan(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_mode(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_encryption(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_rate(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_wpa_wpa2(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_wps(rwnx_hw, info, scan_re, start, stop, &iwe);
-	start = aicwf_get_iwe_stream_rssi(rwnx_hw, info, scan_re, start, stop, &iwe);
-
-	return start;
+	if(scan_re->bss){
+	    	start = aicwf_get_iwe_stream_mac_addr(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_essid(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_protocol(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_chan(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_mode(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_encryption(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_rate(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_wpa_wpa2(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_wps(rwnx_hw, info, scan_re, start, stop, &iwe);
+	    	start = aicwf_get_iwe_stream_rssi(rwnx_hw, info, scan_re, start, stop, &iwe);
+		return start;
+	} else{
+		return start;
+	}	
 }
 
 
@@ -920,7 +925,7 @@ static int aicwf_get_wap(struct net_device *dev,
 }
 
 
-
+extern uint8_t scanning;
 static int aicwf_set_scan(struct net_device *dev, struct iw_request_info *a,
 			   union iwreq_data *wrqu, char *extra)
 {
@@ -938,6 +943,14 @@ static int aicwf_set_scan(struct net_device *dev, struct iw_request_info *a,
 		printk("aic_wiphy error \r\n");
 
 	}
+
+    if (rwnx_hw->wext_scan || scanning) {
+        AICWFDBG(LOGINFO, "is scanning, abort\n");
+	ret =  rwnx_send_scanu_cancel_req(rwnx_hw, NULL);
+	if (ret)
+            return ret;
+	msleep(150);
+    }
 	
 	rwnx_hw->wext_scan = 1;
 
@@ -984,7 +997,6 @@ static int aicwf_get_scan(struct net_device *dev, struct iw_request_info *a,
 	char *stop = start + wrqu->data.length;
 	
 	AICWFDBG(LOGDEBUG, "%s Enter %p %p len:%d \r\n", __func__, start, stop, wrqu->data.length);
-	
 
 	//TODO: spinlock
 	list_for_each_entry_safe(scan_re, tmp, &rwnx_hw->wext_scanre_list, scanu_re_list) {

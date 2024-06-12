@@ -30,6 +30,9 @@
 #include "rwnx_platform.h"
 #include "rwnx_cmds.h"
 #include "rwnx_compat.h"
+#ifdef CONFIG_FILTER_TCP_ACK
+#include "aicwf_tcp_ack.h"
+#endif
 
 #ifdef AICWF_SDIO_SUPPORT
 #include "aicwf_sdio.h"
@@ -56,6 +59,20 @@
 
 #define PS_SP_INTERRUPTED  255
 #define MAC_ADDR_LEN 6
+
+//because android kernel 5.15 uses kernel 6.0 or 6.1 kernel api
+#ifdef ANDROID_PLATFORM
+#define HIGH_KERNEL_VERSION KERNEL_VERSION(5, 15, 41)
+#define HIGH_KERNEL_VERSION2 KERNEL_VERSION(5, 15, 41)
+#define HIGH_KERNEL_VERSION3 KERNEL_VERSION(5, 15, 104)
+#define HIGH_KERNEL_VERSION4 KERNEL_VERSION(6, 1, 0)
+#else
+#define HIGH_KERNEL_VERSION KERNEL_VERSION(6, 0, 0)
+#define HIGH_KERNEL_VERSION2 KERNEL_VERSION(6, 1, 0)
+#define HIGH_KERNEL_VERSION3 KERNEL_VERSION(6, 3, 0)
+#define HIGH_KERNEL_VERSION4 KERNEL_VERSION(6, 3, 0)
+#endif
+
 
 
 #if LINUX_VERSION_CODE >= HIGH_KERNEL_VERSION
@@ -326,6 +343,7 @@ struct rwnx_vif {
     struct net_device *ndev;
     struct net_device_stats net_stats;
     struct rwnx_key key[6];
+    unsigned long drv_flags;
     atomic_t drv_conn_state;
     u8 drv_vif_index;           /* Identifier of the VIF in driver */
     u8 vif_index;               /* Identifier of the station in FW */
@@ -351,13 +369,15 @@ struct rwnx_vif {
                                     the AP */
             struct rwnx_sta *tdls_sta; /* Pointer to the TDLS station */
             bool external_auth;  /* Indicate if external authentication is in progress */
-            u8 group_cipher_type;
-            u8 paired_cipher_type;
-            //connected network info start
-            char ssid[33];//ssid max is 32, but this has one spare for '\0'
-            int ssid_len;
-            u8 bssid[ETH_ALEN];
-            //connected network info end
+            u32 group_cipher_type;
+            u32 paired_cipher_type;
+			//connected network info start
+			char ssid[33];//ssid max is 32, but this has one spare for '\0'
+			int ssid_len;
+			u8 bssid[ETH_ALEN];
+			u32 conn_owner_nlportid;
+			bool is_roam;
+			//connected network info end
         } sta;
         struct
         {
@@ -621,18 +641,23 @@ struct rwnx_hw {
     #endif
     struct rwnx_survey_info survey[SCAN_CHANNEL_MAX];
     struct cfg80211_scan_request *scan_request;
+#ifdef CONFIG_SCHED_SCAN
+    struct cfg80211_sched_scan_request *sched_scan_req;
+#endif
     struct rwnx_chanctx chanctx_table[NX_CHAN_CTXT_CNT];
     u8 cur_chanctx;
 
     u8 monitor_vif; /* FW id of the monitor interface, RWNX_INVALID_VIF if no monitor vif at fw level */
-
+#ifdef CONFIG_FILTER_TCP_ACK
+       /* tcp ack management */
+    struct tcp_ack_manage ack_m;
+#endif
     /* RoC Management */
     struct rwnx_roc_elem *roc_elem;             /* Information provided by cfg80211 in its remain on channel request */
     u32 roc_cookie_cnt;                         /* Counter used to identify RoC request sent by cfg80211 */
 
     struct rwnx_cmd_mgr *cmd_mgr;
 
-    unsigned long drv_flags;
     struct rwnx_plat *plat;
 
     spinlock_t tx_lock;
@@ -675,7 +700,7 @@ struct rwnx_hw {
 #endif
     struct rwnx_hwq hwq[NX_TXQ_CNT];
 
-    u8 avail_idx_map;
+    u64 avail_idx_map;
     u8 vif_started;
     bool adding_sta;
     struct rwnx_phy_info phy;
@@ -700,6 +725,9 @@ struct rwnx_hw {
     struct workqueue_struct *apmStaloss_wq;
     u8 apm_vif_idx;
     u8 sta_mac_addr[6];
+#ifdef CONFIG_SCHED_SCAN
+        bool is_sched_scan;
+#endif//CONFIG_SCHED_SCAN 
 
 	struct sta_tx_flowctrl sta_flowctrl[NX_REMOTE_STA_MAX];
 #if 0
@@ -731,7 +759,7 @@ void rwnx_chanctx_link(struct rwnx_vif *vif, u8 idx,
 void rwnx_chanctx_unlink(struct rwnx_vif *vif);
 int  rwnx_chanctx_valid(struct rwnx_hw *rwnx_hw, u8 idx);
 
-extern u8 chip_id;
+extern u32 chip_id;
 static inline bool is_multicast_sta(int sta_idx)
 {
 

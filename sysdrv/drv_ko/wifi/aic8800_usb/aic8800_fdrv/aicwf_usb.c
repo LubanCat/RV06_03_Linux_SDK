@@ -8,6 +8,7 @@
 
 #include <linux/usb.h>
 #include <linux/kthread.h>
+#include <linux/vmalloc.h>
 #include "aicwf_txrxif.h"
 #include "aicwf_usb.h"
 #include "rwnx_tx.h"
@@ -35,7 +36,7 @@ extern atomic_t aicwf_deinit_atomic;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 #include "uapi/linux/sched/types.h"
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0))
 #include "linux/sched/types.h"
 #else
 #include "linux/sched/rt.h"
@@ -47,6 +48,11 @@ int busrx_thread_prio = 1;
 module_param(busrx_thread_prio, int, 0);
 #endif
 
+#ifdef CONFIG_USB_RX_AGGR
+bool aicwf_usb_rx_aggr = true;
+#else
+bool aicwf_usb_rx_aggr = false;
+#endif
 atomic_t rx_urb_cnt;
 
 void aicwf_usb_tx_flowctrl(struct rwnx_hw *rwnx_hw, bool state)
@@ -307,7 +313,11 @@ static void aicwf_usb_rx_complete(struct urb *urb)
     
     if (usb_dev->state == USB_UP_ST) {
         spin_lock_irqsave(&rx_priv->rxqlock, flags);
-
+        if (aicwf_usb_rx_aggr) {
+	        rx_buff->len = urb->actual_length;
+            //printk("%s rx_buff->len:%d \r\n", __func__, rx_buff->len);
+        }
+        
         if(!aicwf_rxbuff_enqueue(usb_dev->dev, &rx_priv->rxq, rx_buff)){
             spin_unlock_irqrestore(&rx_priv->rxqlock, flags);
             usb_err("rx_priv->rxq is over flow!!!\n");
@@ -387,20 +397,21 @@ static void aicwf_usb_rx_complete(struct urb *urb)
         	return;
 		}
     }
-    #ifdef CONFIG_USB_RX_AGGR
-    if (urb->actual_length > 1600 * 30) {
-        printk("r%d\n", urb->actual_length);
+
+#if 0
+    if ((urb->actual_length > 1600 * 30) && (aicwf_usb_rx_aggr)) {
+	printk("r%d\n", urb->actual_length);
     }
-    #endif
+#endif
 
     if (usb_dev->state == USB_UP_ST) {
 
         skb_put(skb, urb->actual_length);
 
         spin_lock_irqsave(&rx_priv->rxqlock, flags);
-        #ifdef CONFIG_USB_RX_AGGR
-        skb->len = urb->actual_length;
-        #endif
+        if (aicwf_usb_rx_aggr) {
+	    skb->len = urb->actual_length;
+        }
         if(!aicwf_rxframe_enqueue(usb_dev->dev, &rx_priv->rxq, skb)){
             spin_unlock_irqrestore(&rx_priv->rxqlock, flags);
             usb_err("rx_priv->rxq is over flow!!!\n");
@@ -535,6 +546,7 @@ static int aicwf_usb_submit_rx_urb(struct aic_usb_dev *usb_dev,
         aicwf_usb_rx_buf_put(usb_dev, usb_buf);
 
         msleep(100);
+	    return -1;
     }else{
     	atomic_inc(&rx_urb_cnt);
 	}
@@ -557,7 +569,11 @@ static int aicwf_usb_submit_rx_urb(struct aic_usb_dev *usb_dev,
         return -1;
     }
 
-    skb = __dev_alloc_skb(AICWF_USB_MAX_PKT_SIZE, GFP_ATOMIC/*GFP_KERNEL*/);
+    if(aicwf_usb_rx_aggr){
+	skb = __dev_alloc_skb(AICWF_USB_AGGR_MAX_PKT_SIZE, GFP_ATOMIC/*GFP_KERNEL*/);
+    } else {
+	skb = __dev_alloc_skb(AICWF_USB_MAX_PKT_SIZE, GFP_ATOMIC/*GFP_KERNEL*/);
+    }
     if (!skb) {
         aicwf_usb_rx_buf_put(usb_dev, usb_buf);
         return -1;
@@ -582,6 +598,7 @@ static int aicwf_usb_submit_rx_urb(struct aic_usb_dev *usb_dev,
         aicwf_usb_rx_buf_put(usb_dev, usb_buf);
 
         msleep(100);
+	    return -1;
     }else{
     	atomic_inc(&rx_urb_cnt);
 	}
@@ -601,11 +618,16 @@ static void aicwf_usb_rx_submit_all_urb(struct aic_usb_dev *usb_dev)
 
     while((usb_buf = aicwf_usb_rx_buf_get(usb_dev)) != NULL) {
         if (aicwf_usb_submit_rx_urb(usb_dev, usb_buf)) {
+            AICWFDBG(LOGERROR, "sub rx fail\n");
+		return;
+            #if 0
             AICWFDBG(LOGERROR, "usb rx refill fail\n");
             if (usb_dev->state != USB_UP_ST)
                 return;
+            #endif
         }
     }
+    usb_dev->rx_prepare_ready = true;
 }
 
 #ifdef CONFIG_USB_MSG_IN_EP
@@ -929,7 +951,7 @@ static void aicwf_usb_tx_process(struct aic_usb_dev *usb_dev)
         }
         data = usb_buf->skb->data;
 
-        ret = usb_submit_urb(usb_buf->urb, GFP_ATOMIC);
+        ret = usb_submit_urb(usb_buf->urb, GFP_KERNEL);
         if (ret) {
             AICWFDBG(LOGERROR, "aicwf_usb_bus_tx usb_submit_urb FAILED err:%d\n", ret);
             #ifdef CONFIG_USB_TX_AGGR
@@ -981,12 +1003,35 @@ int usb_bustx_thread(void *data)
 {
     struct aicwf_bus *bus = (struct aicwf_bus *)data;
     struct aic_usb_dev *usbdev = bus->bus_priv.usb;
+    int set_cpu_ret = 0;
+
+#ifdef CONFIG_THREAD_INFO_IN_TASK
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	AICWFDBG(LOGINFO, "%s the cpu is:%d\n", __func__, current->thread_info.cpu);
+#else
+    AICWFDBG(LOGINFO, "%s the cpu is:%d\n", __func__, current->cpu);
+#endif
+#endif
+    set_cpu_ret = set_cpus_allowed_ptr(current, cpumask_of(1));
+#ifdef CONFIG_THREAD_INFO_IN_TASK
+    AICWFDBG(LOGINFO, "%s set_cpu_ret is:%d\n", __func__, set_cpu_ret);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	AICWFDBG(LOGINFO, "%s change cpu to:%d\n", __func__, current->thread_info.cpu);
+#else
+    AICWFDBG(LOGINFO, "%s change cpu to:%d\n", __func__, current->cpu);
+#endif
+#endif
+
 
 #ifdef CONFIG_TXRX_THREAD_PRIO
 	if (bustx_thread_prio > 0) {
-			struct sched_param param;
-			param.sched_priority = (bustx_thread_prio < MAX_RT_PRIO)?bustx_thread_prio:(MAX_RT_PRIO-1);
-			sched_setscheduler(current, SCHED_FIFO, &param);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
+        sched_set_fifo_low(current);
+#else
+        struct sched_param param;
+        param.sched_priority = (bustx_thread_prio < MAX_RT_PRIO)?bustx_thread_prio:(MAX_RT_PRIO-1);
+        sched_setscheduler(current, SCHED_FIFO, &param);
+#endif
 	}
 #endif
 	AICWFDBG(LOGINFO, "%s the policy of current thread is:%d\n", __func__, current->policy);
@@ -1025,12 +1070,34 @@ int usb_busrx_thread(void *data)
 {
     struct aicwf_rx_priv *rx_priv = (struct aicwf_rx_priv *)data;
     struct aicwf_bus *bus_if = rx_priv->usbdev->bus_if;
+    int set_cpu_ret = 0;
+    
+#ifdef CONFIG_THREAD_INFO_IN_TASK
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	AICWFDBG(LOGINFO, "%s the cpu is:%d\n", __func__, current->thread_info.cpu);
+#else
+    AICWFDBG(LOGINFO, "%s the cpu is:%d\n", __func__, current->cpu);
+#endif
+#endif
+    set_cpu_ret = set_cpus_allowed_ptr(current, cpumask_of(1));
+#ifdef CONFIG_THREAD_INFO_IN_TASK
+    AICWFDBG(LOGINFO, "%s set_cpu_ret is:%d\n", __func__, set_cpu_ret);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	AICWFDBG(LOGINFO, "%s change cpu to:%d\n", __func__, current->thread_info.cpu);
+#else
+    AICWFDBG(LOGINFO, "%s change cpu to:%d\n", __func__, current->cpu);
+#endif
+#endif
 
 #ifdef CONFIG_TXRX_THREAD_PRIO
 	if (busrx_thread_prio > 0) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
+            sched_set_fifo_low(current);
+#else
 			struct sched_param param;
 			param.sched_priority = (busrx_thread_prio < MAX_RT_PRIO)?busrx_thread_prio:(MAX_RT_PRIO-1);
 			sched_setscheduler(current, SCHED_FIFO, &param);
+#endif
 	}
 #endif
 	AICWFDBG(LOGINFO, "%s the policy of current thread is:%d\n", __func__, current->policy);
@@ -1069,9 +1136,13 @@ int usb_msg_busrx_thread(void *data)
 
 #ifdef CONFIG_TXRX_THREAD_PRIO
 			if (busrx_thread_prio > 0) {
-					struct sched_param param;
-					param.sched_priority = (busrx_thread_prio < MAX_RT_PRIO)?busrx_thread_prio:(MAX_RT_PRIO-1);
-					sched_setscheduler(current, SCHED_FIFO, &param);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
+                sched_set_fifo_low(current);
+#else
+                struct sched_param param;
+                param.sched_priority = (busrx_thread_prio < MAX_RT_PRIO)?busrx_thread_prio:(MAX_RT_PRIO-1);
+                sched_setscheduler(current, SCHED_FIFO, &param);
+#endif
 			}
 #endif
 			AICWFDBG(LOGINFO, "%s the policy of current thread is:%d\n", __func__, current->policy);
@@ -1081,16 +1152,23 @@ int usb_msg_busrx_thread(void *data)
 
 
     while (1) {
+#if 0
         if(kthread_should_stop()) {
             usb_err("usb msg busrx thread stop\n");
             break;
         }
+#endif
         if (!wait_for_completion_interruptible(&bus_if->msg_busrx_trgg)) {
-            if(bus_if->state == BUS_DOWN_ST)
+            if(bus_if->state == BUS_DOWN_ST){
+		AICWFDBG(LOGINFO, "usb msg busrx thread will to stop\n");
                 break;
+	    }
             aicwf_process_msg_rxframes(rx_priv);
         }
     }
+
+	aic_thread_wait_stop();
+	AICWFDBG(LOGINFO, "usb msg busrx thread stop\n");
 
     return 0;
 }
@@ -1149,8 +1227,9 @@ static int aicwf_usb_bus_txmsg(struct device *dev, u8 *buf, u32 len)
     usb_dev->msg_out_urb->transfer_dma = usb_dev->cmd_dma_trans_addr;
     usb_dev->msg_out_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
     #endif
+#ifdef CONFIG_USE_USB_ZERO_PACKET
     usb_dev->msg_out_urb->transfer_flags |= URB_ZERO_PACKET;
-
+#endif
     ret = usb_submit_urb(usb_dev->msg_out_urb, GFP_ATOMIC);
     if (ret) {
         usb_err("usb_submit_urb failed %d\n", ret);
@@ -1559,6 +1638,8 @@ static int aicwf_usb_bus_start(struct device *dev)
         return 0;
 
     aicwf_usb_state_change(usb_dev, USB_UP_ST);
+
+    usb_dev->rx_prepare_ready = false;
     aicwf_usb_rx_prepare(usb_dev);
     aicwf_usb_tx_prepare(usb_dev);
 #ifdef CONFIG_USB_MSG_IN_EP
@@ -1567,8 +1648,12 @@ static int aicwf_usb_bus_start(struct device *dev)
 		aicwf_usb_msg_rx_prepare(usb_dev);
 	}
 #endif
-
-    return 0;
+    if(!usb_dev->rx_prepare_ready){
+        AICWFDBG(LOGERROR, "%s rx prepare fail\r\n", __func__);
+        return -1;
+    }else{
+        return 0;
+    }
 }
 
 static void aicwf_usb_cancel_all_urbs_(struct aic_usb_dev *usb_dev)
@@ -1634,7 +1719,7 @@ static void aicwf_usb_bus_stop(struct device *dev)
     if (usb_dev->state == USB_DOWN_ST)
         return;
 
-    if(g_rwnx_plat->wait_disconnect_cb == true){
+    if(g_rwnx_plat && g_rwnx_plat->wait_disconnect_cb == true){
             atomic_set(&aicwf_deinit_atomic, 1);
             up(&aicwf_deinit_sem);
     }
@@ -1988,6 +2073,7 @@ static int aicwf_usb_chipmatch(struct aic_usb_dev *usb_dev, u16_l vid, u16_l pid
         return 0;
     }else if(pid == USB_PRODUCT_ID_AIC8800D81){
         usb_dev->chipid = PRODUCT_ID_AIC8800D81;
+	aicwf_usb_rx_aggr = true;
 		AICWFDBG(LOGINFO, "%s USE AIC8800D81\r\n", __func__);
         return 0;
     }else{
@@ -2009,9 +2095,46 @@ static int aicwf_usb_probe(struct usb_interface *intf, const struct usb_device_i
     #endif
 
     usb_dev = kzalloc(sizeof(struct aic_usb_dev), GFP_ATOMIC);
+    
+    AICWFDBG(LOGDEBUG, "%s usb_dev:%d usb_tx_buf:%d usb_rx_buf:%d\r\n", 
+        __func__, 
+        (int)sizeof(struct aic_usb_dev),
+        (int)sizeof(struct aicwf_usb_buf) * AICWF_USB_TX_URBS,
+        (int)sizeof(struct aicwf_usb_buf) * AICWF_USB_RX_URBS);
+
+
     if (!usb_dev) {
+        AICWFDBG(LOGERROR, "%s usb_dev kzalloc fail\r\n", __func__);
         return -ENOMEM;
     }
+
+    usb_dev->usb_tx_buf = vmalloc(sizeof(struct aicwf_usb_buf) * AICWF_USB_TX_URBS);
+    usb_dev->usb_rx_buf = vmalloc(sizeof(struct aicwf_usb_buf) * AICWF_USB_RX_URBS);
+
+    if(!usb_dev->usb_tx_buf || !usb_dev->usb_rx_buf){
+        if(usb_dev->usb_tx_buf){
+            vfree(usb_dev);
+        }
+        
+        if(usb_dev->usb_tx_buf){
+            vfree(usb_dev);
+        }
+        
+        if(usb_dev){
+            kfree(usb_dev);
+        }
+        AICWFDBG(LOGERROR, "%s usb_tx_buf or usb_rx_buf vmalloc fail\r\n", __func__);
+        return -ENOMEM;
+    }
+
+    memset(usb_dev->usb_tx_buf, 
+        0, 
+        (int)(sizeof(struct aicwf_usb_buf) * AICWF_USB_TX_URBS));
+    
+    memset(usb_dev->usb_rx_buf, 
+        0, 
+        (int)(sizeof(struct aicwf_usb_buf) * AICWF_USB_RX_URBS));
+
 
     usb_dev->udev = usb;
     usb_dev->dev = &usb->dev;
@@ -2103,6 +2226,8 @@ out_free_usb:
     aicwf_usb_deinit(usb_dev);
 out_free:
     usb_err("failed with errno %d\n", ret);
+    vfree(usb_dev->usb_tx_buf);
+    vfree(usb_dev->usb_rx_buf);
     kfree(usb_dev);
     usb_set_intfdata(intf, NULL);
     return ret;
@@ -2132,16 +2257,14 @@ static void aicwf_usb_disconnect(struct usb_interface *intf)
 #endif
     aicwf_bus_deinit(usb_dev->dev);
     aicwf_usb_deinit(usb_dev);
-    rwnx_cmd_mgr_deinit(&usb_dev->cmd_mgr);
 
 #ifdef CONFIG_GPIO_WAKEUP
 	rwnx_unregister_hostwake_irq(usb_dev->dev);
 #endif
 
-    if (usb_dev->rx_priv)
-        aicwf_rx_deinit(usb_dev->rx_priv);
-
     kfree(usb_dev->bus_if);
+    vfree(usb_dev->usb_tx_buf);
+    vfree(usb_dev->usb_rx_buf);
     kfree(usb_dev);
 	AICWFDBG(LOGINFO, "%s exit\r\n", __func__);
 	up(&aicwf_deinit_sem);

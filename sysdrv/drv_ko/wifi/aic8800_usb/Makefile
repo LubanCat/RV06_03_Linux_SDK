@@ -58,7 +58,7 @@ modules:
 	arm-rockchip830-linux-uclibcgnueabihf-strip --strip-debug $(shell pwd)/aic_load_fw/aic_load_fw.ko
 	cp $(shell pwd)/aic8800_fdrv/aic8800_fdrv.ko $(M_OUT_DIR)
 	cp $(shell pwd)/aic_load_fw/aic_load_fw.ko $(M_OUT_DIR)
-	cp $(shell pwd)/aic8800DC $(M_OUT_DIR) -r
+	cp $(shell pwd)/fw/* $(M_OUT_DIR) -r
 
 install:
 	mkdir -p $(MODDESTDIR)

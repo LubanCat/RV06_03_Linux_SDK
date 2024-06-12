@@ -113,8 +113,13 @@ struct rwnx_vif *rwnx_rx_get_vif(struct rwnx_hw *rwnx_hw, int vif_idx)
 
     if (vif_idx < NX_VIRT_DEV_MAX) {
         rwnx_vif = rwnx_hw->vif_table[vif_idx];
-        if (!rwnx_vif || !rwnx_vif->up)
+        if(!rwnx_vif){
+            AICWFDBG(LOGERROR, "%s rwnx_hw->vif_table[%d] NULL\r\n", __func__, vif_idx);
             return NULL;
+        }else if(!rwnx_vif->up){
+            AICWFDBG(LOGERROR, "%s rwnx_hw->vif_table[%d] is down\r\n", __func__, vif_idx);
+            return NULL;
+        }
     }
 
     return rwnx_vif;
@@ -409,8 +414,16 @@ static void rwnx_rx_data_skb_forward(struct rwnx_hw *rwnx_hw, struct rwnx_vif *r
 	rx_skb->protocol = eth_type_trans(rx_skb, rwnx_vif->ndev);
 	memset(rx_skb->cb, 0, sizeof(rx_skb->cb));
 	REG_SW_SET_PROFILING(rwnx_hw, SW_PROF_IEEE80211RX);
+
+
+#ifdef CONFIG_FILTER_TCP_ACK
+	filter_rx_tcp_ack(rwnx_hw, rx_skb->data, cpu_to_le16(rx_skb->len));
+#endif
+
 	#ifdef CONFIG_RX_NETIF_RECV_SKB //modify by aic
+	local_bh_disable();
 	netif_receive_skb(rx_skb);
+	local_bh_enable();
 	#else
 	if (in_interrupt()) {
 		netif_rx(rx_skb);
@@ -582,8 +595,16 @@ static bool rwnx_rx_data_skb(struct rwnx_hw *rwnx_hw, struct rwnx_vif *rwnx_vif,
 #endif
             memset(rx_skb->cb, 0, sizeof(rx_skb->cb));
             REG_SW_SET_PROFILING(rwnx_hw, SW_PROF_IEEE80211RX);
+
+
+#ifdef CONFIG_FILTER_TCP_ACK
+            filter_rx_tcp_ack(rwnx_hw, rx_skb->data, cpu_to_le16(rx_skb->len));
+#endif
+
             #ifdef CONFIG_RX_NETIF_RECV_SKB //modify by aic
+            local_bh_disable();
             netif_receive_skb(rx_skb);
+            local_bh_enable();
             #else
             if (in_interrupt()) {
                 netif_rx(rx_skb);
@@ -1227,7 +1248,13 @@ static int rwnx_rx_monitor(struct rwnx_hw *rwnx_hw, struct rwnx_vif *rwnx_vif,
     skb->pkt_type = PACKET_OTHERHOST;
     skb->protocol = htons(ETH_P_802_2);
 
+#ifdef CONFIG_FILTER_TCP_ACK
+    filter_rx_tcp_ack(rwnx_hw, skb->data, cpu_to_le16(skb->len));
+#endif
+
+    local_bh_disable();
     netif_receive_skb(skb);
+    local_bh_enable();
 
     return 0;
 }
@@ -1256,10 +1283,13 @@ void arpoffload_proc(struct sk_buff *skb, struct rwnx_vif *rwnx_vif)
                             if (option[offset+2] == DHCP_ACK) {
                                 AICWFDBG(LOGDEBUG, "dhcp:   ack\n");
                                 dhcped = 1;
-                                if(rwnx_vif->sta.group_cipher_type == WLAN_CIPHER_SUITE_CCMP)
-                                    rwnx_send_arpoffload_en_req(rwnx_vif->rwnx_hw, rwnx_vif, dhcph->yiaddr, 1);
+				if (rwnx_vif->sta.paired_cipher_type == WLAN_CIPHER_SUITE_CCMP || \
+					rwnx_vif->sta.paired_cipher_type == WLAN_CIPHER_SUITE_AES_CMAC || \
+					((rwnx_vif->sta.group_cipher_type == 0xff) && \
+					 (rwnx_vif->sta.paired_cipher_type == 0xff)))
+					rwnx_send_arpoffload_en_req(rwnx_vif->rwnx_hw, rwnx_vif, dhcph->yiaddr, 1);
                                 else
-                                    rwnx_send_arpoffload_en_req(rwnx_vif->rwnx_hw, rwnx_vif, dhcph->yiaddr, 0);
+					rwnx_send_arpoffload_en_req(rwnx_vif->rwnx_hw, rwnx_vif, dhcph->yiaddr, 0);
                              }
                         }
                         offset += 2 + option[offset+1];
@@ -1466,6 +1496,9 @@ int reord_single_frame_ind(struct aicwf_rx_priv *rx_priv, struct recv_msdu *prfr
     skb->data = prframe->rx_data;
     skb_set_tail_pointer(skb, prframe->len);
     skb->len = prframe->len;
+
+    rwnx_vif->net_stats.rx_packets++;
+    rwnx_vif->net_stats.rx_bytes += skb->len;
     //printk("netif sn=%d, len=%d\n", precv_frame->attrib.seq_num, skb->len);
 
 #ifdef CONFIG_BR_SUPPORT
@@ -1514,8 +1547,14 @@ int reord_single_frame_ind(struct aicwf_rx_priv *rx_priv, struct recv_msdu *prfr
 #endif
     memset(skb->cb, 0, sizeof(skb->cb));
 
+#ifdef CONFIG_FILTER_TCP_ACK
+     filter_rx_tcp_ack(rwnx_vif->rwnx_hw, skb->data, cpu_to_le16(skb->len));
+#endif
+
 #ifdef CONFIG_RX_NETIF_RECV_SKB//AIDEN test
+    local_bh_disable();
 	netif_receive_skb(skb);
+    local_bh_enable();
 #else
     if (in_interrupt()) {
         netif_rx(skb);
@@ -1535,8 +1574,6 @@ int reord_single_frame_ind(struct aicwf_rx_priv *rx_priv, struct recv_msdu *prfr
 #endif
     }
 #endif//CONFIG_RX_NETIF_RECV_SKB
-    rwnx_vif->net_stats.rx_packets++;
-    rwnx_vif->net_stats.rx_bytes += skb->len;
     prframe->pkt = NULL;
     reord_rxframe_free(&rx_priv->freeq_lock, rxframes_freequeue, &prframe->rxframe_list);
 
@@ -1753,6 +1790,7 @@ int reord_process_unit(struct aicwf_rx_priv *rx_priv, struct sk_buff *skb, u16 s
 
     spin_lock_bh(&preorder_ctrl->reord_list_lock);
     if (reord_need_check(preorder_ctrl, pframe->seq_num)) {
+#if 0
 		if(pframe->rx_data[42] == 0x80){//this is rtp package
 			if(pframe->seq_num == preorder_ctrl->ind_sn){
 				printk("%s pframe->seq_num1:%d \r\n", __func__, pframe->seq_num);
@@ -1769,6 +1807,9 @@ int reord_process_unit(struct aicwf_rx_priv *rx_priv, struct sk_buff *skb, u16 s
 			//printk("%s pframe->seq_num2:%d \r\n", __func__, pframe->seq_num);
 			reord_single_frame_ind(rx_priv, pframe);//not need to reorder
 		}
+#else
+        reord_single_frame_ind(rx_priv, pframe);//not need to reor
+#endif
 
         spin_unlock_bh(&preorder_ctrl->reord_list_lock);
 		return 0;
@@ -2075,6 +2116,10 @@ check_len_update:
                 case RWNX_RX_HD_DECR_WEP:
                     pull_len += 4;//wep_header
                     memcpy(ether_type, &skb->data[hdr_len + 6 + 4], 2);
+                    break;
+		case RWNX_RX_HD_DECR_WAPI:
+                    pull_len += 18;//wapi_header
+                    memcpy(ether_type, &skb->data[hdr_len + 6 + 18], 2);
                     break;
 
                 default:

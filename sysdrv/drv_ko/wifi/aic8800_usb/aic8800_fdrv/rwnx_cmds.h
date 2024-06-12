@@ -21,7 +21,7 @@
 #elif defined(CONFIG_RWNX_FHOST)
 #define RWNX_80211_CMD_TIMEOUT_MS    (10000)
 #else
-#define RWNX_80211_CMD_TIMEOUT_MS    2000//500//300
+#define RWNX_80211_CMD_TIMEOUT_MS    4000//500//300
 #endif
 
 #define RWNX_CMD_FLAG_NONBLOCK      BIT(0)

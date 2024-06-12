@@ -130,6 +130,11 @@ static const char *const rwnx_mmid2str[MSG_I(MM_MAX)] = {
     [MSG_I(MM_SET_VENDOR_HWCONFIG_CFM)]        = "MM_SET_VENDOR_HWCONFIG_CFM",
     [MSG_I(MM_GET_FW_VERSION_REQ)]  = "MM_GET_FW_VERSION_REQ",
     [MSG_I(MM_GET_FW_VERSION_CFM)]  = "MM_GET_FW_VERSION_CFM",
+    [MSG_I(MM_SET_RESUME_RESTORE_REQ)]          = "MM_SET_RESUME_RESTORE_REQ",
+    [MSG_I(MM_SET_RESUME_RESTORE_CFM)]          = "MM_SET_RESUME_RESTORE_CFM",
+    [MSG_I(MM_GET_WIFI_DISABLE_REQ)]            = "MM_GET_WIFI_DISABLE_REQ",
+    [MSG_I(MM_GET_WIFI_DISABLE_CFM)]            = "MM_GET_WIFI_DISABLE_CFM",
+    [MSG_I(MM_CFG_RSSI_CFM)]                    = "MM_CFG_RSSI_CFM",
 };
 
 static const char *const rwnx_dbgid2str[MSG_I(DBG_MAX)] = {
@@ -212,6 +217,7 @@ static const char *const rwnx_smid2str[MSG_I(SM_MAX)] = {
     [MSG_I(SM_DISCONNECT_IND)]    = "SM_DISCONNECT_IND",
     [MSG_I(SM_EXTERNAL_AUTH_REQUIRED_IND)] = "SM_EXTERNAL_AUTH_REQUIRED_IND",
     [MSG_I(SM_EXTERNAL_AUTH_REQUIRED_RSP)] = "SM_EXTERNAL_AUTH_REQUIRED_RSP",
+    [MSG_I(SM_EXTERNAL_AUTH_REQUIRED_RSP_CFM)] = "SM_EXTERNAL_AUTH_REQUIRED_RSP_CFM",
 };
 
 static const char *const rwnx_apmid2str[MSG_I(APM_MAX)] = {

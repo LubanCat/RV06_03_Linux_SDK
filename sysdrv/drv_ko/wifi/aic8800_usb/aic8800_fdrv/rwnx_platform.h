@@ -34,8 +34,18 @@
 #endif
 
 #define RWNX_FCU_FW_NAME                "fcuram.bin"
+#if (defined(CONFIG_DPD) && !defined(CONFIG_FORCE_DPD_CALIB))
+#define FW_DPDRESULT_NAME_8800DC        "aic_dpdresult_lite_8800dc.bin"
+#endif
 
-
+enum {
+    FW_NORMAL_MODE          = 0,
+    FW_RFTEST_MODE          = 1,
+    FW_BLE_SCAN_WAKEUP_MODE = 2,
+    FW_M2D_OTA_MODE         = 3,
+    FW_DPDCALIB_MODE        = 4,
+    FW_BLE_SCAN_AD_FILTER_MODE = 5,
+};
 
 
 /**
@@ -113,10 +123,12 @@ void rwnx_platform_deinit(struct rwnx_hw *rwnx_hw);
 int rwnx_platform_on(struct rwnx_hw *rwnx_hw, void *config);
 void rwnx_platform_off(struct rwnx_hw *rwnx_hw, void **config);
 
+int is_file_exist(char* name);
 void get_userconfig_txpwr_lvl_in_fdrv(txpwr_lvl_conf_t *txpwr_lvl);
 void get_userconfig_txpwr_lvl_v2_in_fdrv(txpwr_lvl_conf_v2_t *txpwr_lvl_v2);
 void get_userconfig_txpwr_lvl_v3_in_fdrv(txpwr_lvl_conf_v3_t *txpwr_lvl_v3);
 void get_userconfig_txpwr_ofst_in_fdrv(txpwr_ofst_conf_t *txpwr_ofst);
+void get_userconfig_txpwr_ofst2x_in_fdrv(txpwr_ofst2x_conf_t *txpwr_ofst2x);
 void get_userconfig_txpwr_loss(txpwr_loss_conf_t *txpwr_loss);
 int rwnx_platform_register_drv(void);
 void rwnx_platform_unregister_drv(void);
