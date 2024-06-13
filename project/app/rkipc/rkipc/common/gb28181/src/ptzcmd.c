@@ -8,11 +8,47 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
+int motor_init(void)
+{
+    FILE *file;
+    int x_current_steps = 0;
+    int y_current_steps = 0;
+    int read_success = 0;
+
+
+    // 打开文件读取保存的位置
+    file = fopen("/oem/motor_steps.txt", "r");
+    if (file != NULL) {
+        // 文件存在，尝试读取步数
+        if (fscanf(file, "x_current_steps=%d\ny_current_steps=%d", &x_current_steps, &y_current_steps) == 2) {
+            read_success = 1;
+        }
+        fclose(file);
+    }
+
+    motor_run(HORIZONTAL_MAX_STEPS, VERTICAL_MAX_STEPS);  // 归零
+
+    if (read_success) {
+        // 如果读取成功，则移动到保存的位置
+        printf("移动到保存的位置 x=%d, y=%d\n", x_current_steps, y_current_steps);
+        // current_steps为绝对路径，需要转换
+        motor_run(x_current_steps - HORIZONTAL_MAX_STEPS, y_current_steps - VERTICAL_MAX_STEPS);
+    } else {
+        // 如果文件不存在或读取失败，则归零并居中
+        printf("文件不存在或读取失败，移动到居中位置\n");
+        motor_run(-4000, 0);    // 居中
+    }
+
+    return 0;
+}
+
 int motor_run(int x_steps, int y_steps)
 {
     int fd;
     struct motors_input_steps motors_steps;
     struct motor_message get_motor_message;
+    int x_current_steps = 0;
+    int y_current_steps = 0;
 
     // 打开电机设备
     fd = open(MOTOR_DEV, O_RDWR);
@@ -28,6 +64,7 @@ int motor_run(int x_steps, int y_steps)
     ioctl(fd, MOTOR_MOVE, (unsigned long)&motors_steps);
 
     usleep(100000); // 等待100毫秒
+
     // 等待电机完成移动
     do {
         ioctl(fd, MOTOR_GET_STATUS, (unsigned long)&get_motor_message);
@@ -39,6 +76,20 @@ int motor_run(int x_steps, int y_steps)
         // 如果电机还在移动，则等待一段时间后重试
         usleep(100000); // 等待100毫秒
     } while (1);
+
+    x_current_steps = get_motor_message.x_cur_steps;
+    y_current_steps = get_motor_message.y_cur_steps;
+
+    // 打开或创建文件以写入当前步数
+    FILE *file = fopen("/oem/motor_steps.txt", "w");
+    if (file == NULL) {
+        perror("open file");
+        return -1;
+    }
+
+    // 将步数写入文件
+    fprintf(file, "x_current_steps=%d\ny_current_steps=%d\n", x_current_steps, y_current_steps);
+    fclose(file);
 
     // 关闭设备
     close(fd);

@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define HORIZONTAL_MAX_STEPS 8000
+#define VERTICAL_MAX_STEPS 1000
+
 #define BUFFER_SIZE 1024
 
 #define MOTOR_DEV "/dev/motor"
@@ -59,5 +62,7 @@ typedef struct {
 int parseCmdString(const char *cmdStr, PtzCommand *cmd);
 
 int motor_run(int x_steps, int y_steps);
+
+int motor_init(void);
 
 #endif  // PTZCMD_H

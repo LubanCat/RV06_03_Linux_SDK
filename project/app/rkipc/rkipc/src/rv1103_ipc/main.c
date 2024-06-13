@@ -18,6 +18,7 @@
 #include <linux/input.h>
 #include "device.h"
 #include "rk_pwm.h"
+#include "ptzcmd.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -178,8 +179,8 @@ static void *wait_key_event(void *arg) {
 											(release_time.tv_nsec - press_time.tv_nsec) / 1e9;
 
 					if (press_duration < SHORT_PRESS_THRESHOLD) {
-						LOG_INFO("get KEY_VOLUMEUP: short press, system shutdown\n");
-						rk_system_shutdown();
+						LOG_INFO("get KEY_VOLUMEUP: short press, system reboot\n");
+						rk_system_reboot();
 					} else {
 						LOG_INFO("get KEY_VOLUMEUP: long press, system factory reset\n");
 						rk_system_factory_reset();
@@ -450,14 +451,27 @@ int string_to_int(const char *str) {
     return sum;
 }
 
+static void *motor_init_thread(void *arg) {
+	// 云台位置初始化 
+	motor_init();
+
+    LOG_INFO("motor init thread exiting");
+    return NULL;
+}
+
 int main(int argc, char **argv) {
 	pthread_t key_chk;
 	pthread_t gpio_key_chk;
 	pthread_t gb28181_chk;
 	pthread_t day_night;
 	pthread_t signal_chk;
+	pthread_t motor_init;
 	char chipid[16];
 	LOG_DEBUG("main begin\n");
+
+	//云台初始化线程
+	pthread_create(&motor_init, NULL, motor_init_thread, NULL);
+
 	rkipc_version_dump();
 	signal(SIGINT, sig_proc);
 	signal(SIGTERM, sig_proc);
@@ -504,8 +518,8 @@ int main(int argc, char **argv) {
 	pthread_create(&key_chk, NULL, wait_key_event, NULL);
 	// 自动日夜转换
 	pthread_create(&day_night, NULL, day_night_event, NULL);
-	// PIR人体传感器
-	pthread_create(&gpio_key_chk, NULL, wait_gpio_event, NULL);
+	// // PIR人体传感器
+	// pthread_create(&gpio_key_chk, NULL, wait_gpio_event, NULL);
 	// 4G网卡信号质量查询
 	pthread_create(&signal_chk, NULL, signal_quality, NULL);
 
@@ -528,7 +542,7 @@ int main(int argc, char **argv) {
 	// deinit
 	pthread_join(day_night, NULL);
 	pthread_join(key_chk, NULL);
-	pthread_join(gpio_key_chk, NULL);
+	// pthread_join(gpio_key_chk, NULL);
 	rk_storage_deinit();
 	rkipc_server_deinit();
 	rk_system_deinit();
