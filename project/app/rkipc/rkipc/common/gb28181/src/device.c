@@ -1,5 +1,6 @@
 #include "device.h"
 #include "ptzcmd.h"
+#include "common.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/udp.h>
@@ -18,14 +19,33 @@ char from_sip[100];
 char contact[100];
 char to_sip[100];
 
-extern char *server_id;
-extern char *server_ip;
-extern int server_port;
-extern int device_port;
-extern char device_id[21];
-extern char username[21];
-extern char *password;
-extern char *manufacture;
+char server_id[22] = "41010500002000000001";
+char server_ip[22] = "192.168.103.37";
+int server_port = 5060;
+int device_port = 5064;
+char device_id[22] = "41010500002000000002";
+char username[32] = "41010500002000000002";
+char password[32] = "12345678910";
+char manufacture[32] = "lbc-4G-ipc";
+
+// char *server_id = "34020000002000000001";
+// char *server_ip = "192.168.103.8";
+// int server_port = 6668;
+// int device_port = 5064;
+// char device_id[21];
+// char username[21];
+// char *password = "12345678";
+// char *manufacture = "lbc-4G-ipc";
+
+// char *server_id = "41010500002000000001";
+// char *server_ip = "47.108.227.19";
+// int server_port = 8116;
+// int device_port = 5064;
+// char device_id[21];
+// char username[21];
+// char *password = "newings2024";
+// char *manufacture = "lbc-4G-ipc";
+
 extern Nalu_t *nalu_vector;
 extern int nalu_vector_size;
 extern int rtp_sockfd;
@@ -50,17 +70,103 @@ static int get_sn() {
 	return sn;
 }
 
-int device_info(){
-    printf("device info: \n");
-    printf("server sip sid: %s\n", server_id);
-    printf("server ip address: %s\n", server_ip);
-    printf("server port: %d\n", server_port);
-    printf("device sip id: %s\n", device_id);
-    printf("device port id: %d\n", device_port);
+int device_info() {
+    char chipid[17];  // 增加一个字节用于存放字符串结束符
+    char chip_device_id[22];  // 21个字符 + 1个字节的字符串结束符
+    char chip_username[17];  // 16个字符 + 1个字节的字符串结束符
+
+    // 获取chipid并转换为设备ID
+    rk_chip_id_get(chipid);
+    printf("chipid : %s\n", chipid);
+
+    // 将16进制字符串转换为无符号长长整数
+    unsigned long long chipid_decimal = strtoull(chipid, NULL, 16);
+
+    // 将10进制整数格式化为21位长度的字符串，高位用0补齐
+    snprintf(chip_device_id, sizeof(chip_device_id), "%021llu", chipid_decimal);
+
+    // 将10进制整数格式化为16位长度的16进制字符串，高位用0补齐
+    snprintf(chip_username, sizeof(chip_username), "%016llx", chipid_decimal);
+
+    printf("chip_device_id: %s\n", chip_device_id);
+    printf("chip_username: %s\n", chip_username);
+
+    strncpy(username, chip_username, sizeof(username) - 1);
+    strncpy(device_id, chip_device_id, sizeof(device_id) - 1);
+
+    // 打印更新前的设备信息
+    printf("default device info: \n");
+    printf("server_id: %s\n", server_id);
+    printf("server_ip: %s\n", server_ip);
+    printf("server_port: %d\n", server_port);
+    printf("device_id: %s\n", device_id);
+    printf("device_port: %d\n", device_port);
     printf("username: %s\n", username);
     printf("password: %s\n", password);
     printf("manufacture: %s\n", manufacture);
-};
+
+    // 获取配置并设置设备信息
+    if (rk_param_get_int("gb28181.setting:enable", 0)) {
+        // 使用临时变量存储获取的值
+        const char *temp_server_id = rk_param_get_string("gb28181.setting:server_id", "default");
+        const char *temp_server_ip = rk_param_get_string("gb28181.setting:server_ip", "default");
+        int temp_server_port = rk_param_get_int("gb28181.setting:server_port", 0);
+        const char *temp_device_id = rk_param_get_string("gb28181.setting:device_id", "default");
+        int temp_device_port = rk_param_get_int("gb28181.setting:device_port", 0);
+        const char *temp_username = rk_param_get_string("gb28181.setting:username", "default");
+        const char *temp_password = rk_param_get_string("gb28181.setting:password", "default");
+        const char *temp_manufacture = rk_param_get_string("gb28181.setting:manufacture", "default");
+
+        // 打印临时变量值
+        printf("ini file device info: \n");
+        printf("temp_server_id: %s\n", temp_server_id);
+        printf("temp_server_ip: %s\n", temp_server_ip);
+        printf("temp_server_port: %d\n", temp_server_port);
+        printf("temp_device_id: %s\n", temp_device_id);
+        printf("temp_device_port: %d\n", temp_device_port);
+        printf("temp_username: %s\n", temp_username);
+        printf("temp_password: %s\n", temp_password);
+        printf("temp_manufacture: %s\n", temp_manufacture);
+
+        // 更新全局变量
+        if (temp_server_port)
+            server_port = temp_server_port;
+        if (temp_device_port)
+            device_port = temp_device_port;
+
+        if (temp_server_id && strcmp(temp_server_id, "default") != 0) {
+            strncpy(server_id, temp_server_id, sizeof(server_id) - 1);
+        }
+        if (temp_server_ip && strcmp(temp_server_ip, "default") != 0) {
+            strncpy(server_ip, temp_server_ip, sizeof(server_ip) - 1);
+        }
+        if (temp_device_id && strcmp(temp_device_id, "default") != 0) {
+            strncpy(device_id, temp_device_id, sizeof(device_id) - 1);
+        }
+        if (temp_username && strcmp(temp_username, "default") != 0) {
+            strncpy(username, temp_username, sizeof(username) - 1);
+        }
+        if (temp_password && strcmp(temp_password, "default") != 0) {
+            strncpy(password, temp_password, sizeof(password) - 1);
+        }
+        if (temp_manufacture && strcmp(temp_manufacture, "default") != 0) {
+            strncpy(manufacture, temp_manufacture, sizeof(manufacture) - 1);
+        }
+    }
+
+    // 打印更新后的设备信息
+    printf("finally device info: \n");
+    printf("server_id: %s\n", server_id);
+    printf("server_ip: %s\n", server_ip);
+    printf("server_port: %d\n", server_port);
+    printf("device_id: %s\n", device_id);
+    printf("device_port: %d\n", device_port);
+    printf("username: %s\n", username);
+    printf("password: %s\n", password);
+    printf("manufacture: %s\n", manufacture);
+
+    return 0;
+}
 
 void *device_heartbeat_task() {
     char *buffer = NULL;

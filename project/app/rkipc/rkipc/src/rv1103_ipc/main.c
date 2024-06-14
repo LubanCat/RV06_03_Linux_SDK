@@ -27,37 +27,6 @@
 pthread_mutex_t lock;
 pthread_cond_t cond;
 
-char *server_id = "41010500002000000001";
-char *server_ip = "192.168.103.37";
-int server_port = 5060;
-int device_port = 5064;
-char *device_id_head = "3402000000200000";
-char device_id[21];
-char username[21];
-char *password = "12345678";
-char *manufacture = "lbc-4G-ipc";
-
-// char *server_id = "34020000002000000001";
-// char *server_ip = "192.168.103.8";
-// int server_port = 6668;
-// int device_port = 5064;
-// char *device_id_head = "3402000000200000";
-// char device_id[21];
-// char username[21];
-// char *password = "12345678";
-// char *manufacture = "lbc-4G-ipc";
-
-
-// char *server_id = "41010500002000000001";
-// char *server_ip = "47.108.227.19";
-// int server_port = 8116;
-// int device_port = 5064;
-// char *device_id_head = "4101050000200000";
-// char device_id[21];
-// char username[21];
-// char *password = "newings2024";
-// char *manufacture = "lbc-4G-ipc";
-
 enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 
 int enable_minilog = 0;
@@ -437,20 +406,6 @@ static void *signal_quality(void *arg) {
     return NULL;
 }
 
-int string_to_int(const char *str) {
-	int num[3];
-	int sum;
-	for(int i=13;i<16;i++){
-		if (str[i] <= '9')
-			num[i-13]=str[i] - '0';
-		else
-			num[i-13]=10 + str[i] - 'a';
-	}
-	sum = num[0]*16*16 + num[1]*16 + num[2];
-
-    return sum;
-}
-
 static void *motor_init_thread(void *arg) {
 	// 云台位置初始化 
 	motor_init();
@@ -466,7 +421,6 @@ int main(int argc, char **argv) {
 	pthread_t day_night;
 	pthread_t signal_chk;
 	pthread_t motor_init;
-	char chipid[16];
 	LOG_DEBUG("main begin\n");
 
 	//云台初始化线程
@@ -522,14 +476,6 @@ int main(int argc, char **argv) {
 	// pthread_create(&gpio_key_chk, NULL, wait_gpio_event, NULL);
 	// 4G网卡信号质量查询
 	pthread_create(&signal_chk, NULL, signal_quality, NULL);
-
-	// chipid转换device id
-	rk_chip_id_get(chipid);
-	printf("chipid : %s", chipid);
-	int num = string_to_int(chipid);
-    printf("转换结果: %d\n", num);
-	sprintf(device_id, "%s%04d", device_id_head,num);
-	sprintf(username, "%s%04d", device_id_head,num);
 
 	device_info();
 	pthread_create(&gb28181_chk, NULL, device_start, NULL);
