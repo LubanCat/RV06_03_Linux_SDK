@@ -29,6 +29,7 @@ pthread_cond_t cond;
 
 enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 
+int rssi, ber;
 int enable_minilog = 0;
 int rkipc_log_level = LOG_INFO;
 
@@ -292,48 +293,31 @@ static void *day_night_event(void *arg) {
 }
 
 // 4G网卡信号质量处理线程
-int rssi, ber;
 static void *signal_quality(void *arg) {
-    int tty_fd = open("/dev/ttyUSB2", O_RDWR | O_NOCTTY | O_NDELAY);
+	int tty_fd;
+    int n;
+    char buf[256];
+    struct termios options;
+
+    tty_fd = open("/dev/ttyUSB2", O_RDWR | O_NOCTTY | O_NDELAY);
     if (tty_fd < 0) {
         LOG_ERROR("Cannot open serial port device /dev/ttyUSB2");
         return NULL;
     }
 
-    struct termios options;
-
-    // 获取当前串口配置
+    // 串口配置
     tcgetattr(tty_fd, &options);
-
-    // 设置波特率为115200
     cfsetispeed(&options, B115200);
     cfsetospeed(&options, B115200);
-
-    // 启用接收器，并设置本地模式
     options.c_cflag |= (CLOCAL | CREAD);
-
-    // 设置数据位为8位
     options.c_cflag &= ~CSIZE;
     options.c_cflag |= CS8;
-
-    // 无校验
     options.c_cflag &= ~PARENB;
-
-    // 设置停止位为1位
     options.c_cflag &= ~CSTOPB;
-
-    // 设置为原始输入模式（非规范模式）
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
     options.c_iflag &= ~(IXON | IXOFF | IXANY);
-
-    // 设置为原始输出模式
     options.c_oflag &= ~OPOST;
-
-    // 将配置写入串口
     tcsetattr(tty_fd, TCSANOW, &options);
-
-    char buf[256];
-    int n;
 
     // 发送ATE0命令关闭回显
     n = write(tty_fd, "ATE0\r\n", 6);
@@ -343,8 +327,7 @@ static void *signal_quality(void *arg) {
         return NULL;
     }
 
-    // 等待响应
-    usleep(100000);
+    usleep(100000); // 等待响应
 
     // 读取ATE0命令的响应
     n = read(tty_fd, buf, sizeof(buf));
@@ -363,8 +346,7 @@ static void *signal_quality(void *arg) {
             return NULL;
         }
 
-        // 等待响应
-        usleep(100000);
+        usleep(100000); // 等待响应
 
         // 读取AT+CSQ命令的响应
         n = read(tty_fd, buf, sizeof(buf));
@@ -382,25 +364,8 @@ static void *signal_quality(void *arg) {
         } else {
             LOG_INFO("No +CSQ response found\n");
         }
-
-		// osd_signal_update(rssi, ber);
-		// // 将信号强度信息格式化为宽字符字符串
-		// swprintf(result, r_size, L"RSSI=%d, BER=%d", rssi, ber);
-
-		// wchar_t w_signal[16] = {0};
-		// int wchar_cnt = 0;
-
-
-		// swprintf(w_signal, wchar_cnt, L" RSSI=%d BER=%d", rssi, ber);
-        // rk_osd_set_enabled(7, value_int);
-        // rk_osd_set_position_x(7, value_int);
-        // rk_osd_set_position_y(7, value_int);
-        // rk_osd_set_display_text(7, value.c_str());
-
-        // 等待一段时间后再次查询
         sleep(5);
     }
-
     close(tty_fd);
     LOG_INFO("Signal quality thread exiting");
     return NULL;

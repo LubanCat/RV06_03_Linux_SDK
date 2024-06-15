@@ -21,6 +21,7 @@
 
 #define MAX_OSD_NUM 8
 
+extern int rssi, ber;
 static int g_osd_server_run_ = 1;
 static int g_osd_font_already_set = 0;
 static double g_x_rate = 1.0;
@@ -89,9 +90,10 @@ int generate_date_time(const char *fmt, wchar_t *result, int r_size) {
 	wchar_t w_week[16] = {0};
 	int wid = -1;
 	int wchar_cnt = 0;
-
+	char signal[32] = {0};
 	time_t curtime;
 	curtime = time(0);
+
 	strftime(year, sizeof(year), "%Y", localtime(&curtime));
 	strftime(month, sizeof(month), "%m", localtime(&curtime));
 	strftime(day, sizeof(day), "%d", localtime(&curtime));
@@ -161,7 +163,11 @@ int generate_date_time(const char *fmt, wchar_t *result, int r_size) {
 			swprintf(w_ymd, wchar_cnt, L"%s日%s月%s年", day, month, year);
 	}
 
-	swprintf(result, r_size, L"%ls%ls %s", w_ymd, w_week, hms);
+	// 4G Signal
+	wchar_cnt = sizeof(signal) / sizeof(wchar_t);
+	swprintf(signal, wchar_cnt, L"4G=%d", rssi);
+
+	swprintf(result, r_size, L"%ls %ls%ls %s", signal, w_ymd, w_week, hms);
 	return wchar_cnt;
 }
 
@@ -222,7 +228,7 @@ static void *osd_time_server(void *arg) {
 	}
 
 	if (display_week_enabled) {
-		strcat(osd_data.text.format, OSD_FMT_WEEK0);
+		strcat(osd_data.text.format, OSD_FMT_WEEK1);
 		strcat(osd_data.text.format, OSD_FMT_SPACE);
 	}
 
@@ -267,84 +273,7 @@ static void *osd_time_server(void *arg) {
 		free(osd_data.buffer);
 	}
 	LOG_INFO("exit\n");
-
 	return 0;
-}
-
-
-void update_osd_data(osd_data_s *osd_data, int rssi, int ber) {
-    // 生成信号字符串
-    swprintf(osd_data->text.wch, sizeof(osd_data->text.wch) / sizeof(wchar_t), L"RSSI=%d, BER=%d", rssi, ber);
-
-    // 计算宽度和高度
-    osd_data->width = UPALIGNTO16(wstr_get_actual_advance_x(osd_data->text.wch) / osd_data->text.font_size);
-    osd_data->height = UPALIGNTO16(osd_data->text.font_size);
-
-    // 计算缓冲区大小
-    osd_data->size = osd_data->width * osd_data->height * 4; // BGRA8888 4字节
-
-    // 分配或重新分配缓冲区
-    if (osd_data->buffer == NULL) {
-        osd_data->buffer = malloc(osd_data->size);
-        if (osd_data->buffer == NULL) {
-            fprintf(stderr, "Failed to allocate memory for OSD buffer\n");
-            return;
-        }
-    } else {
-        void *new_buffer = realloc(osd_data->buffer, osd_data->size);
-        if (new_buffer == NULL) {
-            fprintf(stderr, "Failed to reallocate memory for OSD buffer\n");
-            return;
-        }
-        osd_data->buffer = new_buffer;
-    }
-
-    // 清零缓冲区
-    memset(osd_data->buffer, 0, osd_data->size);
-
-    // 填充文本到缓冲区
-    fill_text(osd_data);
-}
-
-void osd_signal_update(void) {
-    int osd_id = 0;
-    const char *osd_type;
-    char entry[128] = {'\0'};
-    osd_data_s osd_data;
-
-    memset(&osd_data, 0, sizeof(osd_data));
-
-    for (int i = 0; i < MAX_OSD_NUM; i++) {
-        snprintf(entry, 127, "osd.%d:type", i);
-        osd_type = rk_param_get_string(entry, NULL);
-        if (osd_type == NULL)
-            continue;
-        if (!strcmp(osd_type, "signalQuality"))
-            osd_id = i;
-    }
-    LOG_INFO("osd_signal_id is %d\n", osd_id);
-
-    snprintf(entry, 127, "osd.%d:enabled", osd_id);
-    osd_data.enable = rk_param_get_int(entry, 0);
-    snprintf(entry, 127, "osd.%d:position_x", osd_id);
-    osd_data.origin_x = UPALIGNTO16((int)(rk_param_get_int(entry, -1) * g_x_rate));
-    snprintf(entry, 127, "osd.%d:position_y", osd_id);
-    osd_data.origin_y = UPALIGNTO16((int)(rk_param_get_int(entry, -1) * g_y_rate));
-    osd_data.text.font_size = rk_param_get_int("osd.common:font_size", -1);
-    sscanf(rk_param_get_string("osd.common:font_color", NULL), "%x", &osd_data.text.font_color);
-    LOG_INFO("osd_data.text.font_color is %x\n", osd_data.text.font_color);
-    osd_data.text.color_inverse = 1;
-    osd_data.text.font_path = rk_param_get_string("osd.common:font_path", NULL);
-
-    // update_osd_data(&osd_data, rssi, ber);
-    rk_osd_bmp_create_(osd_id, &osd_data);
-
-    while (g_osd_server_run_) {
-        rk_signal_wait(g_osd_signal, 100);
-        // update_osd_data(&osd_data, rssi, ber);
-        rk_osd_bmp_change_(osd_id, &osd_data);
-    }
-    LOG_INFO("exit\n");
 }
 
 int rk_osd_init() {
