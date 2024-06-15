@@ -19,11 +19,11 @@ char from_sip[100];
 char contact[100];
 char to_sip[100];
 
-char server_id[22] = "41010500002000000001";
-char server_ip[22] = "192.168.103.37";
+char server_id[21] = "41010500002000000001";
+char server_ip[21] = "192.168.103.37";
 int server_port = 5060;
 int device_port = 5064;
-char device_id[22] = "41010500002000000002";
+char device_id[21] = "41010500002000000002";
 char username[32] = "41010500002000000002";
 char password[32] = "12345678910";
 char manufacture[32] = "lbc-4G-ipc";
@@ -72,7 +72,7 @@ static int get_sn() {
 
 int device_info() {
     char chipid[17];  // 增加一个字节用于存放字符串结束符
-    char chip_device_id[22];  // 21个字符 + 1个字节的字符串结束符
+    char chip_device_id[21];  // 21个字符 + 1个字节的字符串结束符
     char chip_username[17];  // 16个字符 + 1个字节的字符串结束符
 
     // 获取chipid并转换为设备ID
@@ -83,7 +83,7 @@ int device_info() {
     unsigned long long chipid_decimal = strtoull(chipid, NULL, 16);
 
     // 将10进制整数格式化为21位长度的字符串，高位用0补齐
-    snprintf(chip_device_id, sizeof(chip_device_id), "%021llu", chipid_decimal);
+    snprintf(chip_device_id, sizeof(chip_device_id), "%020llu", chipid_decimal);
 
     // 将10进制整数格式化为16位长度的16进制字符串，高位用0补齐
     snprintf(chip_username, sizeof(chip_username), "%016llx", chipid_decimal);
