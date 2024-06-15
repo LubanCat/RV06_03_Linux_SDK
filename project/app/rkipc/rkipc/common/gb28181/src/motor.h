@@ -77,7 +77,7 @@ void delete_preset(int index);
 void print_presets();
 
 // 将当前的云台位置设置为指定索引的预置位
-void set_preset(int index, const char *name);
+void set_preset(int index);
 
 // 将云台移动到指定索引的预置位
 void move_to_preset(int index);

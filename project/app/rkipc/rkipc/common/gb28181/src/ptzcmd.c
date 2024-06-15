@@ -75,7 +75,7 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         int index = data_byte6;
         if (cmdCode == 0x81 ){
             // 设置新的预置位示例
-            set_preset(index, "预设点");
+            set_preset(index);
             print_presets();  // 设置后打印预置位
         }
         if (cmdCode == 0x82 ){
