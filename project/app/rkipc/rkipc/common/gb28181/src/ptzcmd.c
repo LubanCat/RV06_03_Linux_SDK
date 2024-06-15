@@ -1,4 +1,5 @@
 #include "ptzcmd.h"
+#include "motor.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,93 +9,6 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
-int motor_init(void)
-{
-    FILE *file;
-    int x_current_steps = 0;
-    int y_current_steps = 0;
-    int read_success = 0;
-
-
-    // 打开文件读取保存的位置
-    file = fopen("/oem/motor_steps.txt", "r");
-    if (file != NULL) {
-        // 文件存在，尝试读取步数
-        if (fscanf(file, "x_current_steps=%d\ny_current_steps=%d", &x_current_steps, &y_current_steps) == 2) {
-            read_success = 1;
-        }
-        fclose(file);
-    }
-
-    motor_run(HORIZONTAL_MAX_STEPS, VERTICAL_MAX_STEPS);  // 归零
-
-    if (read_success) {
-        // 如果读取成功，则移动到保存的位置
-        printf("移动到保存的位置 x=%d, y=%d\n", x_current_steps, y_current_steps);
-        // current_steps为绝对路径，需要转换
-        motor_run(x_current_steps - HORIZONTAL_MAX_STEPS, y_current_steps - VERTICAL_MAX_STEPS);
-    } else {
-        // 如果文件不存在或读取失败，则归零并居中
-        printf("文件不存在或读取失败，移动到居中位置\n");
-        motor_run(-4000, 0);    // 居中
-    }
-
-    return 0;
-}
-
-int motor_run(int x_steps, int y_steps)
-{
-    int fd;
-    struct motors_input_steps motors_steps;
-    struct motor_message get_motor_message;
-    int x_current_steps = 0;
-    int y_current_steps = 0;
-
-    // 打开电机设备
-    fd = open(MOTOR_DEV, O_RDWR);
-    if (fd == -1) {
-        perror("open motor");
-        return -1;
-    }
-
-    // 设置新的步数
-    motors_steps.input_x_steps = x_steps;
-    motors_steps.input_y_steps = y_steps;
-    printf("移动步数设置 x=%d, y=%d\n", motors_steps.input_x_steps, motors_steps.input_y_steps);
-    ioctl(fd, MOTOR_MOVE, (unsigned long)&motors_steps);
-
-    usleep(100000); // 等待100毫秒
-
-    // 等待电机完成移动
-    do {
-        ioctl(fd, MOTOR_GET_STATUS, (unsigned long)&get_motor_message);
-        // 检查电机是否完成移动
-        if (get_motor_message.x_cur_status == 0 && get_motor_message.y_cur_status == 0) {
-            printf("电机移动完成,当前位置：x=%d, y=%d\n", get_motor_message.x_cur_steps, get_motor_message.y_cur_steps);
-            break;
-        }
-        // 如果电机还在移动，则等待一段时间后重试
-        usleep(100000); // 等待100毫秒
-    } while (1);
-
-    x_current_steps = get_motor_message.x_cur_steps;
-    y_current_steps = get_motor_message.y_cur_steps;
-
-    // 打开或创建文件以写入当前步数
-    FILE *file = fopen("/oem/motor_steps.txt", "w");
-    if (file == NULL) {
-        perror("open file");
-        return -1;
-    }
-
-    // 将步数写入文件
-    fprintf(file, "x_current_steps=%d\ny_current_steps=%d\n", x_current_steps, y_current_steps);
-    fclose(file);
-
-    // 关闭设备
-    close(fd);
-    return 0;
-}
 
 int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
     if (strlen(cmdStr) != 16) {
@@ -102,49 +16,103 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         return -1;  // Invalid command string length
     }
 
-    int cmdCode, moveSpeed, zoomSpeed;
-    int x_steps=0, y_steps=0;
+    int cmdCode;
+    int data_byte5, data_byte6, data_byte7;
 
+    // 读取指令位
     sscanf(cmdStr + 6, "%02X", &cmdCode);
-    sscanf(cmdStr + 8, "%02X", &moveSpeed);
-    sscanf(cmdStr + 12, "%1X", &zoomSpeed);
+    sscanf(cmdStr + 8, "%02X", &data_byte5);
+    sscanf(cmdStr + 10, "%02X", &data_byte6);
+    sscanf(cmdStr + 12, "%02X", &data_byte7);
 
-    printf("Parsed values - cmdCode: %02X, moveSpeed: %02X, zoomSpeed: %1X\n", cmdCode, moveSpeed, zoomSpeed);
+    printf("Parsed values - cmdCode:%02X, data_byte5:%02X, data_byte6:%02X, data_byte7:%02X,\n", cmdCode, data_byte5, data_byte6, data_byte7);
 
-    cmd->moveSpeed = moveSpeed;
-    cmd->zoomSpeed = zoomSpeed;
+    // 0b00xxxxxx PTZ指令
+    if ((cmdCode >> 6) == 0){
+        int x_steps=0, y_steps=0;
 
-    cmd->leftRight = 0;
-    if (cmdCode & 0x01) {
-        cmd->leftRight = 2;  // 右移
-        x_steps = 1000;
-        motor_run(x_steps, y_steps);
-    } else if (cmdCode & 0x02) {
-        cmd->leftRight = 1;  // 左移
-        x_steps = -1000;
-        motor_run(x_steps, y_steps);
+        cmd->moveSpeedH = data_byte5;
+        cmd->moveSpeedV = data_byte6;
+        cmd->zoomSpeed = data_byte7;
+        cmd->leftRight = cmdCode & 0x03;       // 最低的两位比特 (00000011)
+        cmd->upDown = (cmdCode >> 2) & 0x03; // 第二组两位比特 (00001100)
+        cmd->zoomInOut = (cmdCode >> 4) & 0x03; // 第三组两位比特 (00110000)
+        // int bitGroup4 = (cmdCode >> 6) & 0x03; // 最高的两位比特 (11000000)
+
+        if (cmd->leftRight == 1) {
+            // 右
+            x_steps = 1000;
+            motor_run_relative(x_steps, y_steps);
+        } else if (cmd->leftRight == 2) {
+            // 左
+            x_steps = -1000;
+            motor_run_relative(x_steps, y_steps);
+        }
+
+        if (cmd->upDown == 1) {
+            // 下
+            y_steps = 200;
+            motor_run_relative(x_steps, y_steps);
+        } else if (cmd->upDown == 2) {
+            // 上
+            y_steps = -200;
+            motor_run_relative(x_steps, y_steps);
+        }
+
+        if (cmd->zoomInOut == 1) {
+            // 放大
+        } else if (cmd->zoomInOut == 2) {
+            // 缩小
+        }
+        printf("PTZ command - leftRight: %d, upDown: %d, inOut: %d\n", cmd->leftRight, cmd->upDown, cmd->zoomInOut);
     }
-
-    cmd->upDown = 0;
-    if (cmdCode & 0x04) {
-        cmd->upDown = 2;  // 下移
-        y_steps = 200;
-        motor_run(x_steps, y_steps);
-    } else if (cmdCode & 0x08) {
-        cmd->upDown = 1;  // 上移
-        y_steps = -200;
-        motor_run(x_steps, y_steps);
+    // 0b0100xxxx FI指令
+    else if ((cmdCode >> 4) == 4) {
+        // FI
     }
-
-    cmd->inOut = 0;
-    if (cmdCode & 0x10) {
-        cmd->inOut = 2;  // 放大
-    } else if (cmdCode & 0x20) {
-        cmd->inOut = 1;  // 缩小
+    // 预置位指令
+    else if (cmdCode >= 0x81 && cmdCode <= 0x83) {
+        int index = data_byte6;
+        if (cmdCode == 0x81 ){
+            // 设置新的预置位示例
+            set_preset(index, "预设点");
+            print_presets();  // 设置后打印预置位
+        }
+        if (cmdCode == 0x82 ){
+            // 调用
+            move_to_preset(index);
+        }
+        if (cmdCode == 0x83 ){
+            // 删除
+            delete_preset(index);
+            print_presets();  // 设置后打印预置位
+        }
     }
+    // 巡航指令
+    else if (cmdCode >= 0x84 && cmdCode <= 0x88) {
+        if (cmdCode == 0x84 ){
+            // 加入巡航点
+        }
+        if (cmdCode == 0x85 ){
+            // 删除巡航点
+        }
+        if (cmdCode == 0x86 ){
+            // 设置巡航速度
+        }
+        if (cmdCode == 0x87 ){
+            // 设置巡航停留时间
+        }
+        if (cmdCode == 0x88 ){
+            // 开始巡航        
+        }
+    }
+    // 扫描指令
+    else if (cmdCode >= 0x89 && cmdCode <= 0x8a) {
 
-    printf("Parsed command - leftRight: %d, upDown: %d, inOut: %d, moveSpeed: %d, zoomSpeed: %d\n",
-           cmd->leftRight, cmd->upDown, cmd->inOut, cmd->moveSpeed, cmd->zoomSpeed);
+    }
+    else if (cmdCode == 0x8c && cmdCode == 0x8d) {
+        
+    }
 
     return 0;
 }

@@ -19,6 +19,7 @@
 #include "device.h"
 #include "rk_pwm.h"
 #include "ptzcmd.h"
+#include "motor.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG

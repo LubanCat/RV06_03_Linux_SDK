@@ -25,7 +25,7 @@ int server_port = 5060;
 int device_port = 5064;
 char device_id[21] = "41010500002000000002";
 char username[32] = "41010500002000000002";
-char password[32] = "12345678910";
+char password[32] = "12345678";
 char manufacture[32] = "lbc-4G-ipc";
 
 // char *server_id = "34020000002000000001";
@@ -462,6 +462,9 @@ void device_process_request() {
                     else if (strcmp(cmd_sn.cmd_type, "DeviceControl") == 0) {
                         device_process_devicecontrol_query(cmd_sn.sn);
                     }
+                    else if (strcmp(cmd_sn.cmd_type, "PresetQuery") == 0) {
+                        device_process_presetquery_query(cmd_sn.sn);
+                    }
                     else {
                         printf("unhandled cmd: %s\n", cmd_sn.cmd_type);
                     }
@@ -765,6 +768,42 @@ void device_process_deviceinfo_query(char *sn) {
 
 void device_process_devicecontrol_query(char *sn) {
 
+}
+
+void device_process_presetquery_query(char *sn) {
+    char *buffer = NULL;
+    size_t buflen = 1024;
+    size_t len = 0;
+
+    buffer = (char *)malloc(buflen);
+    if (buffer == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        return;
+    }
+
+    snprintf(buffer, buflen,
+        "<?xml version=\"1.0\" encoding=\"GB2312\"?>\r\n"
+        "<Response>\r\n"
+        "  <CmdType>PresetQuery</CmdType>\r\n"
+        "  <SN>%s</SN>\r\n"
+        "  <DeviceID>%s</DeviceID>\r\n"
+        "  <Result>OK</Result>\r\n"
+        "  <PresetList Num=\"1\">\r\n"
+        "    <Item>\r\n"
+        "      <PresetID>1</PresetID>\r\n"
+        "      <PresetName>test</PresetName>\r\n"
+        "    </Item>\r\n"
+        "  </PresetList>\r\n"
+        "</Response>\r\n",
+        sn, device_id);
+
+    printf("deviceinfo response: \n%s\n", buffer);
+    osip_message_t *request = device_create_msg();
+    if (request != NULL) {
+        osip_message_set_content_type(request, "Application/MANSCDP+xml");
+        osip_message_set_body(request, buffer, strlen(buffer));
+        device_send_request(request);
+    }
 }
 
 void device_process_devicecontrol_control(char *ptz) {
