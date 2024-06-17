@@ -44,6 +44,10 @@ int motor_init(void)
 
     // 初始化时加载预置点列表
     load_presets();
+
+    // 初始化时加载巡航点数据
+    load_cruise();
+
     return 0;
 }
 
@@ -334,48 +338,55 @@ void save_cruise(CruiseData *data) {
 }
 
 // 从文件加载巡航点
-int load_cruise(CruiseData *data) {
-    int num_cruise = 0;
+// 加载巡航点数据
+void load_cruise() {
     FILE *file = fopen(CRUISE_FILE, "r");
     if (file != NULL) {
-        char line[100];  // 假设每行不超过 100 个字符
-        while (fgets(line, sizeof(line), file) != NULL) {
-            int Group, Speed;
-            unsigned int Time;
-            int Points[MAX_POINTS];
-            // 使用 sscanf 解析每行的巡航点信息
-            if (sscanf(line, "Group=%d, Speed=%d, Time=%u, Points=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-                       &Group, &Speed, &Time,
-                       &Points[0], &Points[1], &Points[2], &Points[3],
-                       &Points[4], &Points[5], &Points[6], &Points[7],
-                       &Points[8], &Points[9], &Points[10], &Points[11],
-                       &Points[12], &Points[13], &Points[14], &Points[15]) == 18) {
-                // 将解析得到的信息存储到巡航点数组中
-                if (Group >= 0 && Group < MAX_CRUISE) {
-                    data[Group].Group = Group;
-                    data[Group].Speed = Speed;
-                    data[Group].Time = Time;
-                    for (int j = 0; j < MAX_POINTS; ++j) {
-                        data[Group].Points[j] = Points[j];
+        char line[256];  // 假设每行不超过 256 个字符
+        int index = 0;
+
+        while (fgets(line, sizeof(line), file)) {
+            if (index >= MAX_CRUISE) {
+                printf("警告: 文件中存在超出最大巡航组数的数据，已忽略\n");
+                break;
+            }
+
+            // 解析行数据
+            int Group, Speed, Time;
+            if (sscanf(line, "Group=%d, Speed=%d, Time=%u, Points=", &Group, &Speed, &Time) == 3) {
+                cruise[index].Group = Group;
+                cruise[index].Speed = Speed;
+                cruise[index].Time = Time;
+                cruise[index].is_set = 1;
+
+                // 解析 Points
+                char *token;
+                char *rest = line;
+                int point_index = 0;
+                while ((token = strtok_r(rest, ",", &rest))) {
+                    if (strncmp(token, "Points=", 7) == 0) {
+                        continue;  // 跳过 Points= 部分
                     }
-                    num_cruise++;
-                } else {
-                    printf("警告：巡航点索引 %d 超出范围\n", Group);
+                    int point;
+                    if (sscanf(token, "%d", &point) == 1) {
+                        cruise[index].Points[point_index++] = point;
+                        if (point_index >= MAX_POINTS) {
+                            break;  // 已达到最大点数
+                        }
+                    }
                 }
-            } else {
-                printf("警告：无法解析巡航点信息：%s\n", line);
+
+                index++;
             }
         }
+
         fclose(file);
-        printf("加载 %d 个巡航点信息\n", num_cruise);
     } else {
         perror("打开文件读取失败");
     }
-    return num_cruise;
 }
 
 // 打印所有已设置内容的巡航数据信息
-// 打印巡航点数据
 void print_cruise() {
     for (int i = 0; i < MAX_CRUISE; ++i) {
         if (cruise[i].is_set) {
@@ -414,6 +425,7 @@ void set_cruise_point(int Group, int Point) {
 
     // 如果是新建的 Group，则设置默认值
     if (!cruise[Group].is_set) {
+        cruise[Group].Group = Group;
         cruise[Group].Speed = DEFAULT_SPEED;
         cruise[Group].Time = DEFAULT_TIME;
         cruise[Group].is_set = 1;
@@ -484,5 +496,43 @@ void set_cruise_time(int Group, int Time) {
         cruise[Group].Time = Time;
         // 保存更新后的巡航数据到文件
         save_cruise(cruise);
+    }
+}
+
+// 获取巡航数据组并控制步进电机
+void cruise_run(int Group) {
+    if (Group < 0 || Group >= MAX_CRUISE || !cruise[Group].is_set) {
+        printf("无效的巡航数据组索引或者数据组未设置\n");
+        return;
+    }
+
+    // 读取速度和时间
+    int speed = cruise[Group].Speed;
+    unsigned int time = cruise[Group].Time;
+
+    printf("开始执行巡航数据组: 索引=%d, 速度=%d, 时间=%u\n", Group, speed, time);
+
+    // 按照 Points 的顺序控制步进电机
+    for (int i = 0; i < MAX_POINTS; ++i) {
+        if (cruise[Group].Points[i] != 0) {
+            int point = cruise[Group].Points[i];
+            printf("处理点 %d\n", point);
+
+            // 查找当前点在 presets 中的索引
+            if (presets[point].is_set ) {
+                // 找到了对应的预置位，使用其 x_steps 和 y_steps 控制步进电机
+                printf("找到预置位点 %d，执行步进电机控制：x_steps=%d, y_steps=%d\n",
+                       point, presets[point].x_steps, presets[point].y_steps);
+                motor_run_absolute(presets[point].x_steps, presets[point].y_steps);
+
+                // 停留一段时间，模拟时间控制
+                sleep(time);
+
+                printf("停留 %u 秒\n", time);
+            } else {
+                // 未找到对应的预置位，跳过当前点
+                printf("未找到预置位点 %d，跳过\n", point);
+            }
+        }
     }
 }

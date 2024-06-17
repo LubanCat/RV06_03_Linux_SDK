@@ -104,6 +104,9 @@ void set_preset(int index);
 void move_to_preset(int index);
 
 
+// 打印所有已设置内容的巡航数据信息
+void print_cruise();
+
 // 设置或更新巡航点
 void set_cruise_point(int Group, int Point);
 
@@ -112,5 +115,11 @@ void set_cruise_speed(int Group, int Speed);
 
 // 设置或更新巡航点停留时间
 void set_cruise_time(int Group, int Time);
+
+// 加载巡航点数据
+void load_cruise();
+
+// 获取巡航数据组并控制步进电机
+void cruise_run(int Group);
 
 #endif  // MOTOR_H

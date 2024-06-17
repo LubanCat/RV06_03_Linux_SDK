@@ -94,22 +94,27 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         if (cmdCode == 0x84 ){
             // 加入巡航点
             set_cruise_point(group, point);
+            print_cruise();
         }
         if (cmdCode == 0x85 ){
             // 删除巡航点
             delete_cruise(group, point);
+            print_cruise();
         }
         if (cmdCode == 0x86 ){
             // 设置巡航速度
             set_cruise_speed(group, data);
+            print_cruise();
         }
         if (cmdCode == 0x87 ){
             // 设置巡航停留时间
             set_cruise_time(group, data);
+            print_cruise();
         }
         if (cmdCode == 0x88 ){
             // 开始巡航
             printf("开始巡航: 巡航组=%d",group);
+            cruise_run(group);
         }
     }
     // 扫描指令
