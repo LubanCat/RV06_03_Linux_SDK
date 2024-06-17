@@ -27,8 +27,12 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
 
     printf("Parsed values - cmdCode:%02X, data_byte5:%02X, data_byte6:%02X, data_byte7:%02X,\n", cmdCode, data_byte5, data_byte6, data_byte7);
 
+    // 0b00000000 PTZ的所有操作均停止
+    if (cmdCode == 0){
+    
+    }
     // 0b00xxxxxx PTZ指令
-    if ((cmdCode >> 6) == 0){
+    else if ((cmdCode >> 6) == 0){
         int x_steps=0, y_steps=0;
 
         cmd->moveSpeedH = data_byte5;
@@ -40,23 +44,15 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         // int bitGroup4 = (cmdCode >> 6) & 0x03; // 最高的两位比特 (11000000)
 
         if (cmd->leftRight == 1) {
-            // 右
-            x_steps = 1000;
-            motor_run_relative(x_steps, y_steps);
+            x_steps = 1000; // 右
         } else if (cmd->leftRight == 2) {
-            // 左
-            x_steps = -1000;
-            motor_run_relative(x_steps, y_steps);
+            x_steps = -1000; // 左
         }
 
         if (cmd->upDown == 1) {
-            // 下
-            y_steps = 200;
-            motor_run_relative(x_steps, y_steps);
+            y_steps = 200;  // 下
         } else if (cmd->upDown == 2) {
-            // 上
-            y_steps = -200;
-            motor_run_relative(x_steps, y_steps);
+            y_steps = -200; // 上
         }
 
         if (cmd->zoomInOut == 1) {
@@ -64,7 +60,8 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         } else if (cmd->zoomInOut == 2) {
             // 缩小
         }
-        printf("PTZ command - leftRight: %d, upDown: %d, inOut: %d\n", cmd->leftRight, cmd->upDown, cmd->zoomInOut);
+
+        motor_run_relative(x_steps, y_steps);
     }
     // 0b0100xxxx FI指令
     else if ((cmdCode >> 4) == 4) {
@@ -76,7 +73,7 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         if (cmdCode == 0x81 ){
             // 设置新的预置位示例
             set_preset(index);
-            print_presets();  // 设置后打印预置位
+            // print_presets();  // 设置后打印预置位
         }
         if (cmdCode == 0x82 ){
             // 调用
@@ -85,25 +82,34 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         if (cmdCode == 0x83 ){
             // 删除
             delete_preset(index);
-            print_presets();  // 设置后打印预置位
+            // print_presets();  // 设置后打印预置位
         }
     }
     // 巡航指令
     else if (cmdCode >= 0x84 && cmdCode <= 0x88) {
+        int group = data_byte5;
+        int point = data_byte6;
+        unsigned int data = ((data_byte7 >> 4) << 8) | data_byte6;
+    
         if (cmdCode == 0x84 ){
             // 加入巡航点
+            set_cruise_point(group, point);
         }
         if (cmdCode == 0x85 ){
             // 删除巡航点
+            delete_cruise(group, point);
         }
         if (cmdCode == 0x86 ){
             // 设置巡航速度
+            set_cruise_speed(group, data);
         }
         if (cmdCode == 0x87 ){
             // 设置巡航停留时间
+            set_cruise_time(group, data);
         }
         if (cmdCode == 0x88 ){
-            // 开始巡航        
+            // 开始巡航
+            printf("开始巡航: 巡航组=%d",group);
         }
     }
     // 扫描指令
@@ -111,7 +117,7 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
 
     }
     else if (cmdCode == 0x8c && cmdCode == 0x8d) {
-        
+
     }
 
     return 0;

@@ -9,6 +9,12 @@
 #define MAX_PRESETS 0xFF
 #define PRESETS_FILE "/oem/motor_preset.txt"
 
+#define MAX_POINTS 16
+#define MAX_CRUISE 0xF
+#define DEFAULT_SPEED 100
+#define DEFAULT_TIME 0
+#define CRUISE_FILE "/oem/motor_cruise.txt"
+
 #define BUFFER_SIZE 1024
 
 #define MOTOR_DEV "/dev/motor"
@@ -56,6 +62,19 @@ typedef struct {
 
 MotorPreset presets[MAX_PRESETS];  // 预置位数组
 
+// 定义数据结构
+typedef struct {
+    int Group;
+    int Points[MAX_POINTS];
+    int Speed;
+    unsigned int Time; // 使用unsigned int来表示停留时间
+    int is_set;
+} CruiseData;
+
+CruiseData cruise[MAX_CRUISE];  // 预置位数组
+
+
+
 /* 云台 相对坐标移动 */
 int motor_run_relative(int x_steps, int y_steps);
 
@@ -83,5 +102,15 @@ void set_preset(int index);
 
 // 将云台移动到指定索引的预置位
 void move_to_preset(int index);
+
+
+// 设置或更新巡航点
+void set_cruise_point(int Group, int Point);
+
+// 设置或更新巡航速度
+void set_cruise_speed(int Group, int Speed);
+
+// 设置或更新巡航点停留时间
+void set_cruise_time(int Group, int Time);
 
 #endif  // MOTOR_H

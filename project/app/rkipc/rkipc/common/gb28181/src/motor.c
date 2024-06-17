@@ -305,3 +305,184 @@ void move_to_preset(int index) {
     // 绝对位置移动
     motor_run_absolute(presets[index].x_steps, presets[index].y_steps);
 }
+
+/************************************ 巡航点 ***********************************/
+// 将巡航点保存到文件
+void save_cruise(CruiseData *data) {
+    FILE *file = fopen(CRUISE_FILE, "w");
+    if (file != NULL) {
+        for (int i = 0; i < MAX_CRUISE; ++i) {
+            if (data[i].is_set) {
+                fprintf(file, "Group=%d, Speed=%d, Time=%u, Points=", data[i].Group, data[i].Speed, data[i].Time);
+                int num_points = 0;
+                for (int j = 0; j < MAX_POINTS; ++j) {
+                    if (data[i].Points[j] != 0) {
+                        fprintf(file, "%d,", data[i].Points[j]);
+                        num_points++;
+                    }
+                }
+                if (num_points > 0) {
+                    fseek(file, -1, SEEK_CUR);  // 去掉最后一个逗号
+                }
+                fprintf(file, "\n");
+            }
+        }
+        fclose(file);
+    } else {
+        perror("打开文件写入失败");
+    }
+}
+
+// 从文件加载巡航点
+int load_cruise(CruiseData *data) {
+    int num_cruise = 0;
+    FILE *file = fopen(CRUISE_FILE, "r");
+    if (file != NULL) {
+        char line[100];  // 假设每行不超过 100 个字符
+        while (fgets(line, sizeof(line), file) != NULL) {
+            int Group, Speed;
+            unsigned int Time;
+            int Points[MAX_POINTS];
+            // 使用 sscanf 解析每行的巡航点信息
+            if (sscanf(line, "Group=%d, Speed=%d, Time=%u, Points=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+                       &Group, &Speed, &Time,
+                       &Points[0], &Points[1], &Points[2], &Points[3],
+                       &Points[4], &Points[5], &Points[6], &Points[7],
+                       &Points[8], &Points[9], &Points[10], &Points[11],
+                       &Points[12], &Points[13], &Points[14], &Points[15]) == 18) {
+                // 将解析得到的信息存储到巡航点数组中
+                if (Group >= 0 && Group < MAX_CRUISE) {
+                    data[Group].Group = Group;
+                    data[Group].Speed = Speed;
+                    data[Group].Time = Time;
+                    for (int j = 0; j < MAX_POINTS; ++j) {
+                        data[Group].Points[j] = Points[j];
+                    }
+                    num_cruise++;
+                } else {
+                    printf("警告：巡航点索引 %d 超出范围\n", Group);
+                }
+            } else {
+                printf("警告：无法解析巡航点信息：%s\n", line);
+            }
+        }
+        fclose(file);
+        printf("加载 %d 个巡航点信息\n", num_cruise);
+    } else {
+        perror("打开文件读取失败");
+    }
+    return num_cruise;
+}
+
+// 打印所有已设置内容的巡航数据信息
+// 打印巡航点数据
+void print_cruise() {
+    for (int i = 0; i < MAX_CRUISE; ++i) {
+        if (cruise[i].is_set) {
+            printf("Group=%d, Speed=%d, Time=%u, Points=", cruise[i].Group, cruise[i].Speed, cruise[i].Time);
+            for (int j = 0; j < MAX_POINTS; ++j) {
+                if (cruise[i].Points[j] != 0) {
+                    printf("%d,", cruise[i].Points[j]);
+                }
+            }
+            printf("\n");
+        }
+    }
+}
+
+// 设置或更新巡航点
+void set_cruise_point(int Group, int Point) {
+    if (Group < 0 || Group >= MAX_CRUISE) {
+        printf("无效的巡航数据Group\n");
+        return;
+    }
+
+    printf("设置巡航数据组: 巡航组=%d, 添加点=%d\n", Group, Point);
+
+    // 查找空的点位置
+    int i;
+    for (i = 0; i < MAX_POINTS; ++i) {
+        if (cruise[Group].Points[i] == 0) {
+            cruise[Group].Points[i] = Point;
+            break;
+        }
+    }
+    if (i == MAX_POINTS) {
+        printf("巡航数据组已满: 巡航组=%d\n", Group);
+        return;
+    }
+
+    // 如果是新建的 Group，则设置默认值
+    if (!cruise[Group].is_set) {
+        cruise[Group].Speed = DEFAULT_SPEED;
+        cruise[Group].Time = DEFAULT_TIME;
+        cruise[Group].is_set = 1;
+    }
+
+    // 保存更新后的巡航数据到文件
+    save_cruise(cruise);
+}
+
+// 删除巡航点或整组数据
+void delete_cruise(int Group, int Point) {
+    if (Group < 0 || Group >= MAX_CRUISE) {
+        printf("无效的巡航数据Group\n");
+        return;
+    }
+
+    if (Point == 0) {
+        // 删除整组数据
+        memset(&cruise[Group], 0, sizeof(CruiseData));
+        cruise[Group].is_set = 0;
+        printf("删除整组巡航点: 巡航组=%d\n", Group);
+    } else {
+        // 删除对应点
+        int i;
+        for (i = 0; i < MAX_POINTS; ++i) {
+            if (cruise[Group].Points[i] == Point) {
+                cruise[Group].Points[i] = 0;
+                printf("删除巡航点: 巡航组=%d，位置点=%d\n", Group, Point);
+                break;
+            }
+        }
+        if (i == MAX_POINTS) {
+            printf("点未找到: 索引=%d, 点=%d\n", Group, Point);
+            return;
+        }
+    }
+
+    // 保存更新后的巡航数据到文件
+    save_cruise(cruise);
+}
+
+// 设置或更新巡航速度
+void set_cruise_speed(int Group, int Speed) {
+    if (Group < 0 || Group >= MAX_CRUISE) {
+        printf("无效的巡航数据Group\n");
+        return;
+    }
+    
+    printf("设置巡航速度: 巡航组=%d，速度=%d\n", Group, Speed);
+
+    if (cruise[Group].is_set) {
+        cruise[Group].Speed = Speed;
+        // 保存更新后的巡航数据到文件
+        save_cruise(cruise);
+    }
+}
+
+// 设置或更新巡航点停留时间
+void set_cruise_time(int Group, int Time) {
+    if (Group < 0 || Group >= MAX_CRUISE) {
+        printf("无效的巡航数据:Group\n");
+        return;
+    }
+
+    printf("设置巡航停留: 巡航组=%d，停留时间=%ds\n", Group, Time);
+
+    if (cruise[Group].is_set) {
+        cruise[Group].Time = Time;
+        // 保存更新后的巡航数据到文件
+        save_cruise(cruise);
+    }
+}
