@@ -167,7 +167,6 @@ int motor_run_absolute(int x_steps, int y_steps)
 }
 
 /************************************ 预置位置 ***********************************/
-MotorPreset presets[MAX_PRESETS];  // 预置位数组
 
 // 将预置位保存到文件
 void save_presets() {
@@ -186,10 +185,10 @@ void save_presets() {
 }
 
 // 从文件加载预置位
-void load_presets() {
+int load_presets() {
+    int num_presets = 0;
     FILE *file = fopen(PRESETS_FILE, "r");
     if (file != NULL) {
-        int num_presets = 0;
         char line[100];  // 假设每行不超过 100 个字符
         while (fgets(line, sizeof(line), file) != NULL) {
             int index, x_steps, y_steps;
@@ -217,6 +216,7 @@ void load_presets() {
     } else {
         perror("打开文件读取失败");
     }
+    return num_presets;
 }
 
 // 删除指定索引位置的预置位
@@ -283,7 +283,7 @@ void set_preset(int index) {
     }
 
     // 设置预置位信息
-    snprintf(presets[index].name, sizeof(presets[index].name), "预设点%d", index);
+    snprintf(presets[index].name, sizeof(presets[index].name), "Point%d", index);
     presets[index].name[sizeof(presets[index].name) - 1] = '\0';  // 确保字符串结尾为 null
     presets[index].x_steps = x_current_steps;
     presets[index].y_steps = y_current_steps;

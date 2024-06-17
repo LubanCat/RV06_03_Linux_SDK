@@ -1,5 +1,6 @@
 #include "device.h"
 #include "ptzcmd.h"
+#include "motor.h"
 #include "common.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -771,39 +772,64 @@ void device_process_devicecontrol_query(char *sn) {
 }
 
 void device_process_presetquery_query(char *sn) {
-    char *buffer = NULL;
-    size_t buflen = 1024;
-    size_t len = 0;
-
-    buffer = (char *)malloc(buflen);
+    size_t buflen = 0x6000;
+    char *buffer = (char *)malloc(buflen);
     if (buffer == NULL) {
         fprintf(stderr, "Failed to allocate memory\n");
         return;
     }
 
+    // 加载预置点信息
+    int num_presets = load_presets();
+
+    // 初始化 XML 内容
     snprintf(buffer, buflen,
-        "<?xml version=\"1.0\" encoding=\"GB2312\"?>\r\n"
-        "<Response>\r\n"
-        "  <CmdType>PresetQuery</CmdType>\r\n"
-        "  <SN>%s</SN>\r\n"
-        "  <DeviceID>%s</DeviceID>\r\n"
-        "  <Result>OK</Result>\r\n"
-        "  <PresetList Num=\"1\">\r\n"
-        "    <Item>\r\n"
-        "      <PresetID>1</PresetID>\r\n"
-        "      <PresetName>test</PresetName>\r\n"
-        "    </Item>\r\n"
-        "  </PresetList>\r\n"
-        "</Response>\r\n",
-        sn, device_id);
+             "<?xml version=\"1.0\" encoding=\"GB2312\"?>\r\n"
+             "<Response>\r\n"
+             "<CmdType>PresetQuery</CmdType>\r\n"
+             "<SN>%s</SN>\r\n"
+             "<DeviceID>%s</DeviceID>\r\n"
+             "<Result>OK</Result>\r\n"
+             "<PresetList Num=\"%d\">\r\n",
+             sn, device_id, num_presets);
+
+    // 计算当前 XML 数据长度
+    size_t len = strlen(buffer);
+
+    // 动态生成预置点 XML，并追加到 buffer 中
+    for (int i = 0; i < MAX_PRESETS; ++i) {
+        if (presets[i].is_set) {
+            char itemXML[256];  // 根据实际情况调整大小
+            snprintf(itemXML, sizeof(itemXML),
+                     "<Item>\r\n"
+                     "<PresetID>%d</PresetID>\r\n"
+                     "<PresetName>%s</PresetName>\r\n"
+                     "</Item>\r\n",
+                     i, presets[i].name);
+
+            size_t itemXML_len = strlen(itemXML);
+
+
+            // 追加预置点 XML 数据到 buffer
+            strcat(buffer, itemXML);
+            len += itemXML_len;
+        }
+    }
+
+    // 在 buffer 末尾添加 XML 尾部信息
+    strcat(buffer, "</PresetList>\r\n"
+                   "</Response>\r\n");
 
     printf("deviceinfo response: \n%s\n", buffer);
+
     osip_message_t *request = device_create_msg();
     if (request != NULL) {
         osip_message_set_content_type(request, "Application/MANSCDP+xml");
         osip_message_set_body(request, buffer, strlen(buffer));
         device_send_request(request);
     }
+
+    free(buffer);
 }
 
 void device_process_devicecontrol_control(char *ptz) {

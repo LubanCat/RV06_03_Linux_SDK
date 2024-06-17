@@ -54,6 +54,8 @@ typedef struct {
     int is_set;     // 标记预置位是否设置的标志
 } MotorPreset;
 
+MotorPreset presets[MAX_PRESETS];  // 预置位数组
+
 /* 云台 相对坐标移动 */
 int motor_run_relative(int x_steps, int y_steps);
 
@@ -68,7 +70,7 @@ int motor_init(void);
 void save_presets();
 
 // 从文件加载预置位
-void load_presets();
+int load_presets();
 
 // 删除指定索引位置的预置位
 void delete_preset(int index);
