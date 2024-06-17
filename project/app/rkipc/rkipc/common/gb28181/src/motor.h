@@ -12,7 +12,7 @@
 #define MAX_POINTS 16
 #define MAX_CRUISE 0xF
 #define DEFAULT_SPEED 100
-#define DEFAULT_TIME 0
+#define DEFAULT_TIME 1
 #define CRUISE_FILE "/oem/motor_cruise.txt"
 
 #define BUFFER_SIZE 1024

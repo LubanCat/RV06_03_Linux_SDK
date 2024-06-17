@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
+extern int cruise_group;
 
 int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
     if (strlen(cmdStr) != 16) {
@@ -29,7 +30,8 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
 
     // 0b00000000 PTZ的所有操作均停止
     if (cmdCode == 0){
-    
+        // 停止巡航
+        cruise_group=-1;
     }
     // 0b00xxxxxx PTZ指令
     else if ((cmdCode >> 6) == 0){
@@ -90,7 +92,7 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         int group = data_byte5;
         int point = data_byte6;
         unsigned int data = ((data_byte7 >> 4) << 8) | data_byte6;
-    
+
         if (cmdCode == 0x84 ){
             // 加入巡航点
             set_cruise_point(group, point);
@@ -114,7 +116,7 @@ int parseCmdString(const char *cmdStr, PtzCommand *cmd) {
         if (cmdCode == 0x88 ){
             // 开始巡航
             printf("开始巡航: 巡航组=%d",group);
-            cruise_run(group);
+            cruise_group=group; //传递给motor线程
         }
     }
     // 扫描指令

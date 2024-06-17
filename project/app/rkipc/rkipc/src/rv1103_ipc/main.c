@@ -229,7 +229,6 @@ static void *day_night_event(void *arg) {
     char value;
 
     while (g_main_run_) {
-        // 打开设备文件
         ldr_fd = open("/sys/bus/iio/devices/iio:device0/in_voltage1_raw", O_RDONLY);
         if (ldr_fd < 0) {
             LOG_ERROR("Failed to open device file: /sys/bus/iio/devices/iio:device0/in_voltage1_raw\n");
@@ -239,9 +238,8 @@ static void *day_night_event(void *arg) {
         // 清空缓冲区
         memset(buffer, 0, sizeof(buffer));
 
-        // 读取设备文件内容
         bytes_read = read(ldr_fd, buffer, sizeof(buffer) - 1);
-        close(ldr_fd); // 在这里关闭文件描述符
+        close(ldr_fd);
         ldr_fd = 0;
 
         if (bytes_read < 0) {
@@ -372,11 +370,35 @@ static void *signal_quality(void *arg) {
     return NULL;
 }
 
-static void *motor_init_thread(void *arg) {
+int cruise_group = -1;
+int motor_fd;
+static void *motor_thread(void *arg) {
+    LOG_INFO("motor thread runing");
+
+    // 打开电机设备
+    motor_fd = open(MOTOR_DEV, O_RDWR);
+    if (motor_fd == -1) {
+        LOG_ERROR("open motor failed");
+        return -1;
+    }
+
 	// 云台位置初始化 
 	motor_init();
 
-    LOG_INFO("motor init thread exiting");
+    while (g_main_run_) {
+		if (cruise_group >= 0){
+			LOG_INFO("巡航组状态: %d\n", cruise_group);
+			cruise_run(cruise_group);
+		}
+		else {
+        	sleep(1); // 等待响应
+		}
+    }
+
+    // 关闭设备
+    close(motor_fd);
+
+    LOG_INFO("motor thread exiting");
     return NULL;
 }
 
@@ -390,7 +412,7 @@ int main(int argc, char **argv) {
 	LOG_DEBUG("main begin\n");
 
 	//云台初始化线程
-	pthread_create(&motor_init, NULL, motor_init_thread, NULL);
+	pthread_create(&motor_init, NULL, motor_thread, NULL);
 
 	rkipc_version_dump();
 	signal(SIGINT, sig_proc);
@@ -452,8 +474,10 @@ int main(int argc, char **argv) {
 	}
 
 	// deinit
+	// pthread_join(gb28181_chk, NULL);
 	pthread_join(day_night, NULL);
 	pthread_join(key_chk, NULL);
+	// pthread_join(motor_init, NULL);
 	// pthread_join(gpio_key_chk, NULL);
 	rk_storage_deinit();
 	rkipc_server_deinit();

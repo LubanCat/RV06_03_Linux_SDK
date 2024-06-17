@@ -26,7 +26,7 @@ int rk_pwm_export(uint32_t pwm)
         return ret;
 
     if (!access(file, F_OK)) {
-        printf("warning: pwm %d, file (%s) has exist\n", pwm, file);
+        // printf("warning: pwm %d, file (%s) has exist\n", pwm, file);
         return 0;
     }
     return write_sysfs_int("export", path, 0);
