@@ -79,6 +79,7 @@ target_link_libraries(lvgl_app
     libdrm.a
     libcurl.so
     libcrypto.so
+    libcjson.so
     pthread
     m
 )
