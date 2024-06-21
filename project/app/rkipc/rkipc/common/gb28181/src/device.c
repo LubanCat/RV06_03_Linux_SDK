@@ -1000,7 +1000,7 @@ void device_send_alarm(alarmEvent event) {
 
     // 检查事件是否在设定时间内重复
     if (difftime(current_time, alarm_Instance.last_event_time[event]) < ALARM_TIME_THRESHOLD) {
-        printf("Event %d ignored due to time threshold\n", event);
+        LOG_DEBUG("Event %d ignored due to time threshold\n", event);
         return;
     }
 
@@ -1011,29 +1011,29 @@ void device_send_alarm(alarmEvent event) {
              (timeinfo->tm_year + 1900), (timeinfo->tm_mon + 1),
              timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 
-    printf("alarm_Instance.time[%d]=%s\n", event, alarm_Instance.time[event]);
+    LOG_DEBUG("alarm_Instance.time[%d]=%s\n", event, alarm_Instance.time[event]);
 
     switch (event) {
         case EVENT_MD:
-            printf("Event: Movement Detection\n");
+            LOG_DEBUG("Event: Movement Detection\n");
             snprintf(alarm_Instance.description[event], sizeof(alarm_Instance.description[event]), "移动侦测报警");
             alarm_Instance.method = METHOD_VIDEO;
             alarm_Instance.priority = 4;
             break;
         case EVENT_OD:
-            printf("Event: Obstruction Detection\n");
+            LOG_DEBUG("Event: Obstruction Detection\n");
             snprintf(alarm_Instance.description[event], sizeof(alarm_Instance.description[event]), "摄像头遮挡报警");
             alarm_Instance.method = METHOD_DEVICE;
             alarm_Instance.priority = 1;
             break;
         case EVENT_PERSON:
-            printf("Event: Person Detection\n");
+            LOG_DEBUG("Event: Person Detection\n");
             snprintf(alarm_Instance.description[event], sizeof(alarm_Instance.description[event]), "人体检测报警");
             alarm_Instance.method = METHOD_VIDEO;
             alarm_Instance.priority = 3;
             break;
         default:
-            printf("Event: None or Unknown\n");
+            LOG_ERROR("Event: None or Unknown\n");
             return;
     }
 
@@ -1060,7 +1060,7 @@ void device_send_alarm(alarmEvent event) {
         get_sn(), device_id, alarm_Instance.priority, alarm_Instance.time[event],
         alarm_Instance.method, alarm_Instance.description[event]);
 
-    printf("buffer=%s\n", buffer);
+    LOG_INFO("buffer=%s\n", buffer);
 
     osip_message_t *request = device_create_msg("MESSAGE");
     if (request != NULL) {
