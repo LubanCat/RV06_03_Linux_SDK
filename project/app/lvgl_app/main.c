@@ -9,6 +9,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "lv_conf.h"
+#include "server.h"
 
 #include "generated/gui_guider.h"
 #include "generated/events_init.h"
@@ -62,11 +63,13 @@ int main(void)
     // lv_demo_widgets();
     // lv_demo_stress();
     // lv_demo_keypad_encoder();
-    lv_demo_music();
+    // lv_demo_music();
 
-    // /* ui_init(); */
-    // setup_ui(&guider_ui);
-    // events_init(&guider_ui);
+    /* ui_init(); */
+    setup_ui(&guider_ui);
+    events_init(&guider_ui);
+
+    server();
 
     /*Handle LitlevGL tasks (tickless mode)*/
     while(1) {
