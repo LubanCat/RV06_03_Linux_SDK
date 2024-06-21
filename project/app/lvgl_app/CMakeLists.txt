@@ -46,16 +46,17 @@ include_directories(
     generated/guider_customer_fonts
     generated/images
     generated/mPythonImages
-    )
+    server/
+)
 
 # Define library directory
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/lib)
-
 link_directories(${LIB_DIR})
 
 set(CXX_SRCS
     main.c
     lv_app/src/ui.c
+    server/server.c
     )
 
 file(GLOB_RECURSE GENERATED_SOURCES generated/*.c)
@@ -76,7 +77,10 @@ target_link_libraries(lvgl_app
     PRIVATE lvgl::demos
     PRIVATE lvgl::examples
     libdrm.a
+    libcurl.so
+    libcrypto.so
     pthread
-    m)
+    m
+)
 
 install(TARGETS lvgl_app DESTINATION usr/bin/)
