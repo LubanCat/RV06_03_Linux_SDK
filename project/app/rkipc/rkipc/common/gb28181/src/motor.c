@@ -57,6 +57,11 @@ int motor_init(void)
 /* 云台 相对坐标移动 */
 int motor_run_relative(int x_steps, int y_steps)
 {
+    if (motor_fd == -1) {
+        LOG_ERROR("open motor failed\n");
+        return 0;
+    }
+
     struct motors_input_steps motors_steps;
     struct motor_message get_motor_message;
     int x_current_steps = 0;
@@ -68,18 +73,18 @@ int motor_run_relative(int x_steps, int y_steps)
     LOG_DEBUG("移动步数设置 x=%d, y=%d\n", motors_steps.input_x_steps, motors_steps.input_y_steps);
     ioctl(motor_fd, MOTOR_MOVE, (unsigned long)&motors_steps);
 
-    usleep(100000); // 等待100毫秒
+    usleep(10000); // 等待10毫秒
 
     // 等待电机完成移动
     do {
         ioctl(motor_fd, MOTOR_GET_STATUS, (unsigned long)&get_motor_message);
         // 检查电机是否完成移动
         if (get_motor_message.x_cur_status == 0 && get_motor_message.y_cur_status == 0) {
-            LOG_INFO("电机移动完成,当前位置：x=%d, y=%d\n", get_motor_message.x_cur_steps, get_motor_message.y_cur_steps);
+            LOG_DEBUG("电机移动完成,当前位置：x=%d, y=%d\n", get_motor_message.x_cur_steps, get_motor_message.y_cur_steps);
             break;
         }
         // 如果电机还在移动，则等待一段时间后重试
-        usleep(100000); // 等待100毫秒
+        usleep(10000); // 等待10毫秒
     } while (1);
 
     x_current_steps = get_motor_message.x_cur_steps;
@@ -88,7 +93,7 @@ int motor_run_relative(int x_steps, int y_steps)
     // 打开或创建文件以写入当前步数
     FILE *file = fopen("/oem/motor_steps.txt", "w");
     if (file == NULL) {
-        LOG_ERROR("open /oem/motor_steps.txt failed");
+        LOG_ERROR("open /oem/motor_steps.txt failed\n");
         return -1;
     }
 
@@ -102,6 +107,11 @@ int motor_run_relative(int x_steps, int y_steps)
 /* 云台 绝对坐标移动 */
 int motor_run_absolute(int x_steps, int y_steps)
 {
+    if (motor_fd == -1) {
+        LOG_ERROR("open motor failed\n");
+        return 0;
+    }
+
     struct motors_input_steps motors_steps;
     struct motor_message get_motor_message;
     int x_current_steps = 0;
@@ -122,18 +132,18 @@ int motor_run_absolute(int x_steps, int y_steps)
     LOG_DEBUG("移动步数设置 x=%d, y=%d\n", motors_steps.input_x_steps, motors_steps.input_y_steps);
     ioctl(motor_fd, MOTOR_MOVE, (unsigned long)&motors_steps);
 
-    usleep(100000); // 等待100毫秒
+    usleep(10000); // 等待100毫秒
 
     // 等待电机完成移动
     do {
         ioctl(motor_fd, MOTOR_GET_STATUS, (unsigned long)&get_motor_message);
         // 检查电机是否完成移动
         if (get_motor_message.x_cur_status == 0 && get_motor_message.y_cur_status == 0) {
-            LOG_INFO("电机移动完成,当前位置：x=%d, y=%d\n", get_motor_message.x_cur_steps, get_motor_message.y_cur_steps);
+            LOG_DEBUG("电机移动完成,当前位置：x=%d, y=%d\n", get_motor_message.x_cur_steps, get_motor_message.y_cur_steps);
             break;
         }
         // 如果电机还在移动，则等待一段时间后重试
-        usleep(100000); // 等待100毫秒
+        usleep(10000); // 等待100毫秒
     } while (1);
 
     x_current_steps = get_motor_message.x_cur_steps;
@@ -142,7 +152,7 @@ int motor_run_absolute(int x_steps, int y_steps)
     // 打开或创建文件以写入当前步数
     FILE *file = fopen("/oem/motor_steps.txt", "w");
     if (file == NULL) {
-        LOG_ERROR("open file failed");
+        LOG_ERROR("open file failed\n");
         return -1;
     }
 
@@ -151,6 +161,24 @@ int motor_run_absolute(int x_steps, int y_steps)
     fclose(file);
 
     return 0;
+}
+
+// return run:1 stop:0
+int get_motor_status()
+{
+    struct motor_message get_motor_message;
+
+    if (motor_fd == -1) {
+        LOG_ERROR("open motor failed\n");
+        return -1;
+    }
+
+    ioctl(motor_fd, MOTOR_GET_STATUS, (unsigned long)&get_motor_message);
+
+    if (get_motor_message.x_cur_status == 0 && get_motor_message.y_cur_status == 0) {
+        return 0;
+    }
+    return 1;
 }
 
 /************************************ 预置位置 ***********************************/
@@ -166,7 +194,7 @@ void save_presets() {
         }
         fclose(file);
     } else {
-        LOG_ERROR("打开文件写入失败");
+        LOG_ERROR("打开文件写入失败\n");
     }
 }
 
@@ -245,7 +273,7 @@ void set_preset(int index) {
 
     // 获取电机当前位置信息
     if (ioctl(motor_fd, MOTOR_GET_STATUS, (unsigned long)&get_motor_message) == -1) {
-        LOG_ERROR("ioctl 获取电机状态失败");
+        LOG_ERROR("ioctl 获取电机状态失败\n");
         return;
     }
     x_current_steps = get_motor_message.x_cur_steps;
@@ -304,7 +332,7 @@ void save_cruise(CruiseData *data) {
         }
         fclose(file);
     } else {
-        LOG_ERROR("打开文件写入失败");
+        LOG_ERROR("打开文件写入失败\n");
     }
 }
 

@@ -84,6 +84,9 @@ int motor_run_absolute(int x_steps, int y_steps);
 /* 云台初始化 */
 int motor_init(void);
 
+/* 获取云台状态 */
+int get_motor_status();
+
 
 // 将预置位保存到文件
 void save_presets();
