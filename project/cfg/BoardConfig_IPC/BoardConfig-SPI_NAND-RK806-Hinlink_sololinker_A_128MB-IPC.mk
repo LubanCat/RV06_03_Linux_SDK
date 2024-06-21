@@ -43,7 +43,7 @@ export RK_CAMERA_SENSOR_IQFILES="sc4336_OT01_40IRC_F16.bin sc3336_CMK-OT2119-PC1
 export RK_CAMERA_SENSOR_CAC_BIN="CAC_sc4336_OT01_40IRC_F16 CAC_sc530ai_CMK-OT2115-PC1_30IRC-F16"
 
 # Config CMA size in environment
-export RK_BOOTARGS_CMA_SIZE="66M"
+export RK_BOOTARGS_CMA_SIZE="1M"
 
 # config partition in environment
 # RK_PARTITION_CMD_IN_ENV format:
