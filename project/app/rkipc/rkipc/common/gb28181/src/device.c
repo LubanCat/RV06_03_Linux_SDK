@@ -51,17 +51,18 @@ extern Nalu_t *nalu_vector;
 extern int nalu_vector_size;
 extern int rtp_sockfd;
 
+AlarmInstance alarm_Instance;
 struct eXosip_t* sip_context;
 bool is_running=false;
 bool is_register=false;
 bool is_pushing=false;
+int is_guard = 0;
 char local_ip[24];
 pthread_t heartbeat_thread_id;
 pthread_t push_thread_id;
 rtp_net_t rtp_net;
 char ssrc[20];
 extern int g_video_run_;
-
 
 static int get_sn() {
 	if (sn >= SN_MAX) {
@@ -265,6 +266,17 @@ void *device_start(){
         return NULL;
     }
 
+    // 打开文件读取保存的位置
+    FILE *file = fopen("/oem/guard_status.txt", "r");
+    if (file != NULL) {
+        // 文件存在，读取报警订阅状态
+        fscanf(file, "guard_status=%d", &is_guard);
+        LOG_INFO("读取本地报警订阅状态：%d\n", is_guard);
+        fclose(file);
+    } else {
+        LOG_ERROR("本地报警订阅状态读取失败\n");
+    }
+
     is_running = true;
 
     eXosip_guess_localip(sip_context, AF_INET, local_ip,sizeof(local_ip));
@@ -324,7 +336,9 @@ void device_send_response_ok(eXosip_event_t *evt) {
 }
 
 cmd_sn_t device_get_cmd(const char * body) {
-    mxml_node_t *tree, *node;
+    mxml_node_t *tree, *node, *main_node;
+    const char *tags[] = {"Query", "Control", "Notify", "Response"};
+    int tags_num = 4;
     cmd_sn_t result;
 
     // 初始化结果
@@ -335,44 +349,24 @@ cmd_sn_t device_get_cmd(const char * body) {
     tree = mxmlLoadString(NULL,NULL,body);
     if (tree == NULL) {
         fprintf(stderr, "cannot parse the xml\n");
-        return (cmd_sn_t){NULL, NULL};
+        return (cmd_sn_t){0, NULL, NULL};
     }
 
-    // 获取根节点
-    node = mxmlFindElement(tree, tree, "Query", NULL, NULL, MXML_DESCEND_ALL);
-    if (node == NULL) {
-        node = mxmlFindElement(tree, tree, "Control", NULL, NULL, MXML_DESCEND_ALL);
-        if (node == NULL) {
-            fprintf(stderr, "cannot get root node of xml\n");
-            mxmlDelete(tree);
-            return (cmd_sn_t){NULL, NULL};
-        }
-    }
-
-    // 检查根节点名称
-    const char *root_name = mxmlGetElement(node);
-    strcpy(result.cmd_name, root_name);
-    if (strcmp(root_name, "Query") == 0) {
-        fprintf(stderr, "Query xml with root\n");
-
-
-
-    } else if (strcmp(root_name, "Control") == 0) {
-        fprintf(stderr, "Control xml with root\n");
-        // 获取CmdType节点
-        node = mxmlFindElement(node, tree, "PTZCmd", NULL, NULL, MXML_DESCEND_ALL);
-        if (node == NULL) {
-            fprintf(stderr, "cannot get the PTZCmd\n");
+    for (int i = 0; i < tags_num; i++)
+    {
+        if (i == tags_num) {
             mxmlDelete(tree);
             return result;
         }
-        result.cmd_ptz = strdup(mxmlGetText(node, NULL));
-        printf("get the cmd_ptz %s\n", result.cmd_ptz  );
-    } else {
-        fprintf(stderr, "invalid xml with root\n");
-        mxmlDelete(tree);
-        return (cmd_sn_t){NULL, NULL};
+
+        main_node = mxmlFindElement(tree, tree, tags[i], NULL, NULL, MXML_DESCEND_ALL);
+        if (main_node != NULL) {
+            strcpy(result.cmd_name, tags[i]);
+            break; // 找到标签后退出循环
+        }
     }
+
+    // fprintf(stderr, "%s xml with root\n",result.cmd_name);
 
     // 获取CmdType节点
     node = mxmlFindElement(tree, tree, "CmdType", NULL, NULL, MXML_DESCEND_ALL);
@@ -381,8 +375,41 @@ cmd_sn_t device_get_cmd(const char * body) {
         mxmlDelete(tree);
         return result;
     }
+
     result.cmd_type = strdup(mxmlGetText(node, NULL));
-    printf("get the cmd type %s\n",result.cmd_type);
+    // printf("get the cmd type %s\n",result.cmd_type);
+
+    if(strcmp(result.cmd_type, "DeviceControl") == 0){
+        node = mxmlFindElement(tree, tree, "PTZCmd", NULL, NULL, MXML_DESCEND_ALL);
+        if (node != NULL) {
+            result.cmd_ptz = strdup(mxmlGetText(node, NULL));
+            printf("get the cmd_ptz %s\n", result.cmd_ptz);
+        }
+        node = mxmlFindElement(tree, tree, "GuardCmd", NULL, NULL, MXML_DESCEND_ALL);
+        if (node != NULL) {
+            result.cmd_guard = strdup(mxmlGetText(node, NULL));
+            printf("get the cmd_guard %s\n", result.cmd_guard);
+        }
+
+    }else if(strcmp(result.cmd_type, "RecordInfo") == 0){
+        node = mxmlFindElement(tree, tree, "StartTime", NULL, NULL, MXML_DESCEND_ALL);
+        if (node == NULL) {
+            fprintf(stderr, "cannot get the StartTime\n");
+            mxmlDelete(tree);
+            return result;
+        }
+        result.starttime = strdup(mxmlGetText(node, NULL));
+        printf("starttime: %s\n", result.starttime);
+
+        node = mxmlFindElement(tree, tree, "EndTime", NULL, NULL, MXML_DESCEND_ALL);
+        if (node == NULL) {
+            fprintf(stderr, "cannot get the EndTime\n");
+            mxmlDelete(tree);
+            return result;
+        }
+        result.endtime = strdup(mxmlGetText(node, NULL));
+        printf("endtime: %s\n", result.endtime);
+    }
 
     // 获取SN节点
     node = mxmlFindElement(tree, tree, "SN", NULL, NULL, MXML_DESCEND_ALL);
@@ -391,9 +418,9 @@ cmd_sn_t device_get_cmd(const char * body) {
         mxmlDelete(tree);
         return result;
     }
-    result.sn = strdup(mxmlGetText(node, NULL));
-    printf("get the SN %s\n",result.sn);
 
+    result.sn = strdup(mxmlGetText(node, NULL));
+    // printf("get the SN %s\n",result.sn);
     mxmlDelete(tree);
     return result;
 }
@@ -438,48 +465,52 @@ void device_process_request() {
         }
         case EXOSIP_MESSAGE_NEW: {
             printf("got MESSAGE_NEW\n");
+            // printf("ss_status=%d,ss_reason=%d\n",evt->ss_status,evt->ss_reason);
             if (MSG_IS_MESSAGE(evt->request)) {
                 osip_body_t * body = NULL;
                 osip_message_get_body(evt->request, 0, &body);
-                if (body != NULL) {
-                    printf("new message request:\n%s\n", body->body);
-                }
-
                 device_send_response_ok(evt);
-
+                printf("%s\n",body->body);
                 cmd_sn_t cmd_sn = device_get_cmd(body->body);
-                printf("got new cmd: %s sn: %s\n", cmd_sn.cmd_type, cmd_sn.sn);
-                printf("got new name: %s ptz: %s\n", cmd_sn.cmd_name, cmd_sn.cmd_ptz);
+                printf("got new cmd: %s sn: %s name: %s\n", cmd_sn.cmd_type, cmd_sn.sn, cmd_sn.cmd_name);
                 if (strcmp(cmd_sn.cmd_name, "Query") == 0) {
-                    if (strcmp(cmd_sn.cmd_type, "Catalog") == 0) {
+                    if (strcmp(cmd_sn.cmd_type, "Catalog") == 0)
                         device_process_catalog_query(cmd_sn.sn);
-                    }
-                    else if (strcmp(cmd_sn.cmd_type, "DeviceStatus") == 0) {
+                    else if (strcmp(cmd_sn.cmd_type, "DeviceStatus") == 0)
                         device_process_devicestatus_query(cmd_sn.sn);
-                    }
-                    else if (strcmp(cmd_sn.cmd_type, "DeviceInfo") == 0) {
+                    else if (strcmp(cmd_sn.cmd_type, "DeviceInfo") == 0)
                         device_process_deviceinfo_query(cmd_sn.sn);
-                    }
-                    else if (strcmp(cmd_sn.cmd_type, "DeviceControl") == 0) {
-                        device_process_devicecontrol_query(cmd_sn.sn);
-                    }
-                    else if (strcmp(cmd_sn.cmd_type, "PresetQuery") == 0) {
+                    else if (strcmp(cmd_sn.cmd_type, "PresetQuery") == 0)
                         device_process_presetquery_query(cmd_sn.sn);
-                    }
-                    else {
+                    else if (strcmp(cmd_sn.cmd_type, "RecordInfo") == 0)
+                        device_process_record_info_query(cmd_sn);
+                    else if (strcmp(cmd_sn.cmd_type, "Alarm") == 0)
+                        device_process_undo(cmd_sn.sn);
+                    else
                         printf("unhandled cmd: %s\n", cmd_sn.cmd_type);
-                    }
                 }
                 else if (strcmp(cmd_sn.cmd_name, "Control") == 0) {
-                    if (strcmp(cmd_sn.cmd_type, "DeviceControl") == 0) {
-                        device_process_devicecontrol_control(cmd_sn.cmd_ptz);
-                    } else {
+                    if (strcmp(cmd_sn.cmd_type, "DeviceControl") == 0)
+                        if (cmd_sn.cmd_ptz != NULL)
+                            device_process_devicecontrol_ptz_control(cmd_sn.cmd_ptz);
+                        else if (cmd_sn.cmd_guard != NULL)
+                            device_process_devicecontrol_guard_control(cmd_sn, cmd_sn.cmd_guard);
+                    else
                         printf("unhandled control cmd: %s\n", cmd_sn.cmd_type);
-                    }
+                }else if (strcmp(cmd_sn.cmd_name, "Notify") == 0) {
+                    if (strcmp(cmd_sn.cmd_type, "Broadcast") == 0)
+                        device_process_broadcast_notify(evt,cmd_sn);
+                    else if (strcmp(cmd_sn.cmd_type, "Alarm") == 0)
+                        device_process_undo(cmd_sn.sn);
+                    else if (strcmp(cmd_sn.cmd_type, "MediaStatus") == 0)
+                        device_process_undo(cmd_sn.sn);
+                    else if (strcmp(cmd_sn.cmd_type, "Catalog") == 0)
+                        device_process_undo(cmd_sn.sn);
+                    else
+                        printf("unhandled control cmd: %s\n", cmd_sn.cmd_type);
                 }
-                else {
+                else
                     printf("not get cmd_name\n");
-                }
             }
             else if (MSG_IS_BYE(evt->request)) {
                 printf("got BYE message\n");
@@ -635,7 +666,24 @@ void device_process_request() {
             printf("got MESSAGE_ANSWERED: unhandled\n");
             break;
         }
-
+        case EXOSIP_IN_SUBSCRIPTION_NEW:{
+            printf("get EXOSIP_IN_SUBSCRIPTION_NEW \n");
+            if (MSG_IS_SUBSCRIBE(evt->request)) {
+                osip_body_t * body = NULL;
+                osip_message_get_body(evt->request, 0, &body);
+                device_send_response_ok(evt);
+                printf("%s\n",body->body);
+                cmd_sn_t cmd_sn = device_get_cmd(body->body);
+                printf("got new name: %s cmd: %s sn: %s\n", cmd_sn.cmd_name, cmd_sn.cmd_type, cmd_sn.sn);
+                if (strcmp(cmd_sn.cmd_name, "Query") == 0) {
+                    if (strcmp(cmd_sn.cmd_type, "Alarm") == 0)
+                        device_subscribe_alarm(evt,cmd_sn);
+                    else
+                        printf("unhandled cmd: %s\n", cmd_sn.cmd_type);
+                }
+            }
+            break;
+        }
         default: {
             printf("unhandled sip evt type%d\n", evt->type);
             break;
@@ -684,6 +732,7 @@ void device_process_catalog_query(char *sn) {
         osip_message_set_body(request, buffer, strlen(buffer));
         device_send_request(request);
     }
+    free(buffer); // 释放内存
 }
 
 void device_process_devicestatus_query(char *sn) {
@@ -729,6 +778,7 @@ void device_process_devicestatus_query(char *sn) {
         osip_message_set_body(request, buffer, strlen(buffer));
         device_send_request(request);
     }
+    free(buffer); // 释放内存
 }
 
 void device_process_deviceinfo_query(char *sn) {
@@ -765,6 +815,7 @@ void device_process_deviceinfo_query(char *sn) {
         osip_message_set_body(request, buffer, strlen(buffer));
         device_send_request(request);
     }
+    free(buffer); // 释放内存
 }
 
 void device_process_devicecontrol_query(char *sn) {
@@ -832,7 +883,195 @@ void device_process_presetquery_query(char *sn) {
     free(buffer);
 }
 
-void device_process_devicecontrol_control(char *ptz) {
+void device_process_devicecontrol_ptz_control(char *ptz) {
     PtzCommand cmd;
     parseCmdString(ptz, &cmd);
+}
+
+void device_process_devicecontrol_guard_control(cmd_sn_t cmd_sn, char *guard_status) {
+    char *buffer = NULL;
+    size_t buflen = 384;
+    size_t len = 0;
+
+    buffer = (char *)malloc(buflen);
+    if (buffer == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        return;
+    }
+
+    snprintf(buffer, buflen,
+        "<?xml version=\"1.0\" encoding=\"GB2312\"?>\r\n"
+        "<Response>\r\n"
+        "<CmdType>DeviceControl</CmdType>\r\n"
+        "<SN>%s</SN>\r\n"
+        "<DeviceID>%s</DeviceID>\r\n"
+        "<Result>OK</Result>\r\n"
+        "</Response>\r\n",
+        cmd_sn.sn, device_id);
+
+    printf("deviceinfo response: \n%s\n", buffer);
+
+    osip_message_t *request = device_create_msg("MESSAGE");
+    if (request != NULL) {
+        osip_message_set_content_type(request, "Application/MANSCDP+xml");
+        osip_message_set_body(request, buffer, strlen(buffer));
+        device_send_request(request);
+    }
+    free(buffer); // 释放内存
+
+    if (strcmp(guard_status, "SetGuard") == 0)
+        is_guard=1;
+    else
+        is_guard=0;
+
+    // 打开或创建文件以写入报警订阅状态
+    FILE *file = fopen("/oem/guard_status.txt", "w");
+    if (file == NULL) {
+        LOG_ERROR("open /oem/guard_status.txt failed\n");
+        return -1;
+    }
+
+    // 将报警订阅状态写入文件
+    fprintf(file, "guard_status=%d", is_guard);
+    LOG_INFO("本地报警订阅状态写入:\n", is_guard);
+    fclose(file);
+
+}
+
+void device_subscribe_alarm(eXosip_event_t *evt,cmd_sn_t cmd_sn){
+    char *buffer = NULL;
+    size_t buflen = 512;
+    size_t len = 0;
+
+    buffer = (char *)malloc(buflen);
+    if (buffer == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        return;
+    }
+
+    snprintf(buffer, buflen,
+        "<?xml version=\"1.0\" encoding=\"GB2312\"?>\r\n"
+        "<Response>\r\n"
+        "<CmdType>Alarm</CmdType>\r\n"
+        "<SN>%s</SN>\r\n"
+        "<DeviceID>%s</DeviceID>\r\n"
+        "<Result>OK</Result>\r\n"
+        "</Response>\r\n",
+        cmd_sn.sn, device_id);
+
+    printf("deviceinfo response: \n%s\n", buffer);
+
+    osip_message_t * request = NULL;
+    int status = eXosip_subscribe_build_initial_request(sip_context, &request, to_sip, from_sip, NULL,"presence",3600);
+    if (OSIP_SUCCESS != status) {
+        printf("build request failed:%d\n", status);
+    }
+    if (request != NULL) {
+        osip_message_set_content_type(request, "Application/MANSCDP+xml");
+        osip_message_set_body(request, buffer, strlen(buffer));
+        eXosip_subscribe_send_initial_request(sip_context,request);
+    }
+    free(buffer); // 释放内存
+}
+
+void device_process_broadcast_notify(eXosip_event_t *evt , cmd_sn_t cmd_sn) {
+
+}
+
+void device_process_undo(char *sn) {
+    printf("func undo!!!\n");
+}
+
+void device_process_record_info_query(cmd_sn_t cmd_sn) {
+
+}
+
+void device_send_alarm(alarmEvent event) {
+    if (!is_running || !is_guard) {
+        return;
+    }
+
+    if (event == EVENT_MD && get_motor_status()) {
+        return;
+    }
+
+    time_t current_time;
+    time(&current_time);
+
+    // 检查事件是否在设定时间内重复
+    if (difftime(current_time, alarm_Instance.last_event_time[event]) < ALARM_TIME_THRESHOLD) {
+        printf("Event %d ignored due to time threshold\n", event);
+        return;
+    }
+
+    struct tm* timeinfo = localtime(&current_time);
+
+    snprintf(alarm_Instance.time[event], sizeof(alarm_Instance.time[event]),
+             "%d-%02d-%02dT%02d:%02d:%02d",
+             (timeinfo->tm_year + 1900), (timeinfo->tm_mon + 1),
+             timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+
+    printf("alarm_Instance.time[%d]=%s\n", event, alarm_Instance.time[event]);
+
+    switch (event) {
+        case EVENT_MD:
+            printf("Event: Movement Detection\n");
+            snprintf(alarm_Instance.description[event], sizeof(alarm_Instance.description[event]), "移动侦测报警");
+            alarm_Instance.method = METHOD_VIDEO;
+            alarm_Instance.priority = 4;
+            break;
+        case EVENT_OD:
+            printf("Event: Obstruction Detection\n");
+            snprintf(alarm_Instance.description[event], sizeof(alarm_Instance.description[event]), "摄像头遮挡报警");
+            alarm_Instance.method = METHOD_DEVICE;
+            alarm_Instance.priority = 1;
+            break;
+        case EVENT_PERSON:
+            printf("Event: Person Detection\n");
+            snprintf(alarm_Instance.description[event], sizeof(alarm_Instance.description[event]), "人体检测报警");
+            alarm_Instance.method = METHOD_VIDEO;
+            alarm_Instance.priority = 3;
+            break;
+        default:
+            printf("Event: None or Unknown\n");
+            return;
+    }
+
+    char *buffer = NULL;
+    size_t buflen = 1024;
+
+    buffer = (char *)malloc(buflen);
+    if (buffer == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        return;
+    }
+
+    snprintf(buffer, buflen,
+        "<?xml version=\"1.0\"?>\r\n"
+        "<Notify>\r\n"
+        "<CmdType>Alarm</CmdType>\r\n"
+        "<SN>%d</SN>\r\n"                                     /*命令序列号*/
+        "<DeviceID>%s</DeviceID>\r\n"                         /*设备编码*/
+        "<AlarmPriority>%d</AlarmPriority>\r\n"               /*报警等级*/
+        "<AlarmTime>%s</AlarmTime>\r\n"                       /*报警时间*/
+        "<AlarmMethod>%d</AlarmMethod>\r\n"                   /*报警方式*/
+        "<AlarmDescription>%s</AlarmDescription>\r\n"         /*警情描述*/
+        "</Notify>\r\n",
+        get_sn(), device_id, alarm_Instance.priority, alarm_Instance.time[event],
+        alarm_Instance.method, alarm_Instance.description[event]);
+
+    printf("buffer=%s\n", buffer);
+
+    osip_message_t *request = device_create_msg("MESSAGE");
+    if (request != NULL) {
+        osip_message_set_content_type(request, "Application/MANSCDP+xml");
+        osip_message_set_body(request, buffer, strlen(buffer));
+        device_send_request(request);
+    }
+
+    // 更新上次事件发生时间
+    alarm_Instance.last_event_time[event] = current_time;
+    alarm_Instance.event = EVENT_NONE;
+
+    free(buffer);
 }
