@@ -5,6 +5,7 @@
 #include "video.h"
 #include "audio.h"
 #include "rockiva.h"
+#include "device.h"
 
 #define HAS_VO 0
 #if HAS_VO
@@ -656,7 +657,7 @@ static void *rkipc_get_vpss_bgr(void *arg) {
 }
 
 static void *rkipc_ivs_get_results(void *arg) {
-	LOG_DEBUG("#Start %s thread, arg:%p\n", __func__, arg);
+	LOG_INFO("#Start %s thread, arg:%p\n", __func__, arg);
 	prctl(PR_SET_NAME, "RkipcGetIVS", 0, 0, 0);
 	int ret, i;
 	IVS_RESULT_INFO_S stResults;
@@ -674,14 +675,17 @@ static void *rkipc_ivs_get_results(void *arg) {
 			resultscount++;
 			if (md == 1) {
 				if (stResults.pstResults->stMdInfo.u32Square > md_area_threshold) {
-					LOG_DEBUG("MD: md_area is %d, md_area_threshold is %d\n",
+					LOG_DEBUG("移动侦测 MD: md_area is %d, md_area_threshold is %d\n",
 					         stResults.pstResults->stMdInfo.u32Square, md_area_threshold);
+					device_send_alarm(EVENT_MD);
 				}
 			}
 			if (od == 1) {
 				if (stResults.s32ResultNum > 0) {
-					if (stResults.pstResults->stOdInfo.u32Flag)
-						LOG_DEBUG("OD flag:%d\n", stResults.pstResults->stOdInfo.u32Flag);
+					if (stResults.pstResults->stOdInfo.u32Flag){
+						LOG_DEBUG("遮挡报警 OD flag:%d\n", stResults.pstResults->stOdInfo.u32Flag);
+						device_send_alarm(EVENT_OD);
+					}
 				}
 			}
 			RK_MPI_IVS_ReleaseResults(0, &stResults);
@@ -1581,7 +1585,7 @@ int rkipc_pipe_2_init() {
 		if (ret)
 			LOG_ERROR("Bind VI and IVS error! ret=%#x\n", ret);
 		else
-			LOG_DEBUG("Bind VI and IVS success\n");
+			LOG_INFO("Bind VI and IVS success\n");
 	}
 	if (enable_npu) {
 		pthread_create(&get_vi_2_send_thread, NULL, rkipc_get_vi_2_send, NULL);

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 #include "rockiva.h"
 #include "common.h"
+#include "device.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -121,6 +122,7 @@ void rkba_callback(const RockIvaBaResult *result, const RockIvaExecuteStatus sta
 
 	// LOG_INFO("status is %d, frame %d, result->objNum is %d\n", status, result->frameId,
 	//          result->objNum);
+	LOG_DEBUG("result->objNum is %d\n", result->objNum);
 	rknn_list_push(rknn_list_, rkipc_get_curren_time_ms(), *result);
 	int size = rknn_list_size(rknn_list_);
 	if (size >= MAX_RKNN_LIST_NUM)
@@ -135,12 +137,16 @@ void rkba_callback(const RockIvaBaResult *result, const RockIvaExecuteStatus sta
 		          result->triggerObjects[i].objInfo.rect.bottomRight.y,
 		          result->triggerObjects[i].objInfo.objId,
 		          result->triggerObjects[i].objInfo.frameId,
-		          result->triggerObjects[i].objInfo.score, result->triggerObjects[i].objInfo.type);
-		// LOG_INFO("triggerRules is %d, ruleID is %d, triggerType is %d\n",
-		//          result->triggerObjects[i].triggerRules,
-		//          result->triggerObjects[i].firstTrigger.ruleID,
-		//          result->triggerObjects[i].firstTrigger.triggerType);
+		          result->triggerObjects[i].objInfo.score,
+				  result->triggerObjects[i].objInfo.type);
+		LOG_DEBUG("triggerRules is %d, ruleID is %d, triggerType is %d\n",
+		         result->triggerObjects[i].triggerRules,
+		         result->triggerObjects[i].firstTrigger.ruleID,
+		         result->triggerObjects[i].firstTrigger.triggerType);
 	}
+
+	// 国标报警
+	device_send_alarm(EVENT_PERSON);
 
 	// if (status == ROCKIVA_SUCCESS) {
 	//     CachedImageMem *cached_image_mem = get_image_from_cache(result->frameId);
@@ -179,7 +185,7 @@ void rockiva_frame_release_callback(const RockIvaReleaseFrames *releaseFrames, v
 }
 
 int rkipc_rockiva_init() {
-	LOG_INFO("begin\n");
+	LOG_INFO("begin npu\n");
 	RockIvaRetCode ret;
 	const char *model_type;
 	int rotation = rk_param_get_int("video.source:rotation", 0);

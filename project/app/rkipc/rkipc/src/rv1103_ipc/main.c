@@ -379,10 +379,10 @@ static void *motor_thread(void *arg) {
     motor_fd = open(MOTOR_DEV, O_RDWR);
     if (motor_fd == -1) {
         LOG_ERROR("open motor failed");
-        return -1;
+        return 0;
     }
 
-	// 云台位置初始化 
+	// 云台位置初始化
 	motor_init();
 
     while (g_main_run_) {
