@@ -1,49 +1,46 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-// 定义登录配置响应结构体
+// 登录配置服务器响应
 typedef struct {
-    int retCode;
     char ip[64];
     int tcpPort;
 } LoginConfigResponse;
 
-// 定义登录响应结构体
+// 登录服务器响应
 typedef struct {
-    int retCode;
-    char qrCode[256];
-    double recyclePrice;
-    int heartBeatInterval;
-    char turnOnLight[5];
-    char turnOffLight[5];
+    char qrCode[128];
+    double recyclePrice; // 价格，包含小数
+    int heartBeatInterval; // 时间，单位为秒
+    char turnOnLight[6]; // 时间字符串，格式为HHMM
+    char turnOffLight[6]; // 时间字符串，格式为HHMM
 } LoginResponse;
 
-// 定义心跳响应结构体
+// 心跳发送参数
 typedef struct {
-    int retCode;
-} HeartBeatResponse;
+    int signal;
+    double curWeight;
+} HeartBeatParams;
 
-// 定义开门响应结构体
+// 服务器开门请求
 typedef struct {
-    int retCode;
-    char transId[64];
-    int curWeight;
+    char transId[64];  // 事务ID
+    int openType;      // 开门类型 1：投递回收物 2：清理回收物
+} OpenDoorRequest;
+
+// 终端开门回复
+typedef struct {
+    int retCode;       // 0:成功，1：失败
+    char transId[64];  // 事务ID
+    double curWeight;  // 当前重量（千克）
 } OpenDoorResponse;
 
-// 定义关门响应结构体
+// 终端到服务器关门请求
 typedef struct {
-    int retCode;
-} CloseDoorResponse;
-
-// 定义超重响应结构体
-typedef struct {
-    int retCode;
-} OverweightResponse;
-
-// 定义溢满响应结构体
-typedef struct {
-    int retCode;
-} OverflowResponse;
+    char transId[32];   // 事务ID
+    double curWeight;   // 当前重量，单位千克
+    double changeWeight; // 改变重量，单位千克
+} CloseDoorRequest;
 
 // 定义上传响应结构体
 typedef struct {
@@ -58,19 +55,19 @@ int get_login_config(const char *iccid, const char *sn, const char *key, LoginCo
 int login(const char *imsi, const char *imei, const char *version, const char *iccid, const char *sn, LoginResponse *response);
 
 // 上传心跳
-int upload_heartbeat(const char *sn, int signal, double curWeight, HeartBeatResponse *response);
+int upload_heartbeat(const HeartBeatParams *params);
 
 // 开门
-int open_door(const char *sn, int box, OpenDoorResponse *response);
+int open_door(OpenDoorResponse *response);
 
 // 关门
-int close_door(const char *sn, int box, CloseDoorResponse *response);
+int close_door(CloseDoorRequest *request);
 
 // 上传超重
-int upload_overweight(const char *sn, int box, int overweight);
+int upload_overweight(int overweight);
 
 // 上传满载
-int upload_overflow(const char *sn, int box, int overflow);
+int upload_overflow(int overflow);
 
 // 上传文件通用函数
 int upload_file(const char *url, const char *sn, const char *iccid, const char *transId, const char *file_path, const char *file_type, int photoType, UploadResponse *response);
