@@ -69,6 +69,9 @@ int main(void)
     setup_ui(&guider_ui);
     events_init(&guider_ui);
 
+    module_init();
+    module_info();
+
     server();
 
     /*Handle LitlevGL tasks (tickless mode)*/

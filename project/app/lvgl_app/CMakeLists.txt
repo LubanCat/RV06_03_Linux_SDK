@@ -46,7 +46,7 @@ include_directories(
     generated/guider_customer_fonts
     generated/images
     generated/mPythonImages
-    server/
+    recycle/
 )
 
 # Define library directory
@@ -56,7 +56,8 @@ link_directories(${LIB_DIR})
 set(CXX_SRCS
     main.c
     lv_app/src/ui.c
-    server/server.c
+    recycle/server.c
+    recycle/module.c
     )
 
 file(GLOB_RECURSE GENERATED_SOURCES generated/*.c)
