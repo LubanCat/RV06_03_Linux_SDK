@@ -1,8 +1,11 @@
 /*
- * Copyright 2023 NXP
- * SPDX-License-Identifier: MIT
- * The auto-generated can only be used on NXP devices
- */
+* Copyright 2024 NXP
+* NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be used strictly in
+* accordance with the applicable license terms. By expressly accepting such terms or by downloading, installing,
+* activating and/or otherwise using the software, you are agreeing that you have read, and that you agree to
+* comply with and are bound by, such license terms.  If you do not agree to be bound by the applicable license
+* terms, then you may not retain, install, activate or otherwise use the software.
+*/
 
 #ifndef GUI_GUIDER_H
 #define GUI_GUIDER_H
@@ -10,115 +13,128 @@
 extern "C" {
 #endif
 
-#include "lvgl/lvgl.h"
-#include "guider_fonts.h"
+#include "lvgl.h"
 
 typedef struct
 {
-	lv_obj_t *screen;
-	lv_obj_t *screen_tileview_main;
-	lv_obj_t *screen_tileview_main_tileview;
-	lv_obj_t *screen_digital_clock;
-	lv_obj_t *screen_label_3;
-	lv_obj_t *screen_label_5;
-	lv_obj_t *screen_imgbtn_5;
-	lv_obj_t *screen_imgbtn_5_label;
-	lv_obj_t *screen_imgbtn_play;
-	lv_obj_t *screen_imgbtn_play_label;
-	lv_obj_t *screen_imgbtn_pre;
-	lv_obj_t *screen_imgbtn_pre_label;
-	lv_obj_t *screen_imgbtn_2;
-	lv_obj_t *screen_imgbtn_2_label;
-	lv_obj_t *screen_imgbtn_1;
-	lv_obj_t *screen_imgbtn_1_label;
-	lv_obj_t *screen_label_1;
-	lv_obj_t *screen_slider_main;
-	lv_obj_t *screen_imgbtn_weather;
-	lv_obj_t *screen_imgbtn_weather_label;
-	lv_obj_t *screen_tileview_main_NetWork;
-	lv_obj_t *screen_imgbtn_6;
-	lv_obj_t *screen_imgbtn_6_label;
-	lv_obj_t *screen_label_kbs;
-	lv_obj_t *screen_label_4;
-	lv_obj_t *screen_sw_vpn;
-	lv_obj_t *screen_label_2;
-	lv_obj_t *screen_label_cpu;
-	lv_obj_t *screen_chart_load;
-	lv_obj_t *screen_arc_mem;
-	lv_obj_t *screen_arc_cpu;
-	lv_obj_t *screen_imgbtn_8;
-	lv_obj_t *screen_imgbtn_8_label;
-	lv_obj_t *screen_imgbtn_7;
-	lv_obj_t *screen_imgbtn_7_label;
-	lv_obj_t *screen_line_div;
-	lv_obj_t *screen_tileview_main_Title;
-	lv_obj_t *screen_animimg_1;
+  
+	lv_obj_t *blank;
+	bool blank_del;
+	lv_obj_t *screen_login;
+	bool screen_login_del;
+	lv_obj_t *screen_login_recycle_name;
+	lv_obj_t *screen_login_label_1;
+	lv_obj_t *screen_login_price;
+	lv_obj_t *screen_login_label_3;
+	lv_obj_t *screen_login_clean_time;
+	lv_obj_t *screen_login_qrcode;
+	lv_obj_t *screen_login_label_5;
+	lv_obj_t *screen_login_weigth;
+	lv_obj_t *screen_login_full;
+	lv_obj_t *screen_login_label_8;
+	lv_obj_t *screen_login_label_9;
+	lv_obj_t *screen_login_net_status;
+	lv_obj_t *screen_login_singal;
+	lv_obj_t *screen_full;
+	bool screen_full_del;
+	lv_obj_t *screen_full_recycle_name;
+	lv_obj_t *screen_full_label_1;
+	lv_obj_t *screen_full_price;
+	lv_obj_t *screen_full_label_2;
+	lv_obj_t *screen_full_label_3;
+	lv_obj_t *screen_full_time;
+	lv_obj_t *screen_full_btn_1;
+	lv_obj_t *screen_full_btn_1_label;
+	lv_obj_t *screen_submit;
+	bool screen_submit_del;
+	lv_obj_t *screen_submit_recycle_name;
+	lv_obj_t *screen_submit_weigth;
+	lv_obj_t *screen_submit_time;
+	lv_obj_t *screen_submit_label_4;
+	lv_obj_t *screen_submit_money;
+	lv_obj_t *screen_submit_canvas_1;
+	lv_obj_t *screen_submit_close_door;
+	lv_obj_t *screen_submit_close_door_label;
+	lv_obj_t *screen_submit_continue_open;
+	lv_obj_t *screen_submit_continue_open_label;
+	lv_obj_t *screen_clean;
+	bool screen_clean_del;
+	lv_obj_t *screen_clean_label_2;
+	lv_obj_t *screen_clean_time;
+	lv_obj_t *screen_clean_quit;
+	lv_obj_t *screen_clean_quit_label;
+	lv_obj_t *screen_clean_label_5;
+	lv_obj_t *screen_clean_weigth;
+	lv_obj_t *screen_clean_open_clean;
+	lv_obj_t *screen_clean_open_clean_label;
+	lv_obj_t *screen_cleaning;
+	bool screen_cleaning_del;
+	lv_obj_t *screen_cleaning_label_2;
+	lv_obj_t *screen_cleaning_label_4;
+	lv_obj_t *screen_cleaning_label_5;
+	lv_obj_t *screen_cleaning_weigth;
+	lv_obj_t *screen_cleaned;
+	bool screen_cleaned_del;
+	lv_obj_t *screen_cleaned_label_2;
+	lv_obj_t *screen_cleaned_time;
+	lv_obj_t *screen_cleaned_label_5;
+	lv_obj_t *screen_cleaned_before_clean_weigth;
+	lv_obj_t *screen_cleaned_label_6;
+	lv_obj_t *screen_cleaned_label_9;
+	lv_obj_t *screen_cleaned_after_clean_weigth;
+	lv_obj_t *screen_cleaned_label_7;
+	lv_obj_t *screen_cleaned_label_12;
+	lv_obj_t *screen_cleaned_clean_weigth;
+	lv_obj_t *screen_cleaned_label_10;
 }lv_ui;
 
-void setup_ui(lv_ui *ui);
-extern lv_ui guider_ui;
-void setup_scr_screen(lv_ui *ui);
-void clock_count_12(int *hour, int *min, int *sec, char *meridiem);
-void clock_count_24(int *hour, int *min, int *sec);
+typedef void (*ui_setup_scr_t)(lv_ui * ui);
 
-#include "lvgl/src/extra/widgets/animimg/lv_animimg.h"
-LV_IMG_DECLARE(screen_animimg_1taikongren_00)
-LV_IMG_DECLARE(screen_animimg_1taikongren_01)
-LV_IMG_DECLARE(screen_animimg_1taikongren_02)
-LV_IMG_DECLARE(screen_animimg_1taikongren_03)
-LV_IMG_DECLARE(screen_animimg_1taikongren_04)
-LV_IMG_DECLARE(screen_animimg_1taikongren_05)
-LV_IMG_DECLARE(screen_animimg_1taikongren_06)
-LV_IMG_DECLARE(screen_animimg_1taikongren_07)
-LV_IMG_DECLARE(screen_animimg_1taikongren_08)
-LV_IMG_DECLARE(screen_animimg_1taikongren_09)
-LV_IMG_DECLARE(screen_animimg_1taikongren_10)
-LV_IMG_DECLARE(screen_animimg_1taikongren_11)
-LV_IMG_DECLARE(screen_animimg_1taikongren_12)
-LV_IMG_DECLARE(screen_animimg_1taikongren_13)
-LV_IMG_DECLARE(screen_animimg_1taikongren_14)
-LV_IMG_DECLARE(screen_animimg_1taikongren_15)
-LV_IMG_DECLARE(screen_animimg_1taikongren_16)
-LV_IMG_DECLARE(screen_animimg_1taikongren_17)
-LV_IMG_DECLARE(screen_animimg_1taikongren_18)
-LV_IMG_DECLARE(screen_animimg_1taikongren_19)
-LV_IMG_DECLARE(screen_animimg_1taikongren_20)
-LV_IMG_DECLARE(screen_animimg_1taikongren_21)
-LV_IMG_DECLARE(screen_animimg_1taikongren_22)
-LV_IMG_DECLARE(screen_animimg_1taikongren_23)
-LV_IMG_DECLARE(screen_animimg_1taikongren_24)
-LV_IMG_DECLARE(screen_animimg_1taikongren_25)
-LV_IMG_DECLARE(screen_animimg_1taikongren_26)
-LV_IMG_DECLARE(screen_animimg_1taikongren_27)
-LV_IMG_DECLARE(screen_animimg_1taikongren_28)
-LV_IMG_DECLARE(screen_animimg_1taikongren_29)
-LV_IMG_DECLARE(screen_animimg_1taikongren_30)
-LV_IMG_DECLARE(screen_animimg_1taikongren_31)
-LV_IMG_DECLARE(screen_animimg_1taikongren_32)
-LV_IMG_DECLARE(screen_animimg_1taikongren_33)
-LV_IMG_DECLARE(screen_animimg_1taikongren_34)
-LV_IMG_DECLARE(screen_animimg_1taikongren_35)
-LV_IMG_DECLARE(screen_animimg_1taikongren_36)
-LV_IMG_DECLARE(screen_animimg_1taikongren_37)
-LV_IMG_DECLARE(screen_animimg_1taikongren_38)
-LV_IMG_DECLARE(screen_animimg_1taikongren_39)
-LV_IMG_DECLARE(screen_animimg_1taikongren_40)
-LV_IMG_DECLARE(screen_animimg_1taikongren_41)
-LV_IMG_DECLARE(screen_animimg_1taikongren_42)
-LV_IMG_DECLARE(screen_animimg_1taikongren_43)
-LV_IMG_DECLARE(screen_animimg_1taikongren_44)
-LV_IMG_DECLARE(screen_animimg_1taikongren_45)
-LV_IMG_DECLARE(screen_animimg_1taikongren_46)
-LV_IMG_DECLARE(screen_animimg_1taikongren_47)
-LV_IMG_DECLARE(_btn_play_alpha_100x100);
-LV_IMG_DECLARE(_btn_next_alpha_60x60);
-LV_IMG_DECLARE(_electric_outlet_alpha_110x110);
-LV_IMG_DECLARE(_weather_alpha_140x140);
-LV_IMG_DECLARE(_virtual_alpha_100x100);
-LV_IMG_DECLARE(_webcam_alpha_100x100);
-LV_IMG_DECLARE(_wifi_router_alpha_100x100);
-LV_IMG_DECLARE(_btn_prev_alpha_60x60);
-LV_IMG_DECLARE(_global_network_alpha_100x100);
+void ui_init_style(lv_style_t * style);
+
+void ui_load_scr_animation(lv_ui *ui, lv_obj_t ** new_scr, bool new_scr_del, bool * old_scr_del, ui_setup_scr_t setup_scr,
+                           lv_scr_load_anim_t anim_type, uint32_t time, uint32_t delay, bool is_clean, bool auto_del);
+
+void ui_move_animation(void * var, int32_t duration, int32_t delay, int32_t x_end, int32_t y_end, lv_anim_path_cb_t path_cb,
+                       uint16_t repeat_cnt, uint32_t repeat_delay, uint32_t playback_time, uint32_t playback_delay,
+                       lv_anim_start_cb_t start_cb, lv_anim_ready_cb_t ready_cb, lv_anim_deleted_cb_t deleted_cb);
+
+void ui_scale_animation(void * var, int32_t duration, int32_t delay, int32_t width, int32_t height, lv_anim_path_cb_t path_cb,
+                        uint16_t repeat_cnt, uint32_t repeat_delay, uint32_t playback_time, uint32_t playback_delay,
+                        lv_anim_start_cb_t start_cb, lv_anim_ready_cb_t ready_cb, lv_anim_deleted_cb_t deleted_cb);
+
+void ui_img_zoom_animation(void * var, int32_t duration, int32_t delay, int32_t zoom, lv_anim_path_cb_t path_cb,
+                           uint16_t repeat_cnt, uint32_t repeat_delay, uint32_t playback_time, uint32_t playback_delay,
+                           lv_anim_start_cb_t start_cb, lv_anim_ready_cb_t ready_cb, lv_anim_deleted_cb_t deleted_cb);
+
+void ui_img_rotate_animation(void * var, int32_t duration, int32_t delay, lv_coord_t x, lv_coord_t y, int32_t rotate,
+                   lv_anim_path_cb_t path_cb, uint16_t repeat_cnt, uint32_t repeat_delay, uint32_t playback_time,
+                   uint32_t playback_delay, lv_anim_start_cb_t start_cb, lv_anim_ready_cb_t ready_cb, lv_anim_deleted_cb_t deleted_cb);
+
+void init_scr_del_flag(lv_ui *ui);
+
+void setup_ui(lv_ui *ui);
+
+
+extern lv_ui guider_ui;
+
+
+void setup_scr_blank(lv_ui *ui);
+void setup_scr_screen_login(lv_ui *ui);
+void setup_scr_screen_full(lv_ui *ui);
+void setup_scr_screen_submit(lv_ui *ui);
+void setup_scr_screen_clean(lv_ui *ui);
+void setup_scr_screen_cleaning(lv_ui *ui);
+void setup_scr_screen_cleaned(lv_ui *ui);
+
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN_24)
+LV_FONT_DECLARE(lv_font_montserratMedium_16)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN_84)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
+LV_FONT_DECLARE(lv_font_montserratMedium_12)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN_85)
+
 
 #ifdef __cplusplus
 }
