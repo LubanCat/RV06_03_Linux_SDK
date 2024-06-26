@@ -17,13 +17,16 @@
 #define CONFIG_SERVER_PORT 9096
 
 int sock;
+// 声明互斥锁
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 LoginConfigResponse loginConfigResponse;
 LoginResponse loginResponse;
 OpenDoorRequest openDoorRequest;
 OpenDoorResponse openDoorResponse;
 CloseDoorRequest closeDoorRequest;
-
+UploadResponse photoUploadResponse;
+UploadResponse videoUploadResponse;
 
 // 获取登录配置
 int get_login_config(const char *iccid, const char *sn, const char *key, LoginConfigResponse *response) {
@@ -58,6 +61,9 @@ int get_login_config(const char *iccid, const char *sn, const char *key, LoginCo
     cJSON_AddStringToObject(root, "key", key);
     char *json_str = cJSON_PrintUnformatted(root);
 
+    // 锁定互斥锁
+    pthread_mutex_lock(&mutex);
+
     // 发送登录配置请求
     printf("Sending loginConfig request: %s\n", json_str);
     send(sock, json_str, strlen(json_str), 0);
@@ -65,7 +71,10 @@ int get_login_config(const char *iccid, const char *sn, const char *key, LoginCo
     cJSON_Delete(root);
 
     // 接收服务器响应
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         close(sock);
         return -1;
@@ -151,6 +160,9 @@ int login(const char *imsi, const char *imei, const char *version, const char *i
     cJSON_AddStringToObject(root, "sn", sn);
     char *json_str = cJSON_PrintUnformatted(root);
 
+    // 锁定互斥锁
+    pthread_mutex_lock(&mutex);
+
     // 发送登录请求
     printf("Sending login request: %s\n", json_str);
     send(sock, json_str, strlen(json_str), 0);
@@ -158,7 +170,10 @@ int login(const char *imsi, const char *imei, const char *version, const char *i
     cJSON_Delete(root);
 
     // 接收服务器响应
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         return -1;
     } else {
@@ -181,22 +196,42 @@ int login(const char *imsi, const char *imei, const char *version, const char *i
 
         switch (retCode->valueint) {
             case 0: {
-                // cJSON *qrCode = cJSON_GetObjectItem(response_json, "qrCode");
+                cJSON *qrCode = cJSON_GetObjectItem(response_json, "qrCode");
                 cJSON *recyclePrice = cJSON_GetObjectItem(response_json, "recyclePrice");
                 cJSON *heartBeatInterval = cJSON_GetObjectItem(response_json, "heartBeatInterval");
                 cJSON *turnOnLight = cJSON_GetObjectItem(response_json, "turnOnLight");
                 cJSON *turnOffLight = cJSON_GetObjectItem(response_json, "turnOffLight");
 
-                // if (qrCode && recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
-                if (recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
-                    // strncpy(response->qrCode, qrCode->valuestring, sizeof(response->qrCode) - 1);
-                    // response->qrCode[sizeof(response->qrCode) - 1] = '\0';
+                if (qrCode && recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
+                // if (recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
+                    strncpy(response->qrCode, qrCode->valuestring, sizeof(response->qrCode) - 1);
+                    response->qrCode[sizeof(response->qrCode) - 1] = '\0';
                     response->recyclePrice = atof(recyclePrice->valuestring);
                     response->heartBeatInterval = atoi(heartBeatInterval->valuestring);
-                    strncpy(response->turnOnLight, turnOnLight->valuestring, sizeof(response->turnOnLight) - 1);
-                    response->turnOnLight[sizeof(response->turnOnLight) - 1] = '\0';
-                    strncpy(response->turnOffLight, turnOffLight->valuestring, sizeof(response->turnOffLight) - 1);
-                    response->turnOffLight[sizeof(response->turnOffLight) - 1] = '\0';
+
+                    // 解析 turnOnLight 和 turnOffLight 时间字符串
+                    memset(&response->turnOnLight, 0, sizeof(struct tm));
+                    memset(&response->turnOffLight, 0, sizeof(struct tm));
+
+                    if (sscanf(turnOnLight->valuestring, "%2d%2d", &response->turnOnLight.tm_hour, &response->turnOnLight.tm_min) != 2) {
+                        printf("Failed to parse turnOnLight time\n");
+                        cJSON_Delete(response_json);
+                        return -1;
+                    }
+
+                    if (sscanf(turnOffLight->valuestring, "%2d%2d", &response->turnOffLight.tm_hour, &response->turnOffLight.tm_min) != 2) {
+                        printf("Failed to parse turnOffLight time\n");
+                        cJSON_Delete(response_json);
+                        return -1;
+                    }
+
+                    // 打印获取的时间
+                    char turnOnLightBuf[6], turnOffLightBuf[6];
+                    strftime(turnOnLightBuf, sizeof(turnOnLightBuf), "%H:%M", &response->turnOnLight);
+                    strftime(turnOffLightBuf, sizeof(turnOffLightBuf), "%H:%M", &response->turnOffLight);
+
+                    printf("Turn On Light Time: %s\n", turnOnLightBuf);
+                    printf("Turn Off Light Time: %s\n", turnOffLightBuf);
                 } else {
                     printf("Invalid response: missing expected fields\n");
                     cJSON_Delete(response_json);
@@ -223,7 +258,7 @@ int login(const char *imsi, const char *imei, const char *version, const char *i
     return 0;
 }
 
-// 上传心跳
+// 心跳上传函数
 int upload_heartbeat(const HeartBeatParams *params) {
     char send_buf[MAX_BUF_SIZE], recv_buf[MAX_BUF_SIZE];
     int recv_len;
@@ -235,15 +270,20 @@ int upload_heartbeat(const HeartBeatParams *params) {
     cJSON_AddNumberToObject(root, "curWeight", params->curWeight);
     char *json_str = cJSON_PrintUnformatted(root);
 
+    // 锁定互斥锁
+    pthread_mutex_lock(&mutex);
+
     // 发送心跳上传请求
     printf("Sending heartBeat request: %s\n", json_str);
     send(sock, json_str, strlen(json_str), 0);
     free(json_str);
     cJSON_Delete(root);
 
-    sleep(1);
     // 接收服务器响应
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         return -1;
     } else {
@@ -264,11 +304,13 @@ int upload_heartbeat(const HeartBeatParams *params) {
             return -1;
         }
         
-        if (retCode->valueint == 0 ){
-            cJSON_Delete(response_json);
-            return 0;
+        int result = -1;
+        if (retCode->valueint == 0) {
+            result = retCode->valueint;
         }
+
         cJSON_Delete(response_json);
+        return result;
     }
     return -1;
 }
@@ -311,8 +353,14 @@ int open_door(OpenDoorResponse *response) {
     char send_buf[MAX_BUF_SIZE], recv_buf[MAX_BUF_SIZE];
     int recv_len;
 
-    // 接收服务器开门请求
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    pthread_mutex_lock(&mutex); // 锁定互斥锁
+
+    // 接收服务器响应
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         return -1;
     } else {
@@ -351,11 +399,13 @@ int open_door(OpenDoorResponse *response) {
             cJSON_AddNumberToObject(root, "curWeight", response->curWeight);
             char *json_str = cJSON_PrintUnformatted(root);
 
+            pthread_mutex_lock(&mutex); // 锁定互斥锁
             // Send response
             printf("Sending openDoor response: %s\n", json_str);
             send(sock, json_str, strlen(json_str), 0);
             free(json_str);
             cJSON_Delete(root);
+            pthread_mutex_unlock(&mutex);  // 释放互斥锁
 
             cJSON_Delete(request_json);
             return 0;
@@ -383,6 +433,9 @@ int close_door(CloseDoorRequest *request) {
     cJSON_AddNumberToObject(root, "changeWeight", request->changeWeight);
     char *json_str = cJSON_PrintUnformatted(root);
 
+    // 锁定互斥锁
+    pthread_mutex_lock(&mutex);
+
     // 发送关门请求
     printf("Sending closeDoor request: %s\n", json_str);
     send(sock, json_str, strlen(json_str), 0);
@@ -390,7 +443,10 @@ int close_door(CloseDoorRequest *request) {
     cJSON_Delete(root);
 
     // 接收服务器响应
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         return -1;
     } else {
@@ -431,6 +487,9 @@ int upload_overweight(int curWeight) {
     cJSON_AddNumberToObject(root, "curWeight", curWeight);
     char *json_str = cJSON_PrintUnformatted(root);
 
+    // 锁定互斥锁
+    pthread_mutex_lock(&mutex);
+
     // 发送超重上传请求
     printf("Sending overweight request: %s\n", json_str);
     send(sock, json_str, strlen(json_str), 0);
@@ -438,7 +497,10 @@ int upload_overweight(int curWeight) {
     cJSON_Delete(root);
 
     // 接收服务器响应
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         return -1;
     } else {
@@ -479,6 +541,9 @@ int upload_overflow(int curCapacity) {
     cJSON_AddNumberToObject(root, "curCapacity", curCapacity);
     char *json_str = cJSON_PrintUnformatted(root);
 
+    // 锁定互斥锁
+    pthread_mutex_lock(&mutex);
+
     // 发送满载上传请求
     printf("Sending overflow request: %s\n", json_str);
     send(sock, json_str, strlen(json_str), 0);
@@ -486,7 +551,10 @@ int upload_overflow(int curCapacity) {
     cJSON_Delete(root);
 
     // 接收服务器响应
-    if ((recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0)) < 0) {
+    recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    pthread_mutex_unlock(&mutex);  // 释放互斥锁
+
+    if (recv_len < 0) {
         perror("Receive failed");
         return -1;
     } else {
@@ -543,6 +611,8 @@ int upload_file(const char *url, const char *sn, const char *iccid, const char *
     curl = curl_easy_init();
 
     if (curl) {
+        printf("Initializing curl...\n");
+
         form = curl_mime_init(curl);
 
         field = curl_mime_addpart(form);
@@ -566,13 +636,16 @@ int upload_file(const char *url, const char *sn, const char *iccid, const char *
         field = curl_mime_addpart(form);
         curl_mime_name(field, "file");
         curl_mime_filedata(field, file_path);
+        printf("Added form part: file = %s\n", file_path);
 
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
+        printf("Set URL: %s\n", url);
 
         // 捕获返回数据
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)recv_buf);
+        printf("Set write function and buffer\n");
 
         res = curl_easy_perform(curl);
 
@@ -583,7 +656,7 @@ int upload_file(const char *url, const char *sn, const char *iccid, const char *
             curl_global_cleanup();
             return -1;
         } else {
-            printf("%s uploaded successfully.\n", file_type);
+            printf("File uploaded successfully. Server response: %s\n", recv_buf);
 
             // 使用 cJSON 解析返回消息
             cJSON *json = cJSON_Parse(recv_buf);
@@ -600,6 +673,7 @@ int upload_file(const char *url, const char *sn, const char *iccid, const char *
                 response->code = code->valueint;
                 strncpy(response->msg, msg->valuestring, sizeof(response->msg) - 1);
                 response->msg[sizeof(response->msg) - 1] = '\0';
+                printf("Parsed response: code = %d, msg = %s\n", response->code, response->msg);
             } else {
                 fprintf(stderr, "Invalid JSON response\n");
                 cJSON_Delete(json);
@@ -637,6 +711,7 @@ int upload_video(const char *url, const char *sn, const char *iccid, const char 
 #include "server.h"
 
 int server() {
+    int ret;
     // 设备信息
     const char *iccid = "1234567890";
     const char *sn = "DEVICE123";
@@ -646,11 +721,11 @@ int server() {
     const char *version = "1.0";
 
     // 文件路径
-    const char *photo_file = "/path/to/photo.jpg";
-    const char *video_file = "/path/to/video.mp4";
+    const char *photo_file = "/root/photo.jpg";
+    const char *video_file = "/root/video.mp4";
 
     // 获取登录配置
-    int ret = get_login_config(iccid, sn, key, &loginConfigResponse);
+    ret = get_login_config(iccid, sn, key, &loginConfigResponse);
     if (ret == 0) {
         printf("Login configuration:\n");
         printf("IP: %s\n", loginConfigResponse.ip);
@@ -662,10 +737,20 @@ int server() {
     }
 
     struct sockaddr_in server_addr;
+    struct timeval timeout;
+    timeout.tv_sec = 2;  // 超时时间 秒
+    timeout.tv_usec = 0; // 微秒设置
 
     // 创建套接字
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Socket creation failed");
+        return -1;
+    }
+
+    // 设置接收超时时间
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("Set socket receive timeout failed");
+        close(sock);
         return -1;
     }
 
@@ -685,11 +770,9 @@ int server() {
     ret = login(imsi, imei, version, iccid, sn, &loginResponse);
     if (ret == 0) {
         printf("Login successful:\n");
-        // printf("QR Code: %s\n", loginResponse.qrCode);
+        printf("QR Code: %s\n", loginResponse.qrCode);
         printf("Recycle Price: %.2f\n", loginResponse.recyclePrice);
         printf("Heartbeat Interval: %d seconds\n", loginResponse.heartBeatInterval);
-        printf("Turn on Light Time: %s\n", loginResponse.turnOnLight);
-        printf("Turn off Light Time: %s\n", loginResponse.turnOffLight);
         printf("\n");
     } else {
         printf("Login failed.\n");
@@ -697,21 +780,21 @@ int server() {
         return -1;
     }
 
-    // // 创建心跳线程
-    // pthread_t heartbeat_thread_id;
-    // if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) {
-    //     perror("Failed to create heartbeat thread");
-    //     return -1;
-    // }
+    // 创建心跳线程
+    pthread_t heartbeat_thread_id;
+    if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) {
+        perror("Failed to create heartbeat thread");
+        return -1;
+    }
 
-    // // 下发开门
-    // if (open_door(&OpenDoorRequest) == 0) {
-    //     printf("Open door process completed\n");
-    //     printf("transId: %s\n", OpenDoorRequest.transId);
-    //     printf("openType: %d\n", OpenDoorRequest.openType);
-    // } else {
-    //     printf("Open door process failed\n");
-    // }
+    // 下发开门
+    if (open_door(&openDoorRequest) == 0) {
+        printf("Open door process completed\n");
+        printf("transId: %s\n", openDoorRequest.transId);
+        printf("openType: %d\n", openDoorRequest.openType);
+    } else {
+        printf("Open door process failed\n");
+    }
     
     // 上传关门
     ret = close_door(&closeDoorRequest); // 假设箱子编号为1
@@ -743,26 +826,24 @@ int server() {
         printf("\n");
     }
 
-    // while (1);
-    // // 上传照片
-    // UploadResponse photoUploadResponse;
-    // ret = upload_photo("http://serverIp:port/api/device/upload/photo", sn, iccid, "trans123", 1, photo_file, &photoUploadResponse);
-    // if (ret == 0) {
-    //     printf("Photo uploaded successfully. Server response: %s\n", photoUploadResponse.msg);
-    // } else {
-    //     printf("Failed to upload photo.\n");
-    //     return 1;
-    // }
+    // 上传照片
+    ret = upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", sn, iccid, "trans123", 1, photo_file, &photoUploadResponse);
+    if (ret == 0) {
+        printf("Photo uploaded successfully. Server response: %s\n", photoUploadResponse.msg);
+    } else {
+        printf("Failed to upload photo.\n");
+        return 1;
+    }
 
-    // // 上传视频
-    // UploadResponse videoUploadResponse;
+    // 上传视频
     // ret = upload_video("http://serverIp:port/api/device/upload/video", sn, iccid, "trans123", video_file, &videoUploadResponse);
-    // if (ret == 0) {
-    //     printf("Video uploaded successfully. Server response: %s\n", videoUploadResponse.msg);
-    // } else {
-    //     printf("Failed to upload video.\n");
-    //     return 1;
-    // }
+    ret = upload_video("http://api.recycling.maizucity.com/api/device/upload/video", sn, iccid, "trans123", video_file, &videoUploadResponse);
+    if (ret == 0) {
+        printf("Video uploaded successfully. Server response: %s\n", videoUploadResponse.msg);
+    } else {
+        printf("Failed to upload video.\n");
+        return 1;
+    }
 
     // pthread_join(heartbeat_thread_id, NULL);
 

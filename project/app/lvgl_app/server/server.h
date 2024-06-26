@@ -1,6 +1,9 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include <time.h>
+
+
 // 登录配置服务器响应
 typedef struct {
     char ip[64];
@@ -12,8 +15,8 @@ typedef struct {
     char qrCode[128];
     double recyclePrice; // 价格，包含小数
     int heartBeatInterval; // 时间，单位为秒
-    char turnOnLight[6]; // 时间字符串，格式为HHMM
-    char turnOffLight[6]; // 时间字符串，格式为HHMM
+    struct tm turnOnLight;
+    struct tm turnOffLight;
 } LoginResponse;
 
 // 心跳发送参数
