@@ -537,9 +537,12 @@ int open_door(int curCapacity) {
         int i = 20;
         int clearing = 0;
         printf("开门: openType=%d\n", openDoor.openType);
-        set_screen_clean(&guider_ui.screen_login_del,20,99.9);
+        // 清运操作页面1
+        set_screen_clean(&guider_ui.screen_login_del,i,sub_weight);
         // LVGL_UI 清运页面 清运总重量，开门按钮99s倒计时
         for (; i > 0; i--) {
+            // 更新清运界面倒计时
+
             printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i, sub_weight);
             // 获取按键状态，开门按钮开门
             int clear_key = get_clear_key();
@@ -554,9 +557,13 @@ int open_door(int curCapacity) {
 
         // 判断是否进入清运状态，开门，显示正在清运
         if (clearing == 1) {
-            set_screen_cleaning(&guider_ui.screen_login_del,99.9);
+            // 清运操作页面2
+            set_screen_cleaning(&guider_ui.screen_login_del,sub_weight);
             while (1) {
-                printf("清运中: 当前重量%.2fKG\n", get_current_weight());
+                double cur_weight = get_current_weight();
+                // 清运操作页面2 更新当前质量
+
+                printf("清运中: 当前重量%.2fKG\n", cur_weight);
                 int close_key = get_close_key();
                 if (close_key) {
                     set_clear_door(0);
@@ -570,6 +577,8 @@ int open_door(int curCapacity) {
         if (clearing == 2) {
             double cur_weight = get_current_weight();
             double diff_weight = sub_weight - cur_weight;
+            // 更新清运完成页面 清运前重量 清运后重量 清运重量
+            
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = 10; i > 0; i--) { // 重新初始化倒计时
                 printf("清运完成: %d秒后返回登录界面\n", i);
