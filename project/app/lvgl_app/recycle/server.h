@@ -75,9 +75,9 @@ int upload_photo(const char *url, int photoType, const char *file_path);
 int upload_video(const char *url, const char *file_path);
 
 
-int server();
+int server_start();
 
-
+int get_overflow_status();
 double get_current_weight();
 int send_tcp_packet(char *buf,int size);
 void *tcp_receiver(void *arg);

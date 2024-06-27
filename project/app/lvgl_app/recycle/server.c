@@ -36,7 +36,7 @@ typedef struct {
 } message_queue_t;
 
 // 设备信息
-char *sn = "DEVICE123";
+char *sn = "00016000000001";
 char *key = "device_key";
 char *version = "1.0";
 
@@ -60,6 +60,40 @@ HeartBeat heartBeat;
 double get_current_weight() {
     // 从硬件或其他数据源获取当前重量
     return 12.5; // 示例值
+}
+
+int get_overflow_status() {
+    return 2;
+}
+
+int get_clear_key(){
+    printf("按键：清运开门\n");
+    int a ;
+    scanf("%d",&a);
+    return a;
+}
+
+int get_close_key(){
+    printf("按键：关门\n");
+    int a ;
+    scanf("%d",&a);
+    return a;
+}
+
+int get_post_key(){
+    printf("按键：继续投递\n");
+    int a ;
+    scanf("%d",&a);
+    return a;
+}
+
+
+int set_clear_door(int status){
+    return 0;
+}
+
+int set_post_door(int status){
+    return 0;
 }
 
 int send_tcp_packet(char *buf,int size){
@@ -299,7 +333,7 @@ void *tcp_receiver(void *arg) {
     printf("tcp_receiver\n");
     while (1) {
         recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
-        printf("sock = %d ,recv_len=%d\n ",sock,recv_len);
+        printf("sock = %d ,recv_len=%d\n",sock,recv_len);
         if (recv_len < 0) {
             printf("wrong\n");
         } else {
@@ -329,7 +363,6 @@ void *tcp_receiver(void *arg) {
                 strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
                 trans_Id[sizeof(trans_Id) - 1] = '\0';
                 openDoor.openType = openType->valueint;
-
                 openDoor.curWeight = get_current_weight();  // Example function to get current weight
                 cJSON_Delete(response_json);
 
@@ -409,7 +442,7 @@ void *tcp_receiver(void *arg) {
 void *heartbeat_thread(void *arg) {
 
     while (1) {
-        heartBeat.signal = module_signal();
+        // heartBeat.signal = module_signal();
         heartBeat.curWeight = get_current_weight();
 
         // 发送心跳包
@@ -442,19 +475,105 @@ void *heartbeat_thread(void *arg) {
 
         // 休眠
         // sleep(loginRes.heartBeatInterval);
-        sleep(5);
+        sleep(60);
     }
 
     return NULL;
 }
 
 // 开门
-int open_door() {
+int open_door(int curCapacity) {
     message_queue_t msg;
     if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OPENDOOR, 0) == -1) {
         perror("msgrcv failed");
         exit(EXIT_FAILURE);
     }
+    double sub_weight =  get_current_weight();
+    if (openDoor.openType == 1) {
+        printf("main backloop:openDoor.openType=%d\n", openDoor.openType);
+        if (curCapacity == 3) {
+            // LVGL_UI 回收柜已满，10s后返回登录界面
+            printf("当前回收柜已满，请清运后再投递\n");
+            for (int i = 10; i > 0; i--) {
+                printf("倒计时: %d秒 后返回登录界面\n", i);
+                sleep(1);
+            }
+        } else {
+            int i = 20;
+            printf("可回收物仓门已打开，请尽快投递\n");
+            set_post_door(1);
+            // LVGL_UI 投递页面,投递重量、金额，99s倒计时
+            for (; i > 0; i--) {
+                printf("倒计时: %d秒 后关闭可回收物仓门\n", i);
+
+                // 获取按键状态，关门，发送关门消息个服务器，跳出循环
+                int close_key = get_close_key();
+                if (close_key) {
+                    printf("按键：关闭仓门 post_key=%d\n", close_key);
+                    set_post_door(0);
+                    break;
+                }
+
+                // 超重判断 ，超重发超重消息给服务器，LVGL提示超重
+
+                if (i <= 10) {
+                    // 投递重量、金额，10s倒计时
+                    // 获取按键状态，继续投递按下i=99
+                    int post_key = get_post_key();
+                    if (post_key) {
+                        printf("按键：继续投递 post_key=%d\n", post_key);
+                        i = 99;
+                    }
+                }
+                sleep(1);
+            }
+        }
+        openDoor.openType = 0;
+    } else if (openDoor.openType == 2) {
+        int i = 20;
+        int clearing = 0;
+        printf("开门: openType=%d\n", openDoor.openType);
+        // LVGL_UI 清运页面 清运总重量，开门按钮99s倒计时
+        for (; i > 0; i--) {
+            printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i, sub_weight);
+            // 获取按键状态，开门按钮开门
+            int clear_key = get_clear_key();
+            if (clear_key) {
+                printf("按键：开启清运门 clear_key=%d\n", clear_key);
+                set_clear_door(1);
+                clearing = 1;
+                break;
+            }
+            sleep(1);
+        }
+
+        // 判断是否进入清运状态，开门，显示正在清运
+        if (clearing == 1) {
+            while (1) {
+                printf("清运中: 当前重量%.2fKG\n", get_current_weight());
+                int close_key = get_close_key();
+                if (close_key) {
+                    set_clear_door(0);
+                    clearing = 2;
+                    break;
+                }
+                sleep(1); // 避免CPU空转
+            }
+        }
+
+        if (clearing == 2) {
+            double cur_weight = get_current_weight();
+            double diff_weight = sub_weight - cur_weight;
+            printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
+            for (i = 10; i > 0; i--) { // 重新初始化倒计时
+                printf("清运完成: %d秒后返回登录界面\n", i);
+                sleep(1);
+            }
+        }
+        // 关门,发关门消息
+        openDoor.openType = 0;
+    }
+
     return 0;
 }
 
@@ -667,25 +786,26 @@ int upload_video(const char *url, const char *file_path) {
     return upload_file(url, file_path, "video", 0);
 }
 
-int server() {
+int server_start() {
     int ret;
 
     // 获取登录配置
-    ret = get_login_config(&loginConfig);
-    if (ret == 0) {
-        printf("Login configuration:\n");
-        printf("IP: %s\n", loginConfig.ip);
-        printf("TCP Port: %d\n", loginConfig.tcpPort);
-        printf("\n");
-    } else {
-        printf("Failed to get login configuration.\n");
-        return 1;
+    while (1) {
+        // 获取登录配置
+        ret = get_login_config(&loginConfig);
+        if (ret == 0) {
+            printf("Login configuration:\n");
+            printf("IP: %s\n", loginConfig.ip);
+            printf("TCP Port: %d\n", loginConfig.tcpPort);
+            printf("\n");
+            break; // 成功获取配置后退出循环
+        } else {
+            printf("Failed to get login configuration. Retrying in 60 seconds...\n");
+            sleep(60); // 获取失败时，等待60秒后重试
+        }
     }
 
     struct sockaddr_in server_addr;
-    struct timeval timeout;
-    timeout.tv_sec = 2;  // 超时时间 秒
-    timeout.tv_usec = 0; // 微秒设置
 
     // 创建套接字
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -699,13 +819,6 @@ int server() {
         exit(EXIT_FAILURE);
     }
 
-    // // 设置接收超时时间
-    // if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-    //     perror("Set socket receive timeout failed");
-    //     close(sock);
-    //     return -1;
-    // }
-
     // 设置服务器地址
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(loginConfig.tcpPort);
@@ -718,18 +831,20 @@ int server() {
         return -1;
     }
 
-    // 登录
-    ret = server_login();
-    if (ret == 0) {
-        printf("Login successful:\n");
-        printf("QR Code: %s\n", loginRes.qrCode);
-        printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
-        printf("Heartbeat Interval: %d seconds\n", loginRes.heartBeatInterval);
-        printf("\n");
-    } else {
-        printf("Login failed.\n");
-        close(sock);
-        return -1;
+    // 登录服务器
+    while (1) {
+        ret = server_login();
+        if (ret == 0) {
+            printf("Login successful:\n");
+            printf("QR Code: %s\n", loginRes.qrCode);
+            printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
+            printf("Heartbeat Interval: %d seconds\n", loginRes.heartBeatInterval);
+            printf("\n");
+            break;
+        } else {
+            printf("Failed to get login configuration. Retrying in 60 seconds...\n");
+            sleep(60); // 获取失败时，等待60秒后重试
+        }
     }
 
     // 创建心跳线程
@@ -739,26 +854,19 @@ int server() {
         return -1;
     }
 
-    // 创建心跳线程
+    // 创建接收线程
     pthread_t tcp_receiver_thread_id;
     if (pthread_create(&tcp_receiver_thread_id, NULL, tcp_receiver, NULL) != 0) {
         perror("Failed to create heartbeat thread");
         return -1;
     }
+}
 
-    // while (1){
-    //     sleep(1);
-    // }
 
-    // // 下发开门
-    // if (open_door() == 0) {
-    //     printf("Open door process completed\n");
-    //     printf("transId: %s\n", trans_Id);
-    //     printf("openType: %d\n", openDoor.openType);
-    // } else {
-    //     printf("Open door process failed\n");
-    // }
 
+
+int test() {
+    int ret;
     // 上传关门
     ret = close_door(); // 假设箱子编号为1
     if (ret == 0) {

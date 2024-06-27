@@ -18,6 +18,7 @@
 #define DISP_BUF_SIZE (480 * 480)
 
 lv_ui guider_ui;
+extern int sock;
 
 void* lv_task_thread(void* arg) {
     struct timespec ts;
@@ -142,6 +143,7 @@ int main(void)
     // 获取4G模块信息
     module_init();
     module_info();
+    heartBeat.signal = module_signal();
 
     /* ui_init(); */
     setup_ui(&guider_ui);
@@ -159,9 +161,18 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    server();
+    server_start();
 
-    while(1);
+    int curCapacity = get_overflow_status();
+    if (curCapacity == 3){
+        upload_overflow(curCapacity);
+        // LVGL_UI 回收柜已满
+    }
+
+    while(1){
+        open_door(curCapacity);
+    }
+
     return 0;
 }
 

@@ -53,7 +53,7 @@ int module_init(void) {
         return -1;
     }
 
-    return 1;
+    return 0;
 }
 
 int module_signal(void) {
@@ -190,7 +190,6 @@ int module_deinit(void) {
 }
 
 int module_info(void) {
-    module_signal();
     module_iccid();
     module_imsi();
     module_imei();
