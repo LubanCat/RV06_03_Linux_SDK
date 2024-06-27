@@ -90,10 +90,16 @@ int get_post_key(){
 
 
 int set_clear_door(int status){
+    if (status == 0) {
+        close_door();
+    }
     return 0;
 }
 
 int set_post_door(int status){
+    if (status == 0) {
+        close_door();
+    }
     return 0;
 }
 
@@ -491,25 +497,34 @@ int open_door(int curCapacity) {
     }
     double sub_weight =  get_current_weight();
     if (openDoor.openType == 1) {
-        printf("main backloop:openDoor.openType=%d\n", openDoor.openType);
+        printf("开门:openDoor.openType=%d\n", openDoor.openType);
         if (curCapacity == 3) {
             // LVGL_UI 回收柜已满，10s后返回登录界面
-            set_screen_full(&guider_ui.screen_login_del,0.07,10);
+            set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,10);
             printf("当前回收柜已满，请清运后再投递\n");
             for (int i = 10; i > 0; i--) {
                 printf("倒计时: %d秒 后返回登录界面\n", i);
+                // 更新 回收柜已满 界面倒计时
                 set_screen_full_time(i);
                 sleep(1);
             }
+            // 更新到登录页面
+            set_screen_login(&guider_ui.screen_full_del,loginRes.recyclePrice,sub_weight,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,23);
         } else {
             int i = 20;
-            set_screen_clean(&guider_ui.screen_login_del,20,99.9);
+            set_screen_submit(&guider_ui.screen_login_del,0,i,0);
             printf("可回收物仓门已打开，请尽快投递\n");
             set_post_door(1);
             // LVGL_UI 投递页面,投递重量、金额，99s倒计时
             for (; i > 0; i--) {
+                double cur_weight= get_current_weight();
+                double diff_weight = sub_weight - cur_weight;
+                diff_weight = 0.8;
+                double money = diff_weight * loginRes.recyclePrice;
                 printf("倒计时: %d秒 后关闭可回收物仓门\n", i);
-                set_screen_clean_time(i);
+                set_screen_submit_time(i);
+                set_screen_submit_money(money);
+                set_screen_submit_weigth(diff_weight);
                 // 获取按键状态，关门，发送关门消息个服务器，跳出循环
                 int close_key = get_close_key();
                 if (close_key) {
@@ -531,11 +546,14 @@ int open_door(int curCapacity) {
                 }
                 sleep(1);
             }
+            set_screen_login(&guider_ui.screen_full_del,loginRes.recyclePrice,sub_weight,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,heartBeat.signal);
         }
         openDoor.openType = 0;
     } else if (openDoor.openType == 2) {
         int i = 20;
         int clearing = 0;
+        double cur_weight;
+
         printf("开门: openType=%d\n", openDoor.openType);
         // 清运操作页面1
         set_screen_clean(&guider_ui.screen_login_del,i,sub_weight);
@@ -575,7 +593,7 @@ int open_door(int curCapacity) {
         }
 
         if (clearing == 2) {
-            double cur_weight = get_current_weight();
+            cur_weight = get_current_weight();
             double diff_weight = sub_weight - cur_weight;
             // 更新清运完成页面 清运前重量 清运后重量 清运重量
             
@@ -585,6 +603,7 @@ int open_door(int curCapacity) {
                 sleep(1);
             }
         }
+        set_screen_login(&guider_ui.screen_full_del,loginRes.recyclePrice,cur_weight,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,heartBeat.signal);
         // 关门,发关门消息
         openDoor.openType = 0;
     }
