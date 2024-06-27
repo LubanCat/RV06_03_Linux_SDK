@@ -63,7 +63,7 @@ int close_door();
 int upload_overweight();
 
 // 上传满载
-int upload_overflow(int overflow);
+int upload_overflow(int curCapacity);
 
 // 上传文件通用函数
 int upload_file(const char *url, const char *file_path, const char *file_type, int photoType);
@@ -76,5 +76,12 @@ int upload_video(const char *url, const char *file_path);
 
 
 int server();
+
+
+double get_current_weight();
+int send_tcp_packet(char *buf,int size);
+void *tcp_receiver(void *arg);
+void *heartbeat_thread(void *arg);
+size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 
 #endif // SERVER_H
