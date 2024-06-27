@@ -127,8 +127,8 @@ void setup_scr_screen_login(lv_ui *ui)
 	ui->screen_login_clean_time = lv_label_create(ui->screen_login);
 	lv_label_set_text(ui->screen_login_clean_time, "2024-06-24 16:20");
 	lv_label_set_long_mode(ui->screen_login_clean_time, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_clean_time, 176, 100);
-	lv_obj_set_size(ui->screen_login_clean_time, 256, 56);
+	lv_obj_set_pos(ui->screen_login_clean_time, 130, 100);
+	lv_obj_set_size(ui->screen_login_clean_time, 346, 25);
 
 	//Write style for screen_login_clean_time, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

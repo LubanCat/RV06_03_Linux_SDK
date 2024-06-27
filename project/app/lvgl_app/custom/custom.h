@@ -16,6 +16,17 @@ extern "C" {
 
 #include "gui_guider.h"
 
+// 关闭仓门
+int close_door_flag;
+// 继续投递
+int post_flag;
+//退出按钮
+int quit_flag;
+//打开清理门
+int open_clean_door_flag;
+//手动模拟关闭清理门
+int hand_close_door_flag;
+
 void device_close_door();
 void device_open_clean_door();
 void set_lv_label_text_float(lv_obj_t * name,double value);

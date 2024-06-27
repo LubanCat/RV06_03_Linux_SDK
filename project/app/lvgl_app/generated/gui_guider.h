@@ -56,8 +56,9 @@ typedef struct
 	lv_obj_t *screen_submit_canvas_1;
 	lv_obj_t *screen_submit_close_door;
 	lv_obj_t *screen_submit_close_door_label;
-	lv_obj_t *screen_submit_continue_open;
-	lv_obj_t *screen_submit_continue_open_label;
+	lv_obj_t *screen_submit_post;
+	lv_obj_t *screen_submit_post_label;
+	lv_obj_t *screen_submit_label_5;
 	lv_obj_t *screen_clean;
 	bool screen_clean_del;
 	lv_obj_t *screen_clean_label_2;
@@ -66,14 +67,16 @@ typedef struct
 	lv_obj_t *screen_clean_quit_label;
 	lv_obj_t *screen_clean_label_5;
 	lv_obj_t *screen_clean_weigth;
-	lv_obj_t *screen_clean_open_clean;
-	lv_obj_t *screen_clean_open_clean_label;
+	lv_obj_t *screen_clean_open_clean_door;
+	lv_obj_t *screen_clean_open_clean_door_label;
 	lv_obj_t *screen_cleaning;
 	bool screen_cleaning_del;
 	lv_obj_t *screen_cleaning_label_2;
 	lv_obj_t *screen_cleaning_label_4;
 	lv_obj_t *screen_cleaning_label_5;
 	lv_obj_t *screen_cleaning_weigth;
+	lv_obj_t *screen_cleaning_hand_close_door;
+	lv_obj_t *screen_cleaning_hand_close_door_label;
 	lv_obj_t *screen_cleaned;
 	bool screen_cleaned_del;
 	lv_obj_t *screen_cleaned_label_2;
@@ -134,7 +137,11 @@ LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN_24)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN_84)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_56)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_64)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_32)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN_85)
 
 

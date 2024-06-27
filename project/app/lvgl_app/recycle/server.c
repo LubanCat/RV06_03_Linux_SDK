@@ -20,6 +20,17 @@
 #define CONFIG_SERVER_IP "47.101.195.22"
 #define CONFIG_SERVER_PORT 9096
 
+// 关闭仓门
+extern int close_door_flag;
+// 继续投递
+extern int post_flag;
+//退出按钮
+extern int quit_flag;
+//打开清理门
+extern int open_clean_door_flag;
+//手动模拟关闭清理门
+extern int hand_close_door_flag;
+
 int msgid;
 typedef enum {
     TYPE_HEARTBEAT  = 1,
@@ -490,6 +501,12 @@ void *heartbeat_thread(void *arg) {
 
 // 开门
 int open_door(int curCapacity) {
+
+    close_door_flag=0;
+    post_flag=0;
+    quit_flag=0;
+    open_clean_door_flag=0;
+    hand_close_door_flag=0;
     message_queue_t msg;
     if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OPENDOOR, 0) == -1) {
         perror("msgrcv failed");
@@ -526,10 +543,11 @@ int open_door(int curCapacity) {
                 set_screen_submit_money(money);
                 set_screen_submit_weigth(diff_weight);
                 // 获取按键状态，关门，发送关门消息个服务器，跳出循环
-                int close_key = get_close_key();
-                if (close_key) {
-                    printf("按键：关闭仓门 post_key=%d\n", close_key);
+                if (close_door_flag) {
+                    printf("按键：关闭仓门");
                     set_post_door(0);
+                    close_door_flag=0;
+                    set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
                     break;
                 }
 
@@ -538,15 +556,20 @@ int open_door(int curCapacity) {
                 if (i <= 10) {
                     // 投递重量、金额，10s倒计时
                     // 获取按键状态，继续投递按下i=99
-                    int post_key = get_post_key();
-                    if (post_key) {
-                        printf("按键：继续投递 post_key=%d\n", post_key);
+                    printf("hidden\n");
+                    lv_obj_add_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
+                    if (post_flag) {
+                        printf("按键：继续投递\n");
                         i = 99;
+                        post_flag=0;
                     }
+                }else{
+                    lv_obj_add_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_clear_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                 }
                 sleep(1);
             }
-            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
         }
         openDoor.openType = 0;
     } else if (openDoor.openType == 2) {
@@ -560,14 +583,21 @@ int open_door(int curCapacity) {
         // LVGL_UI 清运页面 清运总重量，开门按钮99s倒计时
         for (; i > 0; i--) {
             // 更新清运界面倒计时
-
+            set_screen_clean_time(i);
             printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i, sub_weight);
             // 获取按键状态，开门按钮开门
-            int clear_key = get_clear_key();
-            if (clear_key) {
-                printf("按键：开启清运门 clear_key=%d\n", clear_key);
+            if (open_clean_door_flag) {
+                printf("按键：开启清运门\n");
                 set_clear_door(1);
+                open_clean_door_flag=0;
                 clearing = 1;
+                break;
+            }
+
+            if (quit_flag) {
+                printf("按键：退出该模式\n");
+                set_screen_login(&guider_ui.screen_clean_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+                quit_flag=0;
                 break;
             }
             sleep(1);
@@ -582,9 +612,10 @@ int open_door(int curCapacity) {
                 // 清运操作页面2 更新当前质量
 
                 printf("清运中: 当前重量%.2fKG\n", cur_weight);
-                int close_key = get_close_key();
-                if (close_key) {
+                if (hand_close_door_flag) {
+                    printf("手动关闭清理门\n");
                     set_clear_door(0);
+                    hand_close_door_flag=0;
                     clearing = 2;
                     break;
                 }
@@ -596,14 +627,15 @@ int open_door(int curCapacity) {
             cur_weight = get_current_weight();
             double diff_weight = sub_weight - cur_weight;
             // 更新清运完成页面 清运前重量 清运后重量 清运重量
-            
+            set_screen_cleaned(&guider_ui.screen_login_del,10,sub_weight, cur_weight, diff_weight);
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = 10; i > 0; i--) { // 重新初始化倒计时
                 printf("清运完成: %d秒后返回登录界面\n", i);
+                set_screen_cleaned_time(i);
                 sleep(1);
             }
         }
-        set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
         // 关门,发关门消息
         openDoor.openType = 0;
     }
@@ -633,13 +665,14 @@ int close_door() {
     free(json_str);
     cJSON_Delete(root);
 
-    message_queue_t msg;
-    if (msgrcv(msgid, &msg, sizeof(msg), TYPE_CLOSEDOOR, 0) == -1) {
-        perror("msgrcv failed");
-        exit(EXIT_FAILURE);
-    }
+    // message_queue_t msg;
+    // if (msgrcv(msgid, &msg, sizeof(msg), TYPE_CLOSEDOOR, 0) == -1) {
+    //     perror("msgrcv failed");
+    //     exit(EXIT_FAILURE);
+    // }
     // printf("Received:%d %d\n", msg.type,msg.retcode);
-    return msg.retcode;
+    // return msg.retcode;
+    return 0;
 }
 
 // 上传超重
@@ -880,6 +913,12 @@ int server_start() {
             sleep(60); // 获取失败时，等待60秒后重试
         }
     }
+
+    close_door();
+    char recv_buf[256];
+    int recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+    printf("recv_len\n",recv_len);
+    while(1);
 
     // 创建心跳线程
     pthread_t heartbeat_thread_id;

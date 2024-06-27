@@ -33,10 +33,10 @@ void setup_scr_screen_clean(lv_ui *ui)
 
 	//Write codes screen_clean_label_2
 	ui->screen_clean_label_2 = lv_label_create(ui->screen_clean);
-	lv_label_set_text(ui->screen_clean_label_2, "清运操作");
+	lv_label_set_text(ui->screen_clean_label_2, "清运操作1\n");
 	lv_label_set_long_mode(ui->screen_clean_label_2, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_clean_label_2, 188, 48);
-	lv_obj_set_size(ui->screen_clean_label_2, 139, 29);
+	lv_obj_set_pos(ui->screen_clean_label_2, 178, 228);
+	lv_obj_set_size(ui->screen_clean_label_2, 139, 25);
 
 	//Write style for screen_clean_label_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_clean_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -58,7 +58,7 @@ void setup_scr_screen_clean(lv_ui *ui)
 	ui->screen_clean_time = lv_label_create(ui->screen_clean);
 	lv_label_set_text(ui->screen_clean_time, "10");
 	lv_label_set_long_mode(ui->screen_clean_time, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_clean_time, 193, 147);
+	lv_obj_set_pos(ui->screen_clean_time, 191, 277);
 	lv_obj_set_size(ui->screen_clean_time, 118, 94);
 
 	//Write style for screen_clean_time, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -86,7 +86,7 @@ void setup_scr_screen_clean(lv_ui *ui)
 	lv_obj_set_style_pad_all(ui->screen_clean_quit, 0, LV_STATE_DEFAULT);
 	lv_obj_set_width(ui->screen_clean_quit_label, LV_PCT(100));
 	lv_obj_set_pos(ui->screen_clean_quit, 26, 37);
-	lv_obj_set_size(ui->screen_clean_quit, 100, 50);
+	lv_obj_set_size(ui->screen_clean_quit, 201, 159);
 
 	//Write style for screen_clean_quit, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_bg_opa(ui->screen_clean_quit, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -96,7 +96,7 @@ void setup_scr_screen_clean(lv_ui *ui)
 	lv_obj_set_style_radius(ui->screen_clean_quit, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_clean_quit, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(ui->screen_clean_quit, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_clean_quit, &lv_font_SourceHanSerifCN2_16, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_clean_quit, &lv_font_SourceHanSerifCN2_64, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_opa(ui->screen_clean_quit, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_align(ui->screen_clean_quit, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
@@ -104,7 +104,7 @@ void setup_scr_screen_clean(lv_ui *ui)
 	ui->screen_clean_label_5 = lv_label_create(ui->screen_clean);
 	lv_label_set_text(ui->screen_clean_label_5, "可清运物重量");
 	lv_label_set_long_mode(ui->screen_clean_label_5, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_clean_label_5, 68, 282);
+	lv_obj_set_pos(ui->screen_clean_label_5, 56, 423);
 	lv_obj_set_size(ui->screen_clean_label_5, 227, 29);
 
 	//Write style for screen_clean_label_5, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -127,13 +127,13 @@ void setup_scr_screen_clean(lv_ui *ui)
 	ui->screen_clean_weigth = lv_label_create(ui->screen_clean);
 	lv_label_set_text(ui->screen_clean_weigth, "4.53KG");
 	lv_label_set_long_mode(ui->screen_clean_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_clean_weigth, 84, 325);
+	lv_obj_set_pos(ui->screen_clean_weigth, 223, 423);
 	lv_obj_set_size(ui->screen_clean_weigth, 227, 29);
 
 	//Write style for screen_clean_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_radius(ui->screen_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_clean_weigth, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_clean_weigth, lv_color_hex(0xf00000), LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_font(ui->screen_clean_weigth, &lv_font_SourceHanSerifCN_24, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_opa(ui->screen_clean_weigth, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_letter_space(ui->screen_clean_weigth, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -146,28 +146,28 @@ void setup_scr_screen_clean(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_clean_open_clean
-	ui->screen_clean_open_clean = lv_btn_create(ui->screen_clean);
-	ui->screen_clean_open_clean_label = lv_label_create(ui->screen_clean_open_clean);
-	lv_label_set_text(ui->screen_clean_open_clean_label, "开启清运门");
-	lv_label_set_long_mode(ui->screen_clean_open_clean_label, LV_LABEL_LONG_WRAP);
-	lv_obj_align(ui->screen_clean_open_clean_label, LV_ALIGN_CENTER, 0, 0);
-	lv_obj_set_style_pad_all(ui->screen_clean_open_clean, 0, LV_STATE_DEFAULT);
-	lv_obj_set_width(ui->screen_clean_open_clean_label, LV_PCT(100));
-	lv_obj_set_pos(ui->screen_clean_open_clean, 216, 385);
-	lv_obj_set_size(ui->screen_clean_open_clean, 100, 50);
+	//Write codes screen_clean_open_clean_door
+	ui->screen_clean_open_clean_door = lv_btn_create(ui->screen_clean);
+	ui->screen_clean_open_clean_door_label = lv_label_create(ui->screen_clean_open_clean_door);
+	lv_label_set_text(ui->screen_clean_open_clean_door_label, "开启清运门");
+	lv_label_set_long_mode(ui->screen_clean_open_clean_door_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_clean_open_clean_door_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_clean_open_clean_door, 0, LV_STATE_DEFAULT);
+	lv_obj_set_width(ui->screen_clean_open_clean_door_label, LV_PCT(100));
+	lv_obj_set_pos(ui->screen_clean_open_clean_door, 261, 41);
+	lv_obj_set_size(ui->screen_clean_open_clean_door, 208, 155);
 
-	//Write style for screen_clean_open_clean, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_bg_opa(ui->screen_clean_open_clean, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_color(ui->screen_clean_open_clean, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_grad_dir(ui->screen_clean_open_clean, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_border_width(ui->screen_clean_open_clean, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_clean_open_clean, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_clean_open_clean, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_clean_open_clean, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_clean_open_clean, &lv_font_SourceHanSerifCN2_16, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_opa(ui->screen_clean_open_clean, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_clean_open_clean, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	//Write style for screen_clean_open_clean_door, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_clean_open_clean_door, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_clean_open_clean_door, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_clean_open_clean_door, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_clean_open_clean_door, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_clean_open_clean_door, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_clean_open_clean_door, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_clean_open_clean_door, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_clean_open_clean_door, &lv_font_SourceHanSerifCN2_32, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_clean_open_clean_door, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_clean_open_clean_door, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//The custom code of screen_clean.
 	
