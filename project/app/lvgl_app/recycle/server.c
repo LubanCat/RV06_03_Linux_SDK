@@ -509,7 +509,7 @@ int open_door(int curCapacity) {
                 sleep(1);
             }
             // 更新到登录页面
-            set_screen_login(&guider_ui.screen_full_del,loginRes.recyclePrice,sub_weight,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,23);
+            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, 23);
         } else {
             int i = 20;
             set_screen_submit(&guider_ui.screen_login_del,0,i,0);
@@ -546,7 +546,7 @@ int open_door(int curCapacity) {
                 }
                 sleep(1);
             }
-            set_screen_login(&guider_ui.screen_full_del,loginRes.recyclePrice,sub_weight,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,heartBeat.signal);
+            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
         }
         openDoor.openType = 0;
     } else if (openDoor.openType == 2) {
@@ -603,7 +603,7 @@ int open_door(int curCapacity) {
                 sleep(1);
             }
         }
-        set_screen_login(&guider_ui.screen_full_del,loginRes.recyclePrice,cur_weight,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,heartBeat.signal);
+        set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
         // 关门,发关门消息
         openDoor.openType = 0;
     }
