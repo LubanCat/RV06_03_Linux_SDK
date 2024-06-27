@@ -70,4 +70,20 @@ int upload_video(const char *url, const char *file_path);
 
 int server();
 
+
+double get_current_weight();
+int send_tcp_packet(char *buf,int size);
+int get_login_config();
+int server_login();
+void *tcp_receiver(void *arg);
+int upload_heartbeat(const HeartBeat *params);
+void *heartbeat_thread(void *arg);
+int open_door();
+int close_door();
+int upload_overweight(void);
+int upload_overflow(int curCapacity);
+size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+int upload_file(const char *url, const char *file_path, const char *file_type, int photoType);
+
+
 #endif // SERVER_H

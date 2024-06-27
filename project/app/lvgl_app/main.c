@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include "lv_conf.h"
 #include "server.h"
+#include "module.h"
 
 #include "generated/gui_guider.h"
 #include "generated/events_init.h"
