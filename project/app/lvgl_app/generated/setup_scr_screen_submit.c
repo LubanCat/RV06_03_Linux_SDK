@@ -208,4 +208,6 @@ void setup_scr_screen_submit(lv_ui *ui)
 	//Update current screen layout.
 	lv_obj_update_layout(ui->screen_submit);
 
+	//Init events for screen.
+	events_init_screen_submit(ui);
 }

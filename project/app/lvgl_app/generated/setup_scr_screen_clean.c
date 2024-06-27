@@ -175,4 +175,6 @@ void setup_scr_screen_clean(lv_ui *ui)
 	//Update current screen layout.
 	lv_obj_update_layout(ui->screen_clean);
 
+	//Init events for screen.
+	events_init_screen_clean(ui);
 }

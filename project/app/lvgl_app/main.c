@@ -163,6 +163,8 @@ int main(void)
 
     server_start();
 
+    set_screen_login(&guider_ui.blank_del,0.07,99.9,"2024/06/27 15:35:99","https://developer.canaan-creative.com/k230/zh/dev/01_software/board/mpp/K230_SHA256_API%E5%8F%82%E8%80%83.html",1,23);
+
     int curCapacity = get_overflow_status();
     if (curCapacity == 3){
         upload_overflow(curCapacity);

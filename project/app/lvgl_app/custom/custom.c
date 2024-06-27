@@ -13,6 +13,14 @@
 #include "lvgl/lvgl.h"
 #include "custom.h"
 
+void device_close_door(){
+    printf("close door\n");
+}
+
+void device_open_clean_door(){
+  printf("open clean door\n");
+}
+
 void set_lv_label_text_float(lv_obj_t * name,double value){
     char str[10];
     sprintf(str,"%.2f",value);

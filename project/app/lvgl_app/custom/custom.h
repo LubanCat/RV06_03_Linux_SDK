@@ -16,6 +16,8 @@ extern "C" {
 
 #include "gui_guider.h"
 
+void device_close_door();
+void device_open_clean_door();
 void set_lv_label_text_float(lv_obj_t * name,double value);
 void set_lv_label_text_int(lv_obj_t * name,int value);
 void set_screen_login_price(double price);

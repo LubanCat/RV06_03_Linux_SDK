@@ -16,6 +16,7 @@
 #endif
 
 
+#include "custom.h"
 static void screen_login_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
@@ -34,23 +35,41 @@ void events_init_screen_login(lv_ui *ui)
 {
 	lv_obj_add_event_cb(ui->screen_login, screen_login_event_handler, LV_EVENT_ALL, ui);
 }
-static void screen_full_btn_1_event_handler (lv_event_t *e)
+static void screen_submit_close_door_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
 
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, guider_ui.screen_login_del, &guider_ui.screen_full_del, setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 200, 200, true, true);
+		device_close_door();
 		break;
 	}
 	default:
 		break;
 	}
 }
-void events_init_screen_full(lv_ui *ui)
+void events_init_screen_submit(lv_ui *ui)
 {
-	lv_obj_add_event_cb(ui->screen_full_btn_1, screen_full_btn_1_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_submit_close_door, screen_submit_close_door_event_handler, LV_EVENT_ALL, ui);
+}
+static void screen_clean_quit_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, guider_ui.screen_login_del, &guider_ui.screen_clean_del, setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 200, 200, true, true);
+		break;
+	}
+	default:
+		break;
+	}
+}
+void events_init_screen_clean(lv_ui *ui)
+{
+	lv_obj_add_event_cb(ui->screen_clean_quit, screen_clean_quit_event_handler, LV_EVENT_ALL, ui);
 }
 
 void events_init(lv_ui *ui)

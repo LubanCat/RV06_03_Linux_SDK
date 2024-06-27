@@ -20,6 +20,9 @@ typedef struct
   
 	lv_obj_t *blank;
 	bool blank_del;
+	lv_obj_t *blank_label_1;
+	lv_obj_t *blank_label_2;
+	lv_obj_t *blank_label_3;
 	lv_obj_t *screen_login;
 	bool screen_login_del;
 	lv_obj_t *screen_login_recycle_name;
@@ -43,8 +46,6 @@ typedef struct
 	lv_obj_t *screen_full_label_2;
 	lv_obj_t *screen_full_label_3;
 	lv_obj_t *screen_full_time;
-	lv_obj_t *screen_full_btn_1;
-	lv_obj_t *screen_full_btn_1_label;
 	lv_obj_t *screen_submit;
 	bool screen_submit_del;
 	lv_obj_t *screen_submit_recycle_name;
@@ -127,11 +128,12 @@ void setup_scr_screen_clean(lv_ui *ui);
 void setup_scr_screen_cleaning(lv_ui *ui);
 void setup_scr_screen_cleaned(lv_ui *ui);
 
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN_24)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN_84)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN_85)
 

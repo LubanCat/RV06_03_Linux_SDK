@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include "module.h"
 #include <sys/msg.h>
+#include "../custom/custom.h"
 
 #define MAX_BUF_SIZE 512
 
@@ -493,19 +494,22 @@ int open_door(int curCapacity) {
         printf("main backloop:openDoor.openType=%d\n", openDoor.openType);
         if (curCapacity == 3) {
             // LVGL_UI 回收柜已满，10s后返回登录界面
+            set_screen_full(&guider_ui.screen_login_del,0.07,10);
             printf("当前回收柜已满，请清运后再投递\n");
             for (int i = 10; i > 0; i--) {
                 printf("倒计时: %d秒 后返回登录界面\n", i);
+                set_screen_full_time(i);
                 sleep(1);
             }
         } else {
             int i = 20;
+            set_screen_clean(&guider_ui.screen_login_del,20,99.9);
             printf("可回收物仓门已打开，请尽快投递\n");
             set_post_door(1);
             // LVGL_UI 投递页面,投递重量、金额，99s倒计时
             for (; i > 0; i--) {
                 printf("倒计时: %d秒 后关闭可回收物仓门\n", i);
-
+                set_screen_clean_time(i);
                 // 获取按键状态，关门，发送关门消息个服务器，跳出循环
                 int close_key = get_close_key();
                 if (close_key) {
@@ -533,6 +537,7 @@ int open_door(int curCapacity) {
         int i = 20;
         int clearing = 0;
         printf("开门: openType=%d\n", openDoor.openType);
+        set_screen_clean(&guider_ui.screen_login_del,20,99.9);
         // LVGL_UI 清运页面 清运总重量，开门按钮99s倒计时
         for (; i > 0; i--) {
             printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i, sub_weight);
@@ -549,6 +554,7 @@ int open_door(int curCapacity) {
 
         // 判断是否进入清运状态，开门，显示正在清运
         if (clearing == 1) {
+            set_screen_cleaning(&guider_ui.screen_login_del,99.9);
             while (1) {
                 printf("清运中: 当前重量%.2fKG\n", get_current_weight());
                 int close_key = get_close_key();
