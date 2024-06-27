@@ -26,10 +26,10 @@ char *version = "1.0";
 // 文件路径
 char *photo_file = "/root/photo.jpg";
 char *video_file = "/root/video.mp4";
-    
-char trans_Id[64];  // 事务ID
 
 int sock;
+char trans_Id[64];  // 事务ID
+
 // 声明互斥锁
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -37,8 +37,7 @@ LoginConfig loginConfig;
 LoginRes loginRes;
 OpenDoor openDoor;
 CloseDoor closeDoor;
-
-extern ModuleInfo moduleInfo;
+HeartBeat heartBeat;
 
 // 获取当前重量
 double get_current_weight() {
@@ -276,15 +275,15 @@ int server_login() {
 }
 
 // 心跳上传函数
-int upload_heartbeat(const HeartBeat *params) {
+int upload_heartbeat() {
     char send_buf[MAX_BUF_SIZE], recv_buf[MAX_BUF_SIZE];
     int recv_len;
 
     // 创建 JSON 请求
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", "heartBeat");
-    cJSON_AddNumberToObject(root, "signal", params->signal);
-    cJSON_AddNumberToObject(root, "curWeight", params->curWeight);
+    cJSON_AddNumberToObject(root, "signal", heartBeat.signal);
+    cJSON_AddNumberToObject(root, "curWeight", heartBeat.curWeight);
     char *json_str = cJSON_PrintUnformatted(root);
 
     // 锁定互斥锁
@@ -335,14 +334,12 @@ int upload_heartbeat(const HeartBeat *params) {
 // 心跳线程函数
 void *heartbeat_thread(void *arg) {
 
-    HeartBeat params;
-
     while (1) {
-        params.signal = module_signal();
-        params.curWeight = get_current_weight();
+        heartBeat.signal = module_signal();
+        heartBeat.curWeight = get_current_weight();
 
         // 发送心跳包
-        int ret = upload_heartbeat(&params);
+        int ret = upload_heartbeat();
         if (ret == 0) {
             printf("Heartbeat sent successfully.\n");
         } else {

@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include "lv_conf.h"
 #include "server.h"
+#include "module.h"
 
 #include "generated/gui_guider.h"
 #include "generated/events_init.h"
@@ -18,8 +19,89 @@
 
 lv_ui guider_ui;
 
+void* lv_task_thread(void* arg) {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 5 * 1000000; // 5毫秒
+
+    while (1) {
+        lv_task_handler();
+        nanosleep(&ts, NULL);
+    }
+
+    return NULL;
+}
+
+// 模拟开灯和关灯的操作
+void turn_on_light() {
+    printf("Light is ON\n");
+}
+
+void turn_off_light() {
+    printf("Light is OFF\n");
+}
+
+// 辅助线程
+void* aux_task_thread(void* arg) {
+    int signal_count = 0;
+    int light_count = 0;
+    loginRes.turnOnLight.tm_hour = 19;
+    loginRes.turnOnLight.tm_min = 0;
+    loginRes.turnOffLight.tm_hour = 7;
+    loginRes.turnOffLight.tm_min = 0;
+
+    while (1) {
+        // LVGL 更新4G信号强度
+        if (signal_count == 5) {
+            heartBeat.signal = module_signal();
+            signal_count = 0;
+        }
+
+        // 灯光更新
+        if (light_count == 60) {
+            time_t t = time(NULL);
+            struct tm* now = localtime(&t);
+
+            int now_minutes = now->tm_hour * 60 + now->tm_min;
+            int start_minutes = loginRes.turnOnLight.tm_hour * 60 + loginRes.turnOnLight.tm_min;
+            int end_minutes = loginRes.turnOffLight.tm_hour * 60 + loginRes.turnOffLight.tm_min;
+
+            if (start_minutes < end_minutes) {
+                // 不跨午夜
+                if (now_minutes >= start_minutes && now_minutes < end_minutes) {
+                    turn_on_light();
+                } else {
+                    turn_off_light();
+                }
+            } else {
+                // 跨午夜
+                if (now_minutes >= start_minutes || now_minutes < end_minutes) {
+                    turn_on_light();
+                } else {
+                    turn_off_light();
+                }
+            }
+            light_count = 0;
+        }
+
+        sleep(1);
+
+        signal_count++;
+        light_count++;
+    }
+
+    return NULL;
+}
+
 int main(void)
 {
+    pthread_t lv_task_thread_id;
+    pthread_t aux_task_thread_id;
+    int ret;
+
+    // 同步时间
+    system("ntpdate ntp1.aliyun.com");
+
     /*LittlevGL init*/
     lv_init();
 
@@ -57,29 +139,29 @@ int main(void)
     indev_drv.read_cb = evdev_read;   //lv_gesture_dir_t lv_indev_get_gesture_dir(const lv_indev_t * indev)
     lv_indev_drv_register(&indev_drv);
 
-    /*Create a Demo*/
-    // lv_demo_benchmark_set_max_speed(true);
-    // lv_demo_benchmark();
-    // lv_demo_widgets();
-    // lv_demo_stress();
-    // lv_demo_keypad_encoder();
-    // lv_demo_music();
+    // 获取4G模块信息
+    module_init();
+    module_info();
 
     /* ui_init(); */
     setup_ui(&guider_ui);
     events_init(&guider_ui);
 
-    module_init();
-    module_info();
+    ret = pthread_create(&lv_task_thread_id, NULL, lv_task_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+
+    ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
 
     server();
 
-    /*Handle LitlevGL tasks (tickless mode)*/
-    while(1) {
-        lv_task_handler();
-        usleep(5000);
-    }
-
+    while(1);
     return 0;
 }
 

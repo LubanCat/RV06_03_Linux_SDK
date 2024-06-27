@@ -16,6 +16,7 @@ typedef struct {
     int signal;      // 信号强度
 } ModuleInfo;
 
+extern ModuleInfo moduleInfo;
 
 // 初始化模块
 int module_init(void);

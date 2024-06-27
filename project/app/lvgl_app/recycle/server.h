@@ -37,6 +37,13 @@ typedef struct {
     double changeWeight; // 改变重量，单位千克
 } CloseDoor;
 
+
+extern LoginConfig loginConfig;
+extern LoginRes loginRes;
+extern OpenDoor openDoor;
+extern CloseDoor closeDoor;
+extern HeartBeat heartBeat;
+
 // 获取登录配置
 int get_login_config();
 
