@@ -59,7 +59,7 @@ int module_init(void) {
 int module_signal(void) {
     int ret;
     char buf[256];
-    int rssi = -1, ber;
+    int rssi = 99, ber;
 
     // 发送AT+CSQ命令查询信号质量
     ret = write(tty_fd, "AT+CSQ\r\n", 8);

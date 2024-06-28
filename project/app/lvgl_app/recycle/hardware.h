@@ -19,7 +19,10 @@ int set_post_door_open();
 // 设置推杆关闭投递门
 int set_post_door_close();
 
-// 关闭门的函数声明
-void close_door();
+// 内部灯光操作
+int inside_light(int status);
+
+// 外部灯光操作
+int outside_light(int status);
 
 #endif // HARDWARE_H

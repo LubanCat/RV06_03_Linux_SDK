@@ -8,14 +8,17 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
+#include <cjson/cJSON.h>
 #include "lv_conf.h"
 #include "server.h"
 #include "module.h"
-
+#include "hardware.h"
+#include "custom.h"
 #include "generated/gui_guider.h"
 #include "generated/events_init.h"
 
 #define DISP_BUF_SIZE (480 * 480)
+#define MAX_WEIGHT 20
 
 lv_ui guider_ui;
 extern int sock;
@@ -29,23 +32,14 @@ void* lv_task_thread(void* arg) {
         lv_task_handler();
         nanosleep(&ts, NULL);
     }
-
     return NULL;
-}
-
-// 模拟开灯和关灯的操作
-void turn_on_light() {
-    printf("Light is ON\n");
-}
-
-void turn_off_light() {
-    printf("Light is OFF\n");
 }
 
 // 辅助线程
 void* aux_task_thread(void* arg) {
     int signal_count = 0;
     int light_count = 0;
+    int overflow_count = 0;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
     loginRes.turnOffLight.tm_hour = 7;
@@ -54,7 +48,15 @@ void* aux_task_thread(void* arg) {
     while (1) {
         // LVGL 更新4G信号强度
         if (signal_count == 5) {
+            int net_status;
             heartBeat.signal = module_signal();
+            if (heartBeat.signal == 99) {
+                net_status = 0;
+            } else {
+                net_status = 1;
+            }
+
+            set_screen_login_net_status(net_status,heartBeat.signal);
             signal_count = 0;
         }
 
@@ -70,27 +72,41 @@ void* aux_task_thread(void* arg) {
             if (start_minutes < end_minutes) {
                 // 不跨午夜
                 if (now_minutes >= start_minutes && now_minutes < end_minutes) {
-                    turn_on_light();
+                    outside_light(1);
                 } else {
-                    turn_off_light();
+                    outside_light(0);
                 }
             } else {
                 // 跨午夜
                 if (now_minutes >= start_minutes || now_minutes < end_minutes) {
-                    turn_on_light();
+                    outside_light(1);
                 } else {
-                    turn_off_light();
+                    outside_light(0);
                 }
             }
             light_count = 0;
         }
 
+        if (overflow_count == 90) {
+            // 获取超重、满溢 
+            int curCapacity = get_overflow_status();
+            if (curCapacity == 3){
+                upload_overflow(curCapacity);
+            }
+
+            int cur_weight = get_current_weight();
+            if (cur_weight >= MAX_WEIGHT){
+                upload_overweight();
+            }
+            overflow_count = 0;
+        }
+
         sleep(1);
 
+        overflow_count++;
         signal_count++;
         light_count++;
     }
-
     return NULL;
 }
 

@@ -74,8 +74,11 @@ int upload_photo(const char *url, int photoType, const char *file_path);
 // 上传视频
 int upload_video(const char *url, const char *file_path);
 
-
+// 服务器注册和通信
 int server_start();
+
+// 读取配置文件
+int read_info();
 
 int get_overflow_status();
 double get_current_weight();
