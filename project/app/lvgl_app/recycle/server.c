@@ -23,17 +23,6 @@
 #define CONFIG_SERVER_IP "47.101.195.22"
 #define CONFIG_SERVER_PORT 9096
 
-// 关闭仓门
-extern int close_door_flag;
-// 继续投递
-extern int post_flag;
-//退出按钮
-extern int quit_flag;
-//打开清理门
-extern int open_clean_door_flag;
-//手动模拟关闭清理门
-extern int hand_close_door_flag;
-
 int msgid;
 typedef enum {
     TYPE_HEARTBEAT  = 1,
@@ -83,7 +72,7 @@ int read_info() {
     // 打开文件
     FILE *file = fopen("/root/device_info.json", "r");
     if (file == NULL) {
-        perror("无法打开文件");
+        perror("无法打开设备配置文件");
         return -1;
     }
 
@@ -523,7 +512,6 @@ void *heartbeat_thread(void *arg) {
 
 // 开门
 int open_door(int curCapacity) {
-
     close_door_flag=0;
     post_flag=0;
     quit_flag=0;
@@ -535,6 +523,9 @@ int open_door(int curCapacity) {
         perror("msgrcv failed");
         exit(EXIT_FAILURE);
     }
+    
+    // 关闭登录页面元素更新 
+    screen_login_flag=0;
 
     double sub_weight =  openDoor.curWeight; //开门命令上传给服务器的重量
 
@@ -565,9 +556,11 @@ int open_door(int curCapacity) {
                 // 获取重量，循环更新页面
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight= get_current_weight();
-                    diff_weight = sub_weight - cur_weight;
-                    diff_weight = 0.8;
+                    diff_weight = cur_weight - sub_weight;
+                    // diff_weight = round((cur_weight - sub_weight) * 100) / 100; //手动保留两位小数
                     money = diff_weight * loginRes.recyclePrice;
+                    // money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
+                    // printf("倒计时: 总重量%fKG，当前重量%fKG，计费重量%fKG，计费%f元\n", sub_weight, cur_weight, diff_weight, money);
                     printf("倒计时: %d秒 后关闭可回收物仓门\n", i/REFRESH_RATE);
                     set_screen_submit_time(i/REFRESH_RATE);
                     set_screen_submit_money(money);
@@ -647,6 +640,7 @@ int open_door(int curCapacity) {
                 if ((i % REFRESH_RATE) == 0) {                
                     cur_weight = get_current_weight();
                     diff_weight = sub_weight - cur_weight;
+                    // diff_weight = round((sub_weight - cur_weight) * 100) / 100; //手动保留两位小数
                     // 清运操作页面2 更新当前重量
                     set_screen_cleaning_weigth(cur_weight);
                     printf("清运中: 当前重量%.2fKG\n", cur_weight);
@@ -691,7 +685,6 @@ int open_door(int curCapacity) {
         // 关门,发关门消息
         openDoor.openType = 0;
     }
-
     return 0;
 }
 
@@ -907,7 +900,12 @@ int server_start() {
 
     ret = read_info();
     if (ret != 0){
+        // {"sn":"00016000000002","key":"device_key"}
+        printf("无法获取 sn 或 key，设置默认参数\n");
         // LVGL提示 未设置SN和Key
+        // 默认参数
+        strcpy(sn, "00016000000001");
+        strcpy(key, "device_key");
     }
 
     // 获取登录配置

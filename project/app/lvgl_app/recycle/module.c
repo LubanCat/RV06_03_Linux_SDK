@@ -56,7 +56,7 @@ int module_init(void) {
     return 0;
 }
 
-int module_signal(void) {
+int module_signal() {
     int ret;
     char buf[256];
     int rssi = 99, ber;

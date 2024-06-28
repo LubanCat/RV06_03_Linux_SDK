@@ -13,6 +13,19 @@
 #include "lvgl/lvgl.h"
 #include "custom.h"
 
+// 关闭仓门
+int close_door_flag;
+// 继续投递
+int post_flag;
+//退出按钮
+int quit_flag;
+//打开清理门
+int open_clean_door_flag;
+//手动模拟关闭清理门
+int hand_close_door_flag;
+// 在登录页面
+int screen_login_flag;
+
 void device_close_door(){
     printf("close door\n");
 }
@@ -127,6 +140,8 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
     set_screen_login_clean_time(time);
     set_screen_login_net_status(singal);
     set_screen_login_qrcode(qrcode);
+    // 当在登录页面时，开启其他线程在登录页面的更新
+    screen_login_flag = 1;
 }
 
 void set_screen_full(bool *screen_del,double price,int time){

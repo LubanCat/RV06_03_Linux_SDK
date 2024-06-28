@@ -17,15 +17,17 @@ extern "C" {
 #include "gui_guider.h"
 
 // 关闭仓门
-int close_door_flag;
+extern int close_door_flag;
 // 继续投递
-int post_flag;
+extern int post_flag;
 //退出按钮
-int quit_flag;
+extern int quit_flag;
 //打开清理门
-int open_clean_door_flag;
+extern int open_clean_door_flag;
 //手动模拟关闭清理门
-int hand_close_door_flag;
+extern int hand_close_door_flag;
+// 在登录页面
+extern int screen_login_flag;
 
 void device_close_door();
 void device_open_clean_door();

@@ -19,18 +19,16 @@
 
 #define DISP_BUF_SIZE (480 * 480)
 #define MAX_WEIGHT 20
+#define LIGHT_CHECK_TIME 60
 
 lv_ui guider_ui;
 extern int sock;
 
 void* lv_task_thread(void* arg) {
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 5 * 1000000; // 5毫秒
 
     while (1) {
         lv_task_handler();
-        nanosleep(&ts, NULL);
+        usleep(5000);
     }
     return NULL;
 }
@@ -38,7 +36,7 @@ void* lv_task_thread(void* arg) {
 // 辅助线程
 void* aux_task_thread(void* arg) {
     int signal_count = 0;
-    int light_count = 0;
+    int light_count = LIGHT_CHECK_TIME;
     int overflow_count = 0;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
@@ -49,12 +47,15 @@ void* aux_task_thread(void* arg) {
         // LVGL 更新4G信号强度
         if (signal_count == 5) {
             heartBeat.signal = module_signal();
-            set_screen_login_net_status(heartBeat.signal);
+            if(screen_login_flag == 1){
+                // 在登录页面才更新
+                set_screen_login_net_status(heartBeat.signal);
+            }
             signal_count = 0;
         }
 
         // 灯光更新
-        if (light_count == 60) {
+        if (light_count == LIGHT_CHECK_TIME) {
             time_t t = time(NULL);
             struct tm* now = localtime(&t);
 
@@ -164,13 +165,13 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
+    server_start();
+
     ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);
     if (ret != 0) {
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
-
-    server_start();
 
     set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
 

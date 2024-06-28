@@ -2,10 +2,25 @@
 #include <stdbool.h>
 #include "module.h"
 
+// 随机数生成
+double generate_random_number() {
+    // 初始化随机数生成器
+    srand(time(NULL));
+    // 生成两位整数部分，范围 10 到 99
+    int integer_part = rand() % 90 + 10;
+    // 生成小数部分，范围 0 到 99
+    int fractional_part = rand() % 100;
+    // 组合整数部分和小数部分
+    double random_number = integer_part + fractional_part / 100.0;
+    return random_number;
+}
+
+
 // 获取当前重量
 double get_current_weight() {
-    // 从硬件或其他数据源获取当前重量
-    return 12.5; // 示例值
+    // 需要修改成从硬件获取重量
+    double weight = generate_random_number();
+    return weight; 
 }
 
 // 获取超重状态
