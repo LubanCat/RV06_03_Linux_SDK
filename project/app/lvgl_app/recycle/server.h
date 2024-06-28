@@ -57,10 +57,10 @@ int upload_heartbeat();
 int open_door();
 
 // 关门
-int close_door();
+int close_door(double cur_weight, double diff_weight);
 
 // 上传超重
-int upload_overweight();
+int upload_overweight(double curWeight);
 
 // 上传满载
 int upload_overflow(int curCapacity);

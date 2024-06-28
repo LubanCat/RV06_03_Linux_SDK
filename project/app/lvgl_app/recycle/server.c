@@ -46,7 +46,6 @@ typedef enum {
 typedef struct {
     receive_type type; // 消息类型
     int retcode;
-    char trans_id[64];
     int open_type;
 } message_queue_t;
 
@@ -537,7 +536,7 @@ int open_door(int curCapacity) {
         exit(EXIT_FAILURE);
     }
 
-    double sub_weight =  get_current_weight();
+    double sub_weight =  openDoor.curWeight; //开门命令上传给服务器的重量
 
     printf("开门: openType=%d\n", openDoor.openType);
 
@@ -552,20 +551,23 @@ int open_door(int curCapacity) {
                 sleep(1);
             }
             // 返回到登录页面
-            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
         } else {
             int i = COUNT_DOWN99 * REFRESH_RATE;
+            double cur_weight = 0, diff_weight, money;
+
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,i,0);
+            inside_light(1);
             set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
             for (; i > 0; i--) {
                 // 获取重量，循环更新页面
                 if ((i % REFRESH_RATE) == 0) {
-                    double cur_weight= get_current_weight();
-                    double diff_weight = sub_weight - cur_weight;
+                    cur_weight= get_current_weight();
+                    diff_weight = sub_weight - cur_weight;
                     diff_weight = 0.8;
-                    double money = diff_weight * loginRes.recyclePrice;
+                    money = diff_weight * loginRes.recyclePrice;
                     printf("倒计时: %d秒 后关闭可回收物仓门\n", i/REFRESH_RATE);
                     set_screen_submit_time(i/REFRESH_RATE);
                     set_screen_submit_money(money);
@@ -597,14 +599,16 @@ int open_door(int curCapacity) {
                 usleep(1000000 / REFRESH_RATE); 
             }
             set_post_door_close();
-            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+            close_door(cur_weight, diff_weight);
+            inside_light(0);
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
         int i = COUNT_DOWN99 * REFRESH_RATE;
         int clearing = 0;
         double cur_weight = 0;
-
+        double diff_weight = 0;
         // 清运操作页面1
         set_screen_clean(&guider_ui.screen_login_del,i,sub_weight);
 
@@ -616,6 +620,7 @@ int open_door(int curCapacity) {
             }
             // 获取开启清运门按键状态，按下开启清运门
             if (open_clean_door_flag) {
+                inside_light(1);
                 printf("按键：开启清运门\n");
                 set_clear_door_open();
                 open_clean_door_flag=0;
@@ -626,7 +631,7 @@ int open_door(int curCapacity) {
             // 获取退出按键状态，按下返回登录界面
             if (quit_flag) {
                 printf("按键：退出该模式\n");
-                set_screen_login(&guider_ui.screen_clean_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+                set_screen_login(&guider_ui.screen_clean_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
                 quit_flag=0;
                 break;
             }
@@ -640,7 +645,8 @@ int open_door(int curCapacity) {
             set_screen_cleaning(&guider_ui.screen_login_del,sub_weight);
             while (1) {
                 if ((i % REFRESH_RATE) == 0) {                
-                    double cur_weight = get_current_weight();
+                    cur_weight = get_current_weight();
+                    diff_weight = sub_weight - cur_weight;
                     // 清运操作页面2 更新当前重量
                     set_screen_cleaning_weigth(cur_weight);
                     printf("清运中: 当前重量%.2fKG\n", cur_weight);
@@ -649,7 +655,8 @@ int open_door(int curCapacity) {
                 // 检测模拟关闭清理门按钮，正式版本删除此判断
                 if (hand_close_door_flag) {
                     printf("关门按钮：关闭清理门\n");
-                    close_door(); // 发送关门信息
+                    close_door(cur_weight, diff_weight); // 发送关门信息
+                    inside_light(0);
                     hand_close_door_flag=0;
                     clearing = 2;
                     break;
@@ -658,7 +665,8 @@ int open_door(int curCapacity) {
                 // 检测清理门关闭状态
                 if (get_clear_door_status()) {
                     printf("电磁锁检测：手动关闭清理门\n");
-                    close_door(); // 发送关门信息
+                    close_door(cur_weight, diff_weight); // 发送关门信息
+                    inside_light(0);
                     hand_close_door_flag=0;
                     clearing = 2;
                     break;
@@ -670,8 +678,6 @@ int open_door(int curCapacity) {
 
         // 判断进入清运完成状态 
         if (clearing == 2) {
-            cur_weight = get_current_weight();
-            double diff_weight = sub_weight - cur_weight;
             // 更新清运完成页面 
             set_screen_cleaned(&guider_ui.screen_login_del,COUNT_DOWN10,sub_weight, cur_weight, diff_weight);
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
@@ -681,7 +687,7 @@ int open_door(int curCapacity) {
                 sleep(1);
             }
         }
-        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
         // 关门,发关门消息
         openDoor.openType = 0;
     }
@@ -689,13 +695,12 @@ int open_door(int curCapacity) {
     return 0;
 }
 
-int close_door() {
+int close_door(double cur_weight, double diff_weight) {
     char recv_buf[MAX_BUF_SIZE];
 
     // 创建 JSON 请求
-    snprintf(trans_Id, sizeof(trans_Id), "1");  // 替换为实际生成的事务ID
-    closeDoor.curWeight = get_current_weight();
-    closeDoor.changeWeight = 0.5;  // 替换为实际改变的重量
+    closeDoor.curWeight = cur_weight;
+    closeDoor.changeWeight = diff_weight;
 
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", "closeDoor");
@@ -721,10 +726,8 @@ int close_door() {
 }
 
 // 上传超重
-int upload_overweight(void) {
+int upload_overweight(double curWeight) {
     char recv_buf[MAX_BUF_SIZE];
-
-    double curWeight = get_current_weight();
 
     // 创建 JSON 请求
     cJSON *root = cJSON_CreateObject();
@@ -984,36 +987,6 @@ int server_start() {
 
 int test() {
     int ret;
-    // 上传关门
-    ret = close_door(); // 假设箱子编号为1
-    if (ret == 0) {
-        printf("Close door request sent successfully.\n");
-        printf("\n");
-    } else {
-        printf("Failed to send close door request.\n");
-        printf("\n");
-    }
-
-    // 上传超重
-    ret = upload_overweight();
-    if (ret == 0) {
-        printf("Overweight uploaded successfully.\n");
-        printf("\n");
-    } else {
-        printf("Failed to upload overweight.\n");
-        printf("\n");
-    }
-
-    // 上传溢满
-    ret = upload_overflow(3); // 当前容量为 3: 高
-    if (ret == 0) {
-        printf("Overflow uploaded successfully.\n");
-        printf("\n");
-    } else {
-        printf("Failed to upload overflow.\n");
-        printf("\n");
-    }
-
     // 上传照片
     ret = upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, photo_file);
     if (ret != 0) {

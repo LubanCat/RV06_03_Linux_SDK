@@ -48,15 +48,8 @@ void* aux_task_thread(void* arg) {
     while (1) {
         // LVGL 更新4G信号强度
         if (signal_count == 5) {
-            int net_status;
             heartBeat.signal = module_signal();
-            if (heartBeat.signal == 99) {
-                net_status = 0;
-            } else {
-                net_status = 1;
-            }
-
-            set_screen_login_net_status(net_status,heartBeat.signal);
+            set_screen_login_net_status(heartBeat.signal);
             signal_count = 0;
         }
 
@@ -96,7 +89,7 @@ void* aux_task_thread(void* arg) {
 
             int cur_weight = get_current_weight();
             if (cur_weight >= MAX_WEIGHT){
-                upload_overweight();
+                upload_overweight(cur_weight);
             }
             overflow_count = 0;
         }
@@ -179,7 +172,7 @@ int main(void)
 
     server_start();
 
-    set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+    set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
 
     int curCapacity = get_overflow_status();
     if (curCapacity == 3){

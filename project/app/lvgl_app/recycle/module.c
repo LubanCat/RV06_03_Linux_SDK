@@ -66,7 +66,7 @@ int module_signal(void) {
     if (ret < 0) {
         perror("Failed to send AT+CSQ command");
         close(tty_fd);
-        return -1;
+        return 99;
     }
 
     usleep(100000); // 等待响应
@@ -76,7 +76,7 @@ int module_signal(void) {
     if (ret < 0) {
         perror("Failed to read AT+CSQ response");
         close(tty_fd);
-        return -1;
+        return 99;
     }
 
     // 提取信号质量数据
@@ -88,7 +88,6 @@ int module_signal(void) {
         printf("No +CSQ response found\n");
     }
 
-    moduleInfo.signal = rssi;
     return rssi;
 }
 
