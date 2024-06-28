@@ -68,51 +68,6 @@ OpenDoor openDoor;
 CloseDoor closeDoor;
 HeartBeat heartBeat;
 
-// 获取当前重量
-double get_current_weight() {
-    // 从硬件或其他数据源获取当前重量
-    return 12.5; // 示例值
-}
-
-int get_overflow_status() {
-    return 2;
-}
-
-int get_clear_key(){
-    printf("按键：清运开门\n");
-    int a ;
-    scanf("%d",&a);
-    return a;
-}
-
-int get_close_key(){
-    printf("按键：关门\n");
-    int a ;
-    scanf("%d",&a);
-    return a;
-}
-
-int get_post_key(){
-    printf("按键：继续投递\n");
-    int a ;
-    scanf("%d",&a);
-    return a;
-}
-
-
-int set_clear_door(int status){
-    if (status == 0) {
-        close_door();
-    }
-    return 0;
-}
-
-int set_post_door(int status){
-    if (status == 0) {
-        close_door();
-    }
-    return 0;
-}
 
 int send_tcp_packet(char *buf,int size){
     pthread_mutex_lock(&mutex);
@@ -508,32 +463,36 @@ int open_door(int curCapacity) {
     open_clean_door_flag=0;
     hand_close_door_flag=0;
     message_queue_t msg;
+
     if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OPENDOOR, 0) == -1) {
         perror("msgrcv failed");
         exit(EXIT_FAILURE);
     }
+
     double sub_weight =  get_current_weight();
+
+    printf("开门: openType=%d\n", openDoor.openType);
+
     if (openDoor.openType == 1) {
-        printf("开门:openDoor.openType=%d\n", openDoor.openType);
+        // 满溢时进入满溢界面，不开投递门
         if (curCapacity == 3) {
-            // LVGL_UI 回收柜已满，10s后返回登录界面
-            set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,10);
             printf("当前回收柜已满，请清运后再投递\n");
+            set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,10);
             for (int i = 10; i > 0; i--) {
                 printf("倒计时: %d秒 后返回登录界面\n", i);
-                // 更新 回收柜已满 界面倒计时
                 set_screen_full_time(i);
                 sleep(1);
             }
-            // 更新到登录页面
-            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, 23);
+            // 返回到登录页面
+            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
         } else {
             int i = 20;
+            // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,i,0);
+            set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
-            set_post_door(1);
-            // LVGL_UI 投递页面,投递重量、金额，99s倒计时
             for (; i > 0; i--) {
+                // 获取重量，循环更新页面
                 double cur_weight= get_current_weight();
                 double diff_weight = sub_weight - cur_weight;
                 diff_weight = 0.8;
@@ -542,26 +501,24 @@ int open_door(int curCapacity) {
                 set_screen_submit_time(i);
                 set_screen_submit_money(money);
                 set_screen_submit_weigth(diff_weight);
-                // 获取按键状态，关门，发送关门消息个服务器，跳出循环
+
+                // 获取关闭仓门按键状态
                 if (close_door_flag) {
                     printf("按键：关闭仓门");
-                    set_post_door(0);
                     close_door_flag=0;
-                    set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
                     break;
                 }
 
-                // 超重判断 ，超重发超重消息给服务器，LVGL提示超重
-
                 if (i <= 10) {
                     // 投递重量、金额，10s倒计时
-                    // 获取按键状态，继续投递按下i=99
                     printf("hidden\n");
                     lv_obj_add_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
+
+                    // 获取继续投递按键状态，按下倒计时重新从99开始
                     if (post_flag) {
                         printf("按键：继续投递\n");
-                        i = 99;
+                        i = 20;
                         post_flag=0;
                     }
                 }else{
@@ -570,30 +527,32 @@ int open_door(int curCapacity) {
                 }
                 sleep(1);
             }
+            set_post_door_close();
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
+            openDoor.openType = 0;
         }
-        openDoor.openType = 0;
     } else if (openDoor.openType == 2) {
         int i = 20;
         int clearing = 0;
         double cur_weight;
 
-        printf("开门: openType=%d\n", openDoor.openType);
         // 清运操作页面1
         set_screen_clean(&guider_ui.screen_login_del,i,sub_weight);
-        // LVGL_UI 清运页面 清运总重量，开门按钮99s倒计时
+
         for (; i > 0; i--) {
             // 更新清运界面倒计时
             set_screen_clean_time(i);
             printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i, sub_weight);
-            // 获取按键状态，开门按钮开门
+            // 获取开启清运门按键状态，按下开启清运门
             if (open_clean_door_flag) {
                 printf("按键：开启清运门\n");
-                set_clear_door(1);
+                set_clear_door_open();
                 open_clean_door_flag=0;
                 clearing = 1;
                 break;
             }
 
+            // 获取退出按键状态，按下返回登录界面
             if (quit_flag) {
                 printf("按键：退出该模式\n");
                 set_screen_login(&guider_ui.screen_clean_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1, heartBeat.signal);
@@ -603,33 +562,45 @@ int open_door(int curCapacity) {
             sleep(1);
         }
 
-        // 判断是否进入清运状态，开门，显示正在清运
+        // 判断是否进入清运状态，显示正在清运
         if (clearing == 1) {
             // 清运操作页面2
             set_screen_cleaning(&guider_ui.screen_login_del,sub_weight);
             while (1) {
                 double cur_weight = get_current_weight();
-                // 清运操作页面2 更新当前质量
-
+                // 清运操作页面2 更新当前重量
+                set_screen_cleaning_weigth(cur_weight);
                 printf("清运中: 当前重量%.2fKG\n", cur_weight);
+
+                // 检测模拟关闭清理门按钮，正式版本删除此判断
                 if (hand_close_door_flag) {
-                    printf("手动关闭清理门\n");
-                    set_clear_door(0);
+                    printf("关门按钮：关闭清理门\n");
+                    close_door(); // 发送关门信息
                     hand_close_door_flag=0;
                     clearing = 2;
                     break;
                 }
-                sleep(1); // 避免CPU空转
+
+                // 检测清理门关闭状态
+                if (get_clear_door_status()) {
+                    printf("电磁锁检测：手动关闭清理门\n");
+                    close_door(); // 发送关门信息
+                    hand_close_door_flag=0;
+                    clearing = 2;
+                    break;
+                }
+                sleep(1);
             }
         }
 
+        // 判断进入清运完成状态 
         if (clearing == 2) {
             cur_weight = get_current_weight();
             double diff_weight = sub_weight - cur_weight;
-            // 更新清运完成页面 清运前重量 清运后重量 清运重量
+            // 更新清运完成页面 
             set_screen_cleaned(&guider_ui.screen_login_del,10,sub_weight, cur_weight, diff_weight);
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
-            for (i = 10; i > 0; i--) { // 重新初始化倒计时
+            for (i = 10; i > 0; i--) {
                 printf("清运完成: %d秒后返回登录界面\n", i);
                 set_screen_cleaned_time(i);
                 sleep(1);
@@ -913,12 +884,6 @@ int server_start() {
             sleep(60); // 获取失败时，等待60秒后重试
         }
     }
-
-    close_door();
-    char recv_buf[256];
-    int recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
-    printf("recv_len\n",recv_len);
-    while(1);
 
     // 创建心跳线程
     pthread_t heartbeat_thread_id;

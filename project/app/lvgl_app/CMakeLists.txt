@@ -56,17 +56,16 @@ link_directories(${LIB_DIR})
 set(CXX_SRCS
     main.c
     lv_app/src/ui.c
-    recycle/server.c
-    recycle/module.c
     )
 
 file(GLOB_RECURSE GENERATED_SOURCES generated/*.c)
 file(GLOB_RECURSE CUSTOM_SOURCES custom/*.c)
+file(GLOB_RECURSE RECYCLE_SOURCES recycle/*.c)
 
 add_subdirectory(lvgl)
 add_subdirectory(lv_drivers)
 
-ADD_EXECUTABLE(lvgl_app ${CUSTOM_SOURCES} ${GENERATED_SOURCES} ${CXX_SRCS})
+ADD_EXECUTABLE(lvgl_app ${RECYCLE_SOURCES} ${CUSTOM_SOURCES} ${GENERATED_SOURCES} ${CXX_SRCS})
 
 # Add linker flags for rpath and rpath-link
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${LIB_DIR}")
