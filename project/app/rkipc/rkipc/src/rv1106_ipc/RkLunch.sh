@@ -47,6 +47,21 @@ network_init()
 	ifconfig eth0 up && udhcpc -i eth0
 }
 
+lvgl_init()
+{
+	while [ ! -e /dev/ttyUSB2 ]; do
+		echo "等待 /dev/ttyUSB2 设备..."
+		sleep 1
+	done
+
+	echo "/dev/ttyUSB2 设备已连接，进行下一步操作。"
+	ifconfig eth1 up && udhcpc -i eth1
+
+	sleep 5
+
+	/oem/usr/bin/lvgl_app &
+}
+
 post_chk()
 {
 	#TODO: ensure /userdata mount done
@@ -69,6 +84,7 @@ post_chk()
 		cd $default_ko_dir && sh insmod_ko.sh && cd -
 	fi
 
+	lvgl_init &
 	network_init &
 	check_linker /userdata   /oem/usr/www/userdata
 	check_linker /media/usb0 /oem/usr/www/usb0
