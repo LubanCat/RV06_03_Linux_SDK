@@ -150,6 +150,8 @@ int main(void)
     indev_drv.read_cb = evdev_read;   //lv_gesture_dir_t lv_indev_get_gesture_dir(const lv_indev_t * indev)
     lv_indev_drv_register(&indev_drv);
 
+    recycle_gpio_init();
+
     // 获取4G模块信息
     module_init();
     module_info();

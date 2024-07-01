@@ -1,6 +1,21 @@
 #ifndef HARDWARE_H
 #define HARDWARE_H
 
+#include "rk_gpio.h"
+
+#define GPIO_CLEAR_LOCK         43
+#define GPIO_PUSH_ROD0          49
+#define GPIO_PUSH_ROD1          50
+#define GPIO_LIGHT_INSIDE       52
+#define GPIO_LIGHT_OUTSIDE      53
+#define GPIO_FAN                58
+
+#define GPIO_LOCK_STATUS        44
+#define GPIO_IR1_STATUS         55
+#define GPIO_IR2_STATUS         56
+#define GPIO_NEAR_STATUS        102
+
+
 // 获取当前重量
 double get_current_weight();
 
