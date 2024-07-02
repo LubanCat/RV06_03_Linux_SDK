@@ -142,6 +142,7 @@
 		bus-format = <MEDIA_BUS_FMT_RGB666_1X18>;
         // enable-gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_HIGH>;
 		// enable-gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_HIGH>;
         // enable-delay-ms = <20>;
 		reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
 		reset-delay-ms = <10>;
@@ -278,32 +279,34 @@
     pinctrl-names = "default";
     pinctrl-0 = <&i2c3m2_xfer>;
 
-	// gt911: touchscreen@5d {
-	// 	compatible = "goodix,gt911";
-	// 	reg = <0x5d>;
-	// 	interrupt-parent = <&gpio0>;
-	// 	interrupts = <RK_PA2 IRQ_TYPE_EDGE_FALLING>;
-	// 	pinctrl-names = "default";
-	// 	pinctrl-0 = <&tp_int &tp_rst>;
-	// 	reset-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_LOW>;
-	// 	// touchscreen-size-y = <480>;
-	// 	// touchscreen-size-x = <480>;
-	// 	// touchscreen-inverted-x;
-	// 	// touchscreen-inverted-y;
-	// 	// touchscreen-swapped-x-y;
-	// };
 
 	gt911: gt911@5d {
 		status = "okay";
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		interrupt-parent = <&gpio1>;
-		interrupts = <RK_PD0 IRQ_TYPE_LEVEL_LOW>;
+		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&gpio1 RK_PA3 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
 		// touchscreen-inverted-x = <1>;
 		// touchscreen-inverted-y = <1>;
 	};
+
+    hynitron@5a {
+        compatible = "hyn,3240";      //根据芯片型号配置
+        reg = <0x5a>;				  //根据芯片型号配置
+
+        interrupt-parent = <&gpio1>;   //根据平台配置
+        interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;       //根据平台配置
+        reset-gpio = <&gpio1 RK_PA3 GPIO_ACTIVE_LOW>; //根据平台配置
+        irq-gpio = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;   //根据平台配置
+        
+        max-touch-number = <5>;
+        display-coords = <0 0 1024 600>;
+		pos-swap = <1>;     			//xy坐标交换
+		posx-reverse = <0>; 			//x坐标反向
+		posy-reverse = <0>; 			//y坐标反向
+    };
 };
 
 &i2c4 {
@@ -386,7 +389,7 @@
 &usbdrd_dwc3 {
     extcon = <&u2phy>;
 	status = "okay";
-    /* dr_mode = "host"; */
+    dr_mode = "host";
 };
 
 &display_subsystem {
