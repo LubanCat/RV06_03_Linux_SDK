@@ -21,75 +21,81 @@ typedef struct
 	lv_obj_t *blank;
 	bool blank_del;
 	lv_obj_t *blank_label_1;
-	lv_obj_t *blank_label_2;
-	lv_obj_t *blank_label_3;
 	lv_obj_t *screen_login;
 	bool screen_login_del;
-	lv_obj_t *screen_login_recycle_name;
-	lv_obj_t *screen_login_label_1;
+	lv_obj_t *screen_login_img_1;
 	lv_obj_t *screen_login_price;
-	lv_obj_t *screen_login_label_3;
-	lv_obj_t *screen_login_clean_time;
-	lv_obj_t *screen_login_qrcode;
-	lv_obj_t *screen_login_label_5;
+	lv_obj_t *screen_login_label_1;
+	lv_obj_t *screen_login_label_2;
 	lv_obj_t *screen_login_weigth;
-	lv_obj_t *screen_login_full;
-	lv_obj_t *screen_login_label_8;
-	lv_obj_t *screen_login_label_9;
+	lv_obj_t *screen_login_clean_time;
+	lv_obj_t *screen_login_canvas_1;
+	lv_obj_t *screen_login_qrcode;
+	lv_obj_t *screen_login_label_3;
+	lv_obj_t *screen_login_label_4;
 	lv_obj_t *screen_login_net_status;
 	lv_obj_t *screen_login_singal;
+	lv_obj_t *screen_login_full;
 	lv_obj_t *screen_full;
 	bool screen_full_del;
-	lv_obj_t *screen_full_recycle_name;
-	lv_obj_t *screen_full_label_1;
+	lv_obj_t *screen_full_img_1;
 	lv_obj_t *screen_full_price;
-	lv_obj_t *screen_full_label_2;
-	lv_obj_t *screen_full_label_3;
+	lv_obj_t *screen_full_img_2;
 	lv_obj_t *screen_full_time;
+	lv_obj_t *screen_full_label_2;
+	lv_obj_t *screen_full_spangroup_1;
 	lv_obj_t *screen_submit;
 	bool screen_submit_del;
-	lv_obj_t *screen_submit_recycle_name;
-	lv_obj_t *screen_submit_weigth;
+	lv_obj_t *screen_submit_img_1;
+	lv_obj_t *screen_submit_line_1;
+	lv_obj_t *screen_submit_img_2;
 	lv_obj_t *screen_submit_time;
+	lv_obj_t *screen_submit_label_1;
+	lv_obj_t *screen_submit_label_2;
+	lv_obj_t *screen_submit_label_3;
 	lv_obj_t *screen_submit_label_4;
+	lv_obj_t *screen_submit_label_5;
+	lv_obj_t *screen_submit_weigth;
 	lv_obj_t *screen_submit_money;
 	lv_obj_t *screen_submit_canvas_1;
-	lv_obj_t *screen_submit_close_door;
-	lv_obj_t *screen_submit_close_door_label;
 	lv_obj_t *screen_submit_post;
 	lv_obj_t *screen_submit_post_label;
-	lv_obj_t *screen_submit_label_5;
+	lv_obj_t *screen_submit_close_door;
+	lv_obj_t *screen_submit_close_door_label;
+	lv_obj_t *screen_submit_label_6;
+	lv_obj_t *screen_submit_label_7;
 	lv_obj_t *screen_clean;
 	bool screen_clean_del;
-	lv_obj_t *screen_clean_label_2;
+	lv_obj_t *screen_clean_img_1;
+	lv_obj_t *screen_clean_img_2;
 	lv_obj_t *screen_clean_time;
+	lv_obj_t *screen_clean_label_2;
+	lv_obj_t *screen_clean_weigth;
+	lv_obj_t *screen_clean_open_clean;
+	lv_obj_t *screen_clean_open_clean_label;
+	lv_obj_t *screen_clean_img_3;
 	lv_obj_t *screen_clean_quit;
 	lv_obj_t *screen_clean_quit_label;
-	lv_obj_t *screen_clean_label_5;
-	lv_obj_t *screen_clean_weigth;
-	lv_obj_t *screen_clean_open_clean_door;
-	lv_obj_t *screen_clean_open_clean_door_label;
 	lv_obj_t *screen_cleaning;
 	bool screen_cleaning_del;
+	lv_obj_t *screen_cleaning_img_1;
+	lv_obj_t *screen_cleaning_img_2;
+	lv_obj_t *screen_cleaning_time;
 	lv_obj_t *screen_cleaning_label_2;
-	lv_obj_t *screen_cleaning_label_4;
-	lv_obj_t *screen_cleaning_label_5;
 	lv_obj_t *screen_cleaning_weigth;
-	lv_obj_t *screen_cleaning_hand_close_door;
-	lv_obj_t *screen_cleaning_hand_close_door_label;
+	lv_obj_t *screen_cleaning_label_3;
 	lv_obj_t *screen_cleaned;
 	bool screen_cleaned_del;
-	lv_obj_t *screen_cleaned_label_2;
+	lv_obj_t *screen_cleaned_img_1;
+	lv_obj_t *screen_cleaned_img_2;
 	lv_obj_t *screen_cleaned_time;
-	lv_obj_t *screen_cleaned_label_5;
+	lv_obj_t *screen_cleaned_label_2;
 	lv_obj_t *screen_cleaned_before_clean_weigth;
-	lv_obj_t *screen_cleaned_label_6;
-	lv_obj_t *screen_cleaned_label_9;
+	lv_obj_t *screen_cleaned_label_3;
 	lv_obj_t *screen_cleaned_after_clean_weigth;
-	lv_obj_t *screen_cleaned_label_7;
-	lv_obj_t *screen_cleaned_label_12;
+	lv_obj_t *screen_cleaned_label_4;
 	lv_obj_t *screen_cleaned_clean_weigth;
-	lv_obj_t *screen_cleaned_label_10;
+	lv_obj_t *screen_cleaned_label_6;
 }lv_ui;
 
 typedef void (*ui_setup_scr_t)(lv_ui * ui);
@@ -130,19 +136,31 @@ void setup_scr_screen_submit(lv_ui *ui);
 void setup_scr_screen_clean(lv_ui *ui);
 void setup_scr_screen_cleaning(lv_ui *ui);
 void setup_scr_screen_cleaned(lv_ui *ui);
+LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_cycle_alpha_200x200);
+LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_cycle_alpha_200x200);
+LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_cycle_alpha_200x200);
+LV_IMG_DECLARE(_3_alpha_222x216);
+LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_cycle_alpha_200x200);
+LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_cycle_alpha_200x200);
 
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN_24)
-LV_FONT_DECLARE(lv_font_montserratMedium_16)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN_84)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_56)
-LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_64)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_56)
+LV_FONT_DECLARE(lv_font_montserratMedium_16)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_32)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN_85)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_96)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_36)
+LV_FONT_DECLARE(lv_font_montserratMedium_12)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_54)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_42)
 
 
 #ifdef __cplusplus

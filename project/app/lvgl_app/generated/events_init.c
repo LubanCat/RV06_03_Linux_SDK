@@ -14,26 +14,21 @@
 #if LV_USE_FREEMASTER
 #include "freemaster_client.h"
 #endif
-
-
 #include "custom.h"
-static void screen_login_event_handler (lv_event_t *e)
+
+static void screen_submit_post_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
 
 	switch (code) {
-	case LV_EVENT_VALUE_CHANGED:
+	case LV_EVENT_CLICKED:
 	{
-		
+		post_flag=1;
 		break;
 	}
 	default:
 		break;
 	}
-}
-void events_init_screen_login(lv_ui *ui)
-{
-	lv_obj_add_event_cb(ui->screen_login, screen_login_event_handler, LV_EVENT_ALL, ui);
 }
 static void screen_submit_close_door_event_handler (lv_event_t *e)
 {
@@ -49,40 +44,12 @@ static void screen_submit_close_door_event_handler (lv_event_t *e)
 		break;
 	}
 }
-static void screen_submit_post_event_handler (lv_event_t *e)
-{
-	lv_event_code_t code = lv_event_get_code(e);
-
-	switch (code) {
-	case LV_EVENT_CLICKED:
-	{
-		post_flag=1;
-		break;
-	}
-	default:
-		break;
-	}
-}
 void events_init_screen_submit(lv_ui *ui)
 {
-	lv_obj_add_event_cb(ui->screen_submit_close_door, screen_submit_close_door_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_submit_post, screen_submit_post_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_submit_close_door, screen_submit_close_door_event_handler, LV_EVENT_ALL, ui);
 }
-static void screen_clean_quit_event_handler (lv_event_t *e)
-{
-	lv_event_code_t code = lv_event_get_code(e);
-
-	switch (code) {
-	case LV_EVENT_CLICKED:
-	{
-		quit_flag=1;
-		break;
-	}
-	default:
-		break;
-	}
-}
-static void screen_clean_open_clean_door_event_handler (lv_event_t *e)
+static void screen_clean_open_clean_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
 
@@ -96,28 +63,24 @@ static void screen_clean_open_clean_door_event_handler (lv_event_t *e)
 		break;
 	}
 }
-void events_init_screen_clean(lv_ui *ui)
-{
-	lv_obj_add_event_cb(ui->screen_clean_quit, screen_clean_quit_event_handler, LV_EVENT_ALL, ui);
-	lv_obj_add_event_cb(ui->screen_clean_open_clean_door, screen_clean_open_clean_door_event_handler, LV_EVENT_ALL, ui);
-}
-static void screen_cleaning_hand_close_door_event_handler (lv_event_t *e)
+static void screen_clean_quit_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
 
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		hand_close_door_flag=1;
+		
 		break;
 	}
 	default:
 		break;
 	}
 }
-void events_init_screen_cleaning(lv_ui *ui)
+void events_init_screen_clean(lv_ui *ui)
 {
-	lv_obj_add_event_cb(ui->screen_cleaning_hand_close_door, screen_cleaning_hand_close_door_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_clean_open_clean, screen_clean_open_clean_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_clean_quit, screen_clean_quit_event_handler, LV_EVENT_ALL, ui);
 }
 
 void events_init(lv_ui *ui)
