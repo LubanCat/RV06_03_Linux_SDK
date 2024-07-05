@@ -66,35 +66,6 @@
 		};
 	};
 
-    weight {
-        compatible = "avia,hx711";
-        sck-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
-        dout-gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;
-        // avdd-supply = <&avdd>;
-        clock-frequency = <100000>;
-    };
-
-	leds: leds {
-		status = "okay";
-		compatible = "gpio-leds";
-
-		fephy_spd_led: fephy-spd-led {
-			label = "fephy_spd_led";
-			linux,default-trigger = "netdev";
-			default-state = "on";
-			function = "activity";
-			gpios = <&gpio4 RK_PA7 GPIO_ACTIVE_HIGH>;
-		};
-
-		fephy_link_led: fephy-link-led {
-			label = "fephy_link_led";
-			linux,default-trigger = "netdev";
-			default-state = "on";
-			function = "link";
-			gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	backlight: backlight {
 		status = "okay";
 		compatible = "pwm-backlight";
@@ -140,9 +111,7 @@
 		compatible = "simple-panel";
 		backlight = <&backlight>;
 		bus-format = <MEDIA_BUS_FMT_RGB666_1X18>;
-        // enable-gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_HIGH>;
-		// enable-gpios = <&gpio3 RK_PB5 GPIO_ACTIVE_HIGH>;
-		enable-gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_HIGH>;
+		// enable-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
         // enable-delay-ms = <20>;
 		reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
 		reset-delay-ms = <10>;
@@ -248,11 +217,28 @@
 	// 	regulator-boot-on;
 	// 	regulator-min-microvolt = <5000000>;
 	// 	regulator-max-microvolt = <5000000>;
-	// 	gpio = <&gpio3 RK_PB5 GPIO_ACTIVE_HIGH>;
+	// 	gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
 	// 	pinctrl-names = "default";
 	// 	pinctrl-0 = <&lcd_power_en>;
 	// 	vin-supply = <&vcc5v0_sys>;
 	// };
+
+	avdd: avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "avdd";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+	};
+
+    hx711: hx711 {
+        compatible = "avia,hx711";
+        sck-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
+        dout-gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;
+        avdd-supply = <&avdd>;
+        clock-frequency = <100000>;
+    };
 };
 
 &acodec {
@@ -288,8 +274,8 @@
 		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&gpio1 RK_PA3 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
-		// touchscreen-inverted-x = <1>;
-		// touchscreen-inverted-y = <1>;
+		touchscreen-inverted-x = <1>;
+		touchscreen-inverted-y = <1>;
 	};
 
     hynitron@5a {
@@ -303,7 +289,7 @@
         
         max-touch-number = <5>;
         display-coords = <0 0 1024 600>;
-		pos-swap = <1>;     			//xy坐标交换
+		pos-swap = <0>;     			//xy坐标交换
 		posx-reverse = <0>; 			//x坐标反向
 		posy-reverse = <0>; 			//y坐标反向
     };
@@ -431,12 +417,10 @@
 &pinctrl {
 	lcd {
 		lcd_power_en: lcd-power-en {
-			rockchip,pins = <3 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
-
-
 
 &csi2_dphy_hw {
 	status = "okay";
