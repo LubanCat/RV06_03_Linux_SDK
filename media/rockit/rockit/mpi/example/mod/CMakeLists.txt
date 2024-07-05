@@ -39,6 +39,10 @@ set(RK_MPI_TEST_VENC_SRC
     test_mpi_venc.cpp
 )
 
+set(RK_MPI_VENC_SRC
+    venc.cpp
+)
+
 set(RK_MPI_TEST_DUP_VENC_SRC
     test_mpi_dup_venc.cpp
 )
@@ -152,6 +156,12 @@ install(TARGETS rk_mpi_sys_test RUNTIME DESTINATION "bin")
 add_executable(rk_mpi_venc_test ${RK_MPI_TEST_VENC_SRC} ${RK_MPI_TEST_COMMON_SRC})
 target_link_libraries(rk_mpi_venc_test ${ROCKIT_DEP_COMMON_LIBS})
 install(TARGETS rk_mpi_venc_test RUNTIME DESTINATION "bin")
+#--------------------------
+# rk_mpi_venc
+#--------------------------
+add_executable(rk_mpi_venc ${RK_MPI_VENC_SRC} ${RK_MPI_TEST_COMMON_SRC})
+target_link_libraries(rk_mpi_venc ${ROCKIT_DEP_COMMON_LIBS})
+install(TARGETS rk_mpi_venc RUNTIME DESTINATION "bin")
 #--------------------------
 # rk_mpi_dup_venc_test
 #--------------------------
