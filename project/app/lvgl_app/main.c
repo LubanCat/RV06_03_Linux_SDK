@@ -16,6 +16,7 @@
 #include "custom.h"
 #include "generated/gui_guider.h"
 #include "generated/events_init.h"
+#include "capture.h"
 
 #define DISP_BUF_SIZE (480 * 480)
 #define MAX_WEIGHT 20
@@ -23,6 +24,7 @@
 
 lv_ui guider_ui;
 extern int sock;
+lv_disp_drv_t disp_drv;
 
 void* lv_task_thread(void* arg) {
 
@@ -86,7 +88,18 @@ void* aux_task_thread(void* arg) {
             int curCapacity = get_overflow_status();
             if (curCapacity == 3){
                 upload_overflow(curCapacity);
+                 // LVGL_UI 回收柜已满
+                if(screen_login_flag == 1){
+                    // 在登录页面才更新
+                    lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                }
+            }else{
+                if(screen_login_flag == 1){
+                    // 在登录页面才更新
+                    lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                }
             }
+
 
             int cur_weight = get_current_weight();
             if (cur_weight >= MAX_WEIGHT){
@@ -119,6 +132,7 @@ int main(void)
     /*Linux DRM device init*/
     drm_init();
 
+
     /*A small buffer for LittlevGL to draw the screen's content*/
     static lv_color_t buf1[DISP_BUF_SIZE];
     static lv_color_t buf2[DISP_BUF_SIZE];
@@ -128,14 +142,13 @@ int main(void)
     lv_disp_draw_buf_init(&disp_buf, buf1, buf2, DISP_BUF_SIZE);
 
     /*Initialize and register a display driver*/
-    static lv_disp_drv_t disp_drv;
     uint32_t dpi = 0;
     lv_disp_drv_init(&disp_drv);
     disp_drv.draw_buf   = &disp_buf;
     disp_drv.flush_cb   = drm_flush;
     disp_drv.wait_cb    = drm_wait_vsync;
-    /* disp_drv.sw_rotate = 1; */
-    /* disp_drv.rotated = LV_DISP_ROT_90; */
+    disp_drv.sw_rotate = 1;
+    disp_drv.rotated = LV_DISP_ROT_90;
     drm_get_sizes(&disp_drv.hor_res, &disp_drv.ver_res, &dpi);
     lv_disp_drv_register(&disp_drv);
 
@@ -166,7 +179,7 @@ int main(void)
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
-
+    
     server_start();
 
     ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);
@@ -181,10 +194,13 @@ int main(void)
     if (curCapacity == 3){
         upload_overflow(curCapacity);
         // LVGL_UI 回收柜已满
+        lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+    }else{
+        lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
     }
 
     while(1){
-        open_door(curCapacity);
+        open_door();
     }
 
     return 0;

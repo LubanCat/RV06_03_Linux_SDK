@@ -40,6 +40,7 @@ include_directories(
     lv_port/
     include
     include/libdrm
+    include/libjpeg9
     custom/
     generated/
     generated/guider_fonts
@@ -80,6 +81,7 @@ target_link_libraries(lvgl_app
     libcurl.so
     libcrypto.so
     libcjson.so
+    libjpeg.so
     pthread
     m
 )

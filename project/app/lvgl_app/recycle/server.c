@@ -10,6 +10,7 @@
 #include "module.h"
 #include <sys/msg.h>
 #include "../custom/custom.h"
+#include "capture.h"
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 15
@@ -22,6 +23,46 @@
 
 #define CONFIG_SERVER_IP "47.101.195.22"
 #define CONFIG_SERVER_PORT 9096
+extern lv_disp_drv_t disp_drv;
+
+void* capture_thread(void* arg) {
+    // capture_jpg("/dev/video21",320,240,"320x240.jpg");
+
+    video_frame_t video_frame;
+    video_frame.width=320;
+    video_frame.height=240;
+    sprintf(video_frame.device,"%s","/dev/video21");
+    capture_start(&video_frame);
+    lv_color_t *color_p;
+    int size=320*240;
+    color_p=malloc(size*sizeof(lv_color_t));
+    int length;
+
+    lv_area_t area;
+    area.x1=618;
+    area.x2=857;
+    area.y1=129;
+    area.y2=448;
+    
+    while(1){
+        char *data;
+        video_linux_get_frame_rgb(&video_frame,&data,&length);
+        printf("convert\n");
+        memset(color_p,0x00,size*sizeof(lv_color_t));
+
+        for(int j=0;j<240;j++){
+            for(int i=0;i<320;i++){
+                color_p[j+(319-i)*240].full |= 0xff<<24;
+                color_p[j+(319-i)*240].full |= data[(j*320+i)*3+0]<<16;
+                color_p[j+(319-i)*240].full |= data[(j*320+i)*3+1]<<8;
+                color_p[j+(319-i)*240].full |= data[(j*320+i)*3+2];
+            }
+        }
+        
+        drm_flush(&disp_drv,&area,color_p);
+        free(data);
+    }
+}
 
 int msgid;
 typedef enum {
@@ -511,7 +552,7 @@ void *heartbeat_thread(void *arg) {
 }
 
 // 开门
-int open_door(int curCapacity) {
+int open_door() {
     close_door_flag=0;
     post_flag=0;
     quit_flag=0;
@@ -533,7 +574,7 @@ int open_door(int curCapacity) {
 
     if (openDoor.openType == 1) {
         // 满溢时进入满溢界面，不开投递门
-        if (curCapacity == 3) {
+        if (get_overflow_status() == 3) {
             printf("当前回收柜已满，请清运后再投递\n");
             set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,COUNT_DOWN10);
             for (int i = COUNT_DOWN10; i > 0; i--) {
@@ -546,9 +587,15 @@ int open_door(int curCapacity) {
         } else {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
-
+            pthread_t capture_thread_id;
+            int ret = pthread_create(&capture_thread_id, NULL, capture_thread, NULL);
+            if (ret != 0) {
+                perror("pthread_create");
+                exit(EXIT_FAILURE);
+            }
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,i,0);
+
             inside_light(1);
             set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
@@ -591,6 +638,7 @@ int open_door(int curCapacity) {
                 }
                 usleep(1000000 / REFRESH_RATE); 
             }
+            pthread_cancel(capture_thread_id);
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             inside_light(0);
@@ -657,7 +705,7 @@ int open_door(int curCapacity) {
                 }
 
                 // 检测清理门关闭状态
-                if (get_clear_door_status()) {
+                if (get_clear_door_status() == 0) {
                     printf("电磁锁检测：手动关闭清理门\n");
                     close_door(cur_weight, diff_weight); // 发送关门信息
                     inside_light(0);

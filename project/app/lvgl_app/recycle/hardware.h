@@ -3,17 +3,19 @@
 
 #include "rk_gpio.h"
 
-#define GPIO_CLEAR_LOCK         43
-#define GPIO_PUSH_ROD0          49
-#define GPIO_PUSH_ROD1          50
-#define GPIO_LIGHT_INSIDE       52
-#define GPIO_LIGHT_OUTSIDE      53
-#define GPIO_FAN                58
+#define msleep(x) usleep(x * 1000)
 
-#define GPIO_LOCK_STATUS        44
-#define GPIO_IR1_STATUS         55
-#define GPIO_IR2_STATUS         56
-#define GPIO_NEAR_STATUS        102
+#define GPIO_LOCK_CEN           5
+#define GPIO_PUSH_ROD0          2
+#define GPIO_PUSH_ROD1          3
+#define GPIO_LIGHT_INSIDE       1
+#define GPIO_LIGHT_OUTSIDE      0
+#define GPIO_FAN                118
+
+#define GPIO_LOCK_INT           4
+#define GPIO_IR1_STATUS         135
+#define GPIO_IR2_STATUS         133
+#define GPIO_PEOPLE_CHECK       123
 
 
 // 获取当前重量
