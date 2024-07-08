@@ -111,8 +111,8 @@
 		compatible = "simple-panel";
 		backlight = <&backlight>;
 		bus-format = <MEDIA_BUS_FMT_RGB666_1X18>;
-		// enable-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
-        // enable-delay-ms = <20>;
+		enable-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+        enable-delay-ms = <20>;
 		reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
 		reset-delay-ms = <10>;
 
@@ -208,20 +208,6 @@
 		regulator-max-microvolt = <3300000>;
 		vin-supply = <&vcc_3v3>;
 	};
-
-	// vcc5v0_lcd: vcc5v0-lcd {
-	// 	compatible = "regulator-fixed";
-	// 	regulator-name = "vcc5v0_lcd";
-	// 	regulator-always-on;
-	// 	enable-active-high;
-	// 	regulator-boot-on;
-	// 	regulator-min-microvolt = <5000000>;
-	// 	regulator-max-microvolt = <5000000>;
-	// 	gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
-	// 	pinctrl-names = "default";
-	// 	pinctrl-0 = <&lcd_power_en>;
-	// 	vin-supply = <&vcc5v0_sys>;
-	// };
 
 	avdd: avdd {
 		compatible = "regulator-fixed";
@@ -412,14 +398,6 @@
 
 &vop {
 	status = "okay";
-};
-
-&pinctrl {
-	lcd {
-		lcd_power_en: lcd-power-en {
-			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-	};
 };
 
 &csi2_dphy_hw {
