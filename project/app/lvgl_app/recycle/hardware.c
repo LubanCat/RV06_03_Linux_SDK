@@ -50,10 +50,64 @@ double generate_random_number() {
     return random_number;
 }
 
+int read_weight_adc(int ch){
+    char path[64];
+    int value;
+    char buffer[16];
+
+    if(ch!=0&&ch!=1){
+        printf("error chanel\n");
+        return -1;
+    }
+
+    sprintf(path,"/sys/bus/iio/devices/iio:device0/in_voltage%d_raw",ch);
+    
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        perror("无法打开文件");
+        return -1;
+    }
+
+    ssize_t num_read = read(fd, buffer, sizeof(buffer) - 1);
+    if (num_read < 0) {
+        perror("读取文件失败");
+        close(fd);
+        return -1;
+    }
+
+    buffer[num_read] = '\0'; // 确保字符串以null结尾
+    // 将读取的内容转换为int型数据
+    value = atoi(buffer);
+    // 关闭文件
+    close(fd);
+
+    return value;
+}
+
 // 获取当前重量
 double get_current_weight() {
+    int weight_zero=8381900;
+    int dd;
     // 需要修改成从硬件获取重量
-    double weight = generate_random_number();
+    double weight,weight_ch0,weight_ch1;
+
+    // 定义两个从adc上读到的数据
+    int adc_read_ch0,adc_read_ch1;
+    adc_read_ch0 = read_weight_adc(0);
+    adc_read_ch1 = read_weight_adc(1);
+
+    //重量转换，
+    if(adc_read_ch0 > weight_zero)
+        dd=adc_read_ch0-weight_zero;
+    else
+        dd=weight_zero-adc_read_ch0;
+    
+    dd /=100;
+    weight_ch0 = (double)dd/5;
+    weight_ch1 = 0.0;
+
+    // 总重等于两个通道重量相加
+    weight = weight_ch0 + weight_ch1;
     return weight; 
 }
 
@@ -117,6 +171,7 @@ get_rod_status() {
 }
 // 设置推杆开启投递门
 int set_post_door_open(){
+    int status;
     rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
 
@@ -137,12 +192,11 @@ int set_post_door_open(){
 
 // 设置推杆关闭投递门
 int set_post_door_close(){
+    int status;
     rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
 
     msleep(500);
-
-    int status;
 
     while (1) {
         status = get_rod_status();
