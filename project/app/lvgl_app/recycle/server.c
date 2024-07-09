@@ -27,12 +27,12 @@ extern lv_disp_drv_t disp_drv;
 
 void* capture_thread(void* arg) {
     // capture_jpg("/dev/video21",320,240,"320x240.jpg");
-
-    video_frame_t video_frame;
-    video_frame.width=320;
-    video_frame.height=240;
-    sprintf(video_frame.device,"%s","/dev/video21");
-    capture_start(&video_frame);
+    sleep(1);
+    video_frame_t *video_frame = (video_frame_t *)arg;
+    video_frame->width=320;
+    video_frame->height=240;
+    sprintf(video_frame->device,"%s","/dev/video21");
+    capture_start(video_frame);
     lv_color_t *color_p;
     int size=320*240;
     color_p=malloc(size*sizeof(lv_color_t));
@@ -46,8 +46,7 @@ void* capture_thread(void* arg) {
     
     while(1){
         char *data;
-        video_linux_get_frame_rgb(&video_frame,&data,&length);
-        printf("convert\n");
+        video_linux_get_frame_rgb(video_frame,&data,&length);
         memset(color_p,0x00,size*sizeof(lv_color_t));
 
         for(int j=0;j<240;j++){
@@ -588,13 +587,14 @@ int open_door() {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
-            int ret = pthread_create(&capture_thread_id, NULL, capture_thread, NULL);
-            if (ret != 0) {
-                perror("pthread_create");
-                exit(EXIT_FAILURE);
-            }
+            video_frame_t *video_frame;
+            video_frame = malloc(sizeof(video_frame));
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,i,0);
+            int ret = pthread_create(&capture_thread_id, NULL, capture_thread, (void *)video_frame);
+            if (ret != 0) {
+                perror("pthread_create");
+            }
 
             inside_light(1);
             set_post_door_open();
@@ -639,6 +639,7 @@ int open_door() {
                 usleep(1000000 / REFRESH_RATE); 
             }
             pthread_cancel(capture_thread_id);
+            capture_stop(video_frame);
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             inside_light(0);
