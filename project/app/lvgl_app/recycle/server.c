@@ -13,7 +13,7 @@
 #include "capture.h"
 
 #define MAX_BUF_SIZE 512
-#define COUNT_DOWN99 15
+#define COUNT_DOWN99 99
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 
@@ -592,7 +592,7 @@ int open_door() {
             //柜内拍照
             //柜外拍照
             // 投递界面
-            set_screen_submit(&guider_ui.screen_login_del,0,i,0);
+            set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
             video_frame = malloc(sizeof(video_frame_t));
             int ret = pthread_create(&capture_thread_id, NULL, capture_thread, (void *)video_frame);
@@ -640,7 +640,8 @@ int open_door() {
                     lv_obj_add_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                 }
-                usleep(1000000 / REFRESH_RATE); 
+                // usleep(1000000 / REFRESH_RATE); 
+                usleep(600000 / REFRESH_RATE); 
             }
             set_post_door_close();
             close_door(cur_weight, diff_weight);

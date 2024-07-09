@@ -10,6 +10,23 @@ int tty_fd;
 
 ModuleInfo moduleInfo;
 
+// 将fd设置为非阻塞模式
+int set_nonblocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        perror("Failed to get file status flags");
+        return -1;
+    }
+
+    flags |= O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) == -1) {
+        perror("Failed to set file status flags");
+        return -1;
+    }
+
+    return 0;
+}
+
 int module_init(void) {
     int ret;
     struct termios options;
@@ -33,6 +50,12 @@ int module_init(void) {
     options.c_iflag &= ~(IXON | IXOFF | IXANY);
     options.c_oflag &= ~OPOST;
     tcsetattr(tty_fd, TCSANOW, &options);
+
+    // 设置tty_fd为非阻塞模式
+    if (set_nonblocking(tty_fd) < 0) {
+        close(tty_fd);
+        return 99;
+    }
 
     // 发送ATE0命令关闭回显
     ret = write(tty_fd, "ATE0\r\n", 6);
@@ -71,10 +94,17 @@ int module_signal() {
 
     usleep(100000); // 等待响应
 
-    // 读取AT+CSQ命令的响应
+    // 初始化读取缓冲区
+    memset(buf, 0, sizeof(buf));
+
+    // 读取AT+CSQ命令的响应，非阻塞读取一次
     ret = read(tty_fd, buf, sizeof(buf));
     if (ret < 0) {
-        perror("Failed to read AT+CSQ response");
+        if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            printf("No data available to read\n");
+        } else {
+            perror("Failed to read AT+CSQ response");
+        }
         close(tty_fd);
         return 99;
     }

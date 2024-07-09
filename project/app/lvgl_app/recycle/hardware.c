@@ -18,7 +18,7 @@ int recycle_gpio_init() {
     gpio_init(GPIO_LOCK_INT, GPIO_DIRECTION_INPUT, 1);
 
     // 推杆，默认输出低电平
-    gpio_init(GPIO_PUSH_ROD0, GPIO_DIRECTION_OUTPUT, 0);
+    gpio_init(GPIO_PUSH_ROD0, GPIO_DIRECTION_OUTPUT, 1);
     gpio_init(GPIO_PUSH_ROD1, GPIO_DIRECTION_OUTPUT, 0);
 
     // 柜内灯，默认输出低电平关灯
@@ -103,7 +103,7 @@ double get_current_weight() {
         dd=weight_zero-adc_read_ch0;
     
     dd /=100;
-    weight_ch0 = (double)dd/5;
+    weight_ch0 = (double)dd/20; //转换系数，现在随便给的
     weight_ch1 = 0.0;
 
     // 总重等于两个通道重量相加
@@ -163,7 +163,7 @@ get_rod_status() {
     // 判断 rod 的状态
     if (voltage < 5) {
         return 0;
-    } else if (voltage < 80) {
+    } else if (voltage < 200) {
         return 1;
     } else {
         return 2;
@@ -175,16 +175,26 @@ int set_post_door_open(){
     rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
 
-    msleep(500);
+    msleep(1000);
 
     while (1) {
         status = get_rod_status();
+
+        if (status == 2) {
+            rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
+            rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
+            msleep(2000);
+            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
+            rk_gpio_set_value(GPIO_PUSH_ROD1, 1);            
+        }
 
         if (status == 0) {
             rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
             rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
             break; // 跳出循环
         }
+
+        msleep(100);
     }
 
     return 0;
@@ -196,16 +206,25 @@ int set_post_door_close(){
     rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
 
-    msleep(500);
+    msleep(1000);
 
     while (1) {
         status = get_rod_status();
+
+        if (status == 2) {
+            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
+            rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
+            msleep(2000);
+            rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
+            rk_gpio_set_value(GPIO_PUSH_ROD1, 0);            
+        }
 
         if (status == 0) {
             rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
             rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
             break; // 跳出循环
         }
+        msleep(100);
     }
 
     return 0;
