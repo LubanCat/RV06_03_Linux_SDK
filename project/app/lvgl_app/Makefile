@@ -42,6 +42,7 @@ lvgl_app-build:
 	@cd output && cmake -DCMAKE_TOOLCHAIN_FILE=$(TOOLCHAIN_FILE) -DCMAKE_INSTALL_PREFIX="$(CURRENT_DIR)/$(PKG_BIN)" $(SOURCE_DIR)
 	@make -C output -j $(nproc)
 	@make -C output install
+	@mkdir -p $(PKG_BIN)/usr/share && cp -vf $(CURRENT_DIR)/files/* $(PKG_BIN)/usr/share
 	$(call MAROC_COPY_PKG_TO_APP_OUTPUT, $(RK_APP_OUTPUT), $(PKG_BIN))
 
 install:
