@@ -1,0 +1,23 @@
+#!/bin/sh
+
+start() {
+	/usr/bin/aplay -Dhw:0 /oem/usr/share/poweron.wav
+}
+
+stop() {
+	/usr/bin/aplay -Dhw:0 /oem/usr/share/powerdown.wav
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  *)
+	echo "Usage: $0 {start|stop}"
+	exit 1
+esac
+
+exit $?
