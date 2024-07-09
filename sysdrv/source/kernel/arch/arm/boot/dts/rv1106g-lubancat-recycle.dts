@@ -281,34 +281,6 @@
     };
 };
 
-&i2c4 {
-    status = "disabled";
-    clock-frequency = <400000>;
-    pinctrl-names = "default";
-    pinctrl-0 = <&i2c4m2_xfer>;
-
-	gc2093: gc2093@37 {
-        compatible = "galaxycore,gc2093";
-		status = "okay";
-		reg = <0x37>;
-		clocks = <&cru MCLK_REF_MIPI0>;
-		clock-names = "xvclk";
-		// pwdn-gpios = <&gpio3 RK_PC5 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&mipi_refclk_out0>;
-        rockchip,camera-module-index = <0>;
-        rockchip,camera-module-facing = "back";
-        rockchip,camera-module-name = "SIDA209300461";
-        rockchip,camera-module-lens-name = "60IRC_F20";
-		port {
-			gc2093_out: endpoint {
-				remote-endpoint = <&csi_dphy_input0>;
-				data-lanes = <1 2>;
-			};
-		};
-	};
-};
-
 &i2s0_8ch {
 	#sound-dai-cells = <0>;
 	status = "okay";
