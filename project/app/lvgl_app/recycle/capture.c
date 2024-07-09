@@ -18,9 +18,8 @@ int capture_start(video_frame_t *video_frame)
     video_frame->fd = open(video_frame->device, O_RDWR);
     if (video_frame->fd == -1) {
         printf("打开摄像头失败: %s\n",video_frame->device);
-        exit(EXIT_FAILURE);
+        return -1;
     }
-    printf("%s:fd = %d\n",video_frame->device,video_frame->fd);
     struct v4l2_streamparm streamparam;
     // 设置摄像头格式为MJPEG
     struct v4l2_format fmt = {0};
@@ -33,7 +32,7 @@ int capture_start(video_frame_t *video_frame)
     if (ioctl(video_frame->fd, VIDIOC_S_FMT, &fmt) == -1) {
         perror("设置摄像头格式失败");
         close(video_frame->fd);
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     struct v4l2_format vfmt;
@@ -41,16 +40,15 @@ int capture_start(video_frame_t *video_frame)
     int ret = ioctl(video_frame->fd, VIDIOC_G_FMT, &vfmt);
     if(ret < 0){
         perror("Get FMT fail!");
-        exit(1);    
+        return -1;  
     }
-    printf("width:%d,height:%d\n",vfmt.fmt.pix.width,vfmt.fmt.pix.height);
 
     // 获取帧率参数
     streamparam.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (ioctl(video_frame->fd, VIDIOC_G_PARM, &streamparam) < 0) {
         perror("获取帧率参数失败");
         close(video_frame->fd);
-        return 1;
+        return -1;
     }
 
     struct v4l2_requestbuffers reqbuf;
@@ -61,7 +59,7 @@ int capture_start(video_frame_t *video_frame)
     ret = ioctl(video_frame->fd, VIDIOC_REQBUFS, &reqbuf);
     if(ret < 0){
         perror("request fail");    
-        return 0;
+        return -1;
     }
 
     //把内核空间映射到用户空间
@@ -72,26 +70,26 @@ int capture_start(video_frame_t *video_frame)
     kbuf.memory = V4L2_MEMORY_MMAP;
     if(ioctl(video_frame->fd, VIDIOC_QUERYBUF, &kbuf)<0){
         perror("query buf fail");
-        return 0;
+        return -1;
     }    
     video_frame->length = kbuf.length;
     video_frame->start = (char *)mmap(NULL, kbuf.length, PROT_READ | PROT_WRITE, MAP_SHARED, video_frame->fd, kbuf.m.offset);
     if(video_frame->start == MAP_FAILED){
         perror("mmap fail");
-        return 0;
+        return -1;
     }
 
     //缓存入队
     if(ioctl(video_frame->fd, VIDIOC_QBUF, &kbuf) < 0){
         perror("qbuf fail");
-        return 0;
+        return -1;
     }
 
     //启动摄像头数据采集
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if(ioctl(video_frame->fd, VIDIOC_STREAMON, &type)<0){
         perror("start fail");
-        return 0;
+        return -1;
     }
     return 1;
 }
@@ -149,19 +147,15 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length
     jpeg_start_decompress(&cinfo);
     row_stride = cinfo.output_width *cinfo.output_components;
     length[0]=row_stride*cinfo.output_height;
-    printf("width=%d,height=%d,bits=%d\n",cinfo.output_width ,cinfo.output_height,cinfo.output_components);
 
-    printf("buffer\n");
     buffer = (*cinfo.mem->alloc_sarray)
               ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-    printf("malloc\n");
     *data = (unsigned char *) malloc(cinfo.output_height * row_stride);
     if (*data == NULL) {
         printf("内存分配失败\n");
         jpeg_destroy_decompress(&cinfo);
         return 1;
     }
-    printf("jpeg_read_scanlines\n");
     int row = 0;
     while (cinfo.output_scanline < cinfo.output_height) {
         jpeg_read_scanlines(&cinfo, buffer, 1);
