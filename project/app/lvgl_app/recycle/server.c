@@ -24,6 +24,7 @@
 #define CONFIG_SERVER_IP "47.101.195.22"
 #define CONFIG_SERVER_PORT 9096
 extern lv_disp_drv_t disp_drv;
+char *preview_data;
 
 void* capture_thread(void* arg) {
     // capture_jpg("/dev/video21",320,240,"320x240.jpg");
@@ -45,21 +46,20 @@ void* capture_thread(void* arg) {
     area.y2=448;
     
     while(1){
-        char *data;
-        video_linux_get_frame_rgb(video_frame,&data,&length);
+        video_linux_get_frame_rgb(video_frame,&preview_data,&length);
         memset(color_p,0x00,size*sizeof(lv_color_t));
 
         for(int j=0;j<240;j++){
             for(int i=0;i<320;i++){
                 color_p[j+(319-i)*240].full |= 0xff<<24;
-                color_p[j+(319-i)*240].full |= data[(j*320+i)*3+0]<<16;
-                color_p[j+(319-i)*240].full |= data[(j*320+i)*3+1]<<8;
-                color_p[j+(319-i)*240].full |= data[(j*320+i)*3+2];
+                color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+0]<<16;
+                color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+1]<<8;
+                color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+2];
             }
         }
         
         drm_flush(&disp_drv,&area,color_p);
-        free(data);
+        free(preview_data);
     }
 }
 
@@ -587,10 +587,14 @@ int open_door() {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
-            video_frame_t *video_frame;
-            video_frame = malloc(sizeof(video_frame));
+            //获取当前时间
+            
+            //柜内拍照
+            //柜外拍照
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,i,0);
+            video_frame_t *video_frame;
+            video_frame = malloc(sizeof(video_frame_t));
             int ret = pthread_create(&capture_thread_id, NULL, capture_thread, (void *)video_frame);
             if (ret != 0) {
                 perror("pthread_create");
@@ -638,11 +642,16 @@ int open_door() {
                 }
                 usleep(1000000 / REFRESH_RATE); 
             }
-            pthread_cancel(capture_thread_id);
-            capture_stop(video_frame);
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             inside_light(0);
+            pthread_cancel(capture_thread_id);
+            capture_stop(video_frame);
+            free(video_frame);
+            if(preview_data != NULL)
+                free(preview_data);
+            //柜内拍照
+            //柜外拍照
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
             openDoor.openType = 0;
         }
