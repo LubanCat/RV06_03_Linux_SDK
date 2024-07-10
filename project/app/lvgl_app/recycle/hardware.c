@@ -163,7 +163,7 @@ get_rod_status() {
     // 判断 rod 的状态
     if (voltage < 5) {
         return 0;
-    } else if (voltage < 200) {
+    } else if (voltage < ROD_HINDER_ADC_VALUE) {
         return 1;
     } else {
         return 2;

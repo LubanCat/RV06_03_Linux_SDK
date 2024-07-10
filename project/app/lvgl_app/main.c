@@ -19,7 +19,7 @@
 #include "capture.h"
 
 #define DISP_BUF_SIZE (480 * 480)
-#define MAX_WEIGHT 20
+#define MAX_WEIGHT 200
 #define LIGHT_CHECK_TIME 60
 
 lv_ui guider_ui;
@@ -99,7 +99,6 @@ void* aux_task_thread(void* arg) {
                     lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
                 }
             }
-
 
             int cur_weight = get_current_weight();
             if (cur_weight >= MAX_WEIGHT){
@@ -191,8 +190,8 @@ int main(void)
     set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
 
     int curCapacity = get_overflow_status();
+    upload_overflow(curCapacity);
     if (curCapacity == 3){
-        upload_overflow(curCapacity);
         // LVGL_UI 回收柜已满
         lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
     }else{

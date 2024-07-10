@@ -51,16 +51,10 @@ int module_init(void) {
     options.c_oflag &= ~OPOST;
     tcsetattr(tty_fd, TCSANOW, &options);
 
-    // 设置tty_fd为非阻塞模式
-    if (set_nonblocking(tty_fd) < 0) {
-        close(tty_fd);
-        return 99;
-    }
-
     // 发送ATE0命令关闭回显
     ret = write(tty_fd, "ATE0\r\n", 6);
     if (ret < 0) {
-        perror("Failed to send ATE0 command");
+        perror("Failed to send ATE0 command\n");
         close(tty_fd);
         return -1;
     }
@@ -71,7 +65,7 @@ int module_init(void) {
     char buf[256];
     ret = read(tty_fd, buf, sizeof(buf));
     if (ret < 0) {
-        perror("Failed to read ATE0 response");
+        perror("Failed to read ATE0 response\n");
         close(tty_fd);
         return -1;
     }
@@ -83,6 +77,17 @@ int module_signal() {
     int ret;
     char buf[256];
     int rssi = 99, ber;
+
+    // // 设置tty_fd为非阻塞模式
+    // if (set_nonblocking(tty_fd) < 0) {
+    //     close(tty_fd);
+    //     return 99;
+    // }
+
+    ret = module_init();
+    if (ret == -1){
+        return 99;
+    }
 
     // 发送AT+CSQ命令查询信号质量
     ret = write(tty_fd, "AT+CSQ\r\n", 8);
@@ -117,6 +122,8 @@ int module_signal() {
     } else {
         printf("No +CSQ response found\n");
     }
+
+    module_deinit();
 
     return rssi;
 }
@@ -219,8 +226,10 @@ int module_deinit(void) {
 }
 
 int module_info(void) {
+    module_init();
     module_iccid();
     module_imsi();
     module_imei();
+    module_deinit();
     return 0;
 }

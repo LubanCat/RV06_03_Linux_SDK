@@ -20,6 +20,11 @@
 
 #define GPIO_PEOPLE_CHECK       123
 
+#if 1
+#define ROD_HINDER_ADC_VALUE 280
+#else 
+#define ROD_HINDER_ADC_VALUE 80
+#endif
 
 // 获取当前重量
 double get_current_weight();

@@ -86,8 +86,6 @@ typedef struct {
 // 设备信息
 char sn[32];
 char key[32];
-// char *sn = "00016000000001";
-// char *key = "device_key";
 char *version = "1.0";
 
 // 文件路径
@@ -208,8 +206,6 @@ int get_login_config() {
     cJSON_AddStringToObject(root, "sn", sn);
     cJSON_AddStringToObject(root, "key", key);
     char *json_str = cJSON_PrintUnformatted(root);
-
-    // 锁定互斥锁
 
     // 发送登录配置请求
     printf("Sending loginConfig request: %s\n", json_str);
@@ -345,7 +341,6 @@ int server_login() {
                 cJSON *turnOffLight = cJSON_GetObjectItem(response_json, "turnOffLight");
 
                 if (qrCode && recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
-                // if (recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
                     strncpy(loginRes.qrCode, qrCode->valuestring, sizeof(loginRes.qrCode) - 1);
                     loginRes.qrCode[sizeof(loginRes.qrCode) - 1] = '\0';
                     loginRes.recyclePrice = atof(recyclePrice->valuestring);
@@ -487,31 +482,6 @@ void *tcp_receiver(void *arg) {
     }
 }
 
-
-// 心跳上传函数
-// int upload_heartbeat() {
-//     // 创建 JSON 请求
-//     cJSON *root = cJSON_CreateObject();
-//     cJSON_AddStringToObject(root, "cmd", "heartBeat");
-//     cJSON_AddNumberToObject(root, "signal", heartBeat->signal);
-//     cJSON_AddNumberToObject(root, "curWeight", heartBeat->curWeight);
-//     char *json_str = cJSON_PrintUnformatted(root);
-
-//     // 发送心跳上传请求
-//     printf("Sending heartBeat request: %s\n", json_str);
-//     send_tcp_packet(json_str, strlen(json_str));
-//     free(json_str);
-//     cJSON_Delete(root);
-    
-//     // while(1);
-//     message_queue_t msg;
-//     if (msgrcv(msgid, &msg, sizeof(msg), 1, 0) == -1) {
-//         perror("msgrcv failed");
-//         exit(EXIT_FAILURE);
-//     }
-//     return msg.retcode;
-// }
-
 // 心跳线程函数
 void *heartbeat_thread(void *arg) {
 
@@ -548,8 +518,7 @@ void *heartbeat_thread(void *arg) {
         printf("\n");
 
         // 休眠
-        // sleep(loginRes.heartBeatInterval);
-        sleep(60);
+        sleep(loginRes.heartBeatInterval);
     }
 
     return NULL;
@@ -716,7 +685,7 @@ int open_door() {
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
             capture_jpg(out_video,1920,1080,out_video_close_path);
 
-            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
@@ -725,7 +694,7 @@ int open_door() {
         double cur_weight = 0;
         double diff_weight = 0;
         // 清运操作页面1
-        set_screen_clean(&guider_ui.screen_login_del,i,sub_weight);
+        set_screen_clean(&guider_ui.screen_login_del,COUNT_DOWN99,sub_weight);
 
         for (; i > 0; i--) {
             if ((i % REFRESH_RATE) == 0) {
@@ -766,16 +735,6 @@ int open_door() {
                     // 清运操作页面2 更新当前重量
                     set_screen_cleaning_weigth(cur_weight);
                     printf("清运中: 当前重量%.2fKG\n", cur_weight);
-                }
-
-                // 检测模拟关闭清理门按钮，正式版本删除此判断
-                if (hand_close_door_flag) {
-                    printf("关门按钮：关闭清理门\n");
-                    close_door(cur_weight, diff_weight); // 发送关门信息
-                    inside_light(0);
-                    hand_close_door_flag=0;
-                    clearing = 2;
-                    break;
                 }
 
                 // 检测清理门关闭状态
@@ -830,13 +789,6 @@ int close_door(double cur_weight, double diff_weight) {
     free(json_str);
     cJSON_Delete(root);
 
-    // message_queue_t msg;
-    // if (msgrcv(msgid, &msg, sizeof(msg), TYPE_CLOSEDOOR, 0) == -1) {
-    //     perror("msgrcv failed");
-    //     exit(EXIT_FAILURE);
-    // }
-    // printf("Received:%d %d\n", msg.type,msg.retcode);
-    // return msg.retcode;
     return 0;
 }
 
@@ -861,7 +813,6 @@ int upload_overweight(double curWeight) {
         perror("msgrcv failed");
         exit(EXIT_FAILURE);
     }
-    // printf("Received:%d %d\n", msg.type,msg.retcode);
     return msg.retcode;
 }
 
@@ -887,7 +838,6 @@ int upload_overflow(int curCapacity) {
         perror("msgrcv failed");
         exit(EXIT_FAILURE);
     }
-    // printf("Received:%d %d\n", msg.type,msg.retcode);
     return msg.retcode;
 }
 
@@ -1122,8 +1072,5 @@ int test() {
         return 1;
     }
 
-    // pthread_join(heartbeat_thread_id, NULL);
-
-    // close(sock);
     return 0;
 }
