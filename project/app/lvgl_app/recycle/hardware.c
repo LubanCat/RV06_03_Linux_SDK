@@ -169,11 +169,27 @@ get_rod_status() {
         return 2;
     }
 }
+
+rod_push(){
+    rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
+    rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
+}
+
+rod_pull(){
+    rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
+    rk_gpio_set_value(GPIO_PUSH_ROD1, 0);    
+}
+
+rod_stop(){
+    rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
+    rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
+}
+
 // 设置推杆开启投递门
 int set_post_door_open(){
     int status;
-    rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
-    rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
+    int rod_retry = 0;
+    rod_push();
 
     msleep(1000);
 
@@ -181,16 +197,19 @@ int set_post_door_open(){
         status = get_rod_status();
 
         if (status == 2) {
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
-            rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
-            msleep(2000);
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
-            rk_gpio_set_value(GPIO_PUSH_ROD1, 1);            
+            rod_retry++;
+            rod_pull();
+            msleep(3000);
+            if (rod_retry == 5){
+                rod_stop();
+                // 向服务器发送维修信息
+                break;
+            }
+            rod_push();         
         }
 
         if (status == 0) {
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
+            rod_stop();
             break; // 跳出循环
         }
 
@@ -203,8 +222,8 @@ int set_post_door_open(){
 // 设置推杆关闭投递门
 int set_post_door_close(){
     int status;
-    rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
-    rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
+    int rod_retry = 0;
+    rod_pull();
 
     msleep(1000);
 
@@ -212,16 +231,19 @@ int set_post_door_close(){
         status = get_rod_status();
 
         if (status == 2) {
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
-            rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
-            msleep(2000);
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
-            rk_gpio_set_value(GPIO_PUSH_ROD1, 0);            
+            rod_retry++;
+            rod_push();
+            msleep(3000);
+            if (rod_retry == 5){
+                rod_stop();
+                // 向服务器发送维修信息
+                break;
+            }
+            rod_pull();        
         }
 
         if (status == 0) {
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
-            rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
+            rod_stop();
             break; // 跳出循环
         }
         msleep(100);

@@ -630,10 +630,8 @@ int open_door() {
                 // 获取重量，循环更新页面
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight= get_current_weight();
-                    diff_weight = cur_weight - sub_weight;
-                    // diff_weight = round((cur_weight - sub_weight) * 100) / 100; //手动保留两位小数
-                    money = diff_weight * loginRes.recyclePrice;
-                    // money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
+                    diff_weight = round((cur_weight - sub_weight) * 100) / 100; //手动保留两位小数
+                    money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
                     // printf("倒计时: 总重量%fKG，当前重量%fKG，计费重量%fKG，计费%f元\n", sub_weight, cur_weight, diff_weight, money);
                     printf("倒计时: %d秒 后关闭可回收物仓门\n", i/REFRESH_RATE);
                     set_screen_submit_time(i/REFRESH_RATE);
