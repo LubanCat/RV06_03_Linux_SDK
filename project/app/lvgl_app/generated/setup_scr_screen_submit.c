@@ -247,15 +247,6 @@ void setup_scr_screen_submit(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_submit_money, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_submit_money, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_submit_canvas_1
-	ui->screen_submit_canvas_1 = lv_canvas_create(ui->screen_submit);
-	static lv_color_t buf_screen_submit_canvas_1[320*240*4];
-	lv_canvas_set_buffer(ui->screen_submit_canvas_1, buf_screen_submit_canvas_1, 320, 240, LV_IMG_CF_TRUE_COLOR_ALPHA);
-	lv_canvas_fill_bg(ui->screen_submit_canvas_1, lv_color_hex(0x000000), 255);
-	lv_obj_set_pos(ui->screen_submit_canvas_1, 129, 618);
-	lv_obj_set_size(ui->screen_submit_canvas_1, 320, 240);
-	lv_obj_set_scrollbar_mode(ui->screen_submit_canvas_1, LV_SCROLLBAR_MODE_OFF);
-
 	//Write codes screen_submit_post
 	ui->screen_submit_post = lv_btn_create(ui->screen_submit);
 	ui->screen_submit_post_label = lv_label_create(ui->screen_submit_post);

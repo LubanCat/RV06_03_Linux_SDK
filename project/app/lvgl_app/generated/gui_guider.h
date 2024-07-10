@@ -57,7 +57,6 @@ typedef struct
 	lv_obj_t *screen_submit_label_5;
 	lv_obj_t *screen_submit_weigth;
 	lv_obj_t *screen_submit_money;
-	lv_obj_t *screen_submit_canvas_1;
 	lv_obj_t *screen_submit_post;
 	lv_obj_t *screen_submit_post_label;
 	lv_obj_t *screen_submit_close_door;
