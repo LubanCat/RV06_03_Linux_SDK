@@ -136,7 +136,7 @@ void setup_scr_screen_submit(lv_ui *ui)
 	ui->screen_submit_label_3 = lv_label_create(ui->screen_submit);
 	lv_label_set_text(ui->screen_submit_label_3, "本次投递重量");
 	lv_label_set_long_mode(ui->screen_submit_label_3, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_label_3, 32, 473);
+	lv_obj_set_pos(ui->screen_submit_label_3, 43, 476);
 	lv_obj_set_size(ui->screen_submit_label_3, 213, 32);
 
 	//Write style for screen_submit_label_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -159,7 +159,7 @@ void setup_scr_screen_submit(lv_ui *ui)
 	ui->screen_submit_label_4 = lv_label_create(ui->screen_submit);
 	lv_label_set_text(ui->screen_submit_label_4, "本次预计获得金额");
 	lv_label_set_long_mode(ui->screen_submit_label_4, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_label_4, 316, 473);
+	lv_obj_set_pos(ui->screen_submit_label_4, 344, 473);
 	lv_obj_set_size(ui->screen_submit_label_4, 213, 32);
 
 	//Write style for screen_submit_label_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -182,7 +182,7 @@ void setup_scr_screen_submit(lv_ui *ui)
 	ui->screen_submit_label_5 = lv_label_create(ui->screen_submit);
 	lv_label_set_text(ui->screen_submit_label_5, "> > >");
 	lv_label_set_long_mode(ui->screen_submit_label_5, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_label_5, 183, 532);
+	lv_obj_set_pos(ui->screen_submit_label_5, 205, 534);
 	lv_obj_set_size(ui->screen_submit_label_5, 213, 32);
 
 	//Write style for screen_submit_label_5, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -203,10 +203,10 @@ void setup_scr_screen_submit(lv_ui *ui)
 
 	//Write codes screen_submit_weigth
 	ui->screen_submit_weigth = lv_label_create(ui->screen_submit);
-	lv_label_set_text(ui->screen_submit_weigth, "4.5");
+	lv_label_set_text(ui->screen_submit_weigth, "000.00");
 	lv_label_set_long_mode(ui->screen_submit_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_weigth, 30, 527);
-	lv_obj_set_size(ui->screen_submit_weigth, 106, 46);
+	lv_obj_set_pos(ui->screen_submit_weigth, 25, 527);
+	lv_obj_set_size(ui->screen_submit_weigth, 138, 46);
 
 	//Write style for screen_submit_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_submit_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -226,9 +226,9 @@ void setup_scr_screen_submit(lv_ui *ui)
 
 	//Write codes screen_submit_money
 	ui->screen_submit_money = lv_label_create(ui->screen_submit);
-	lv_label_set_text(ui->screen_submit_money, "3.15");
+	lv_label_set_text(ui->screen_submit_money, "000.00");
 	lv_label_set_long_mode(ui->screen_submit_money, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_money, 313, 525);
+	lv_obj_set_pos(ui->screen_submit_money, 368, 527);
 	lv_obj_set_size(ui->screen_submit_money, 144, 46);
 
 	//Write style for screen_submit_money, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -307,7 +307,7 @@ void setup_scr_screen_submit(lv_ui *ui)
 	ui->screen_submit_label_6 = lv_label_create(ui->screen_submit);
 	lv_label_set_text(ui->screen_submit_label_6, "公斤");
 	lv_label_set_long_mode(ui->screen_submit_label_6, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_label_6, 132, 527);
+	lv_obj_set_pos(ui->screen_submit_label_6, 168, 527);
 	lv_obj_set_size(ui->screen_submit_label_6, 90, 46);
 
 	//Write style for screen_submit_label_6, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -330,7 +330,7 @@ void setup_scr_screen_submit(lv_ui *ui)
 	ui->screen_submit_label_7 = lv_label_create(ui->screen_submit);
 	lv_label_set_text(ui->screen_submit_label_7, "元");
 	lv_label_set_long_mode(ui->screen_submit_label_7, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_submit_label_7, 457, 527);
+	lv_obj_set_pos(ui->screen_submit_label_7, 516, 527);
 	lv_obj_set_size(ui->screen_submit_label_7, 43, 46);
 
 	//Write style for screen_submit_label_7, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
