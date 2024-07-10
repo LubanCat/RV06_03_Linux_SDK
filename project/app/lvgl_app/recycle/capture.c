@@ -40,7 +40,7 @@ int capture_start(video_frame_t *video_frame)
     int ret = ioctl(video_frame->fd, VIDIOC_G_FMT, &vfmt);
     if(ret < 0){
         perror("Get FMT fail!");
-        return -1;  
+        return -1;
     }
 
     // 获取帧率参数
@@ -58,8 +58,8 @@ int capture_start(video_frame_t *video_frame)
     reqbuf.memory = V4L2_MEMORY_MMAP;
     ret = ioctl(video_frame->fd, VIDIOC_REQBUFS, &reqbuf);
     if(ret < 0){
-        perror("request fail");    
-        return -1;
+        perror("request fail");
+        return -1;    
     }
 
     //把内核空间映射到用户空间
@@ -70,7 +70,6 @@ int capture_start(video_frame_t *video_frame)
     kbuf.memory = V4L2_MEMORY_MMAP;
     if(ioctl(video_frame->fd, VIDIOC_QUERYBUF, &kbuf)<0){
         perror("query buf fail");
-        return -1;
     }    
     video_frame->length = kbuf.length;
     video_frame->start = (char *)mmap(NULL, kbuf.length, PROT_READ | PROT_WRITE, MAP_SHARED, video_frame->fd, kbuf.m.offset);
@@ -102,14 +101,12 @@ int video_linux_get_frame(video_frame_t *video_frame ,char *data,int* length)
     readbuf.memory = V4L2_MEMORY_MMAP;
     if(ioctl(video_frame->fd, VIDIOC_DQBUF, &readbuf) < 0){
         perror("dqbuf fail");
-        return 0;
     }
     memcpy(data, video_frame->start, video_frame->length);
     length[0] = readbuf.length;
     //入队
     if(ioctl(video_frame->fd, VIDIOC_QBUF, &readbuf) < 0){
         perror("qbuf fail");
-        return 0;
     }
 
     return 1;
@@ -124,13 +121,11 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length
     readbuf.memory = V4L2_MEMORY_MMAP;
     if(ioctl(video_frame->fd, VIDIOC_DQBUF, &readbuf) < 0){
         perror("dqbuf fail");
-        return 0;
     }
     // memcpy(data, video_frame->start, video_frame->length);
     //入队
     if(ioctl(video_frame->fd, VIDIOC_QBUF, &readbuf) < 0){
         perror("qbuf fail");
-        return 0;
     }
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
@@ -154,7 +149,6 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length
     if (*data == NULL) {
         printf("内存分配失败\n");
         jpeg_destroy_decompress(&cinfo);
-        return 1;
     }
     int row = 0;
     while (cinfo.output_scanline < cinfo.output_height) {
@@ -177,7 +171,7 @@ int capture_stop(video_frame_t *video_frame)
     //采集结束
     if(ioctl(video_frame->fd, VIDIOC_STREAMOFF, &type)<0){
         perror("stop fail");
-        return 0;
+        return -1;
     }
     //释放映射空间
     int i=0;
@@ -201,7 +195,7 @@ int capture_jpg(char *device,int width,int height,char* output_path){
     int afd = open(output_path, O_WRONLY | O_CREAT, 0644);
     if (afd == -1) {
         perror("open");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     video_linux_get_frame(&video_frame,data,&length);
@@ -209,7 +203,7 @@ int capture_jpg(char *device,int width,int height,char* output_path){
     if (write(afd, data, length) != length) {
         perror("write");
         close(afd);
-        exit(EXIT_FAILURE);
+        return -1;
     }
     close(afd);
     free(data);
@@ -228,7 +222,7 @@ int get_video_in_out(int ch){
     // 检查文件是否成功打开
     if (file == NULL) {
         perror("无法打开文件"); // perror 用于打印错误信息
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     size_t  bytesRead = fread(str, 1, sizeof(str), file);
