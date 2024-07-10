@@ -215,3 +215,56 @@ int capture_jpg(char *device,int width,int height,char* output_path){
     free(data);
     capture_stop(&video_frame);
 }
+
+
+int get_video_in_out(int ch){
+    char path[64];
+    sprintf(path,"/sys/class/video4linux/video%d/device/uevent",ch);
+    char str[384];
+
+    // 打开文件
+    FILE *file = fopen(path, "r");
+
+    // 检查文件是否成功打开
+    if (file == NULL) {
+        perror("无法打开文件"); // perror 用于打印错误信息
+        exit(EXIT_FAILURE);
+    }
+
+    size_t  bytesRead = fread(str, 1, sizeof(str), file);
+
+    // 分割字符串的标记
+    const char *delimiter = "\n";
+    char *str_copy = strdup(str); // 复制字符串，因为strtok会修改原始字符串
+    char *token = strtok(str_copy, delimiter);
+
+    char product[32]; // 存储PRODUCT值的数组
+
+    // 遍历udev信息的每个字段
+    while (token != NULL) {
+        // 检查是否是PRODUCT行
+        if (strncmp(token, "PRODUCT=", 8) == 0) {
+            // 提取PRODUCT值
+            strcpy(product, token + 8);
+            break;
+        }
+        token = strtok(NULL, delimiter);
+    }
+
+    free(str_copy); // 释放复制的字符串
+
+    char *last_slash = strrchr(product, '/'); // 查找最后一个斜杠
+
+    if (last_slash != NULL) {
+        *last_slash = '\0'; 
+    } else {
+        printf("No slash found in the string.\n");
+    }
+
+    if(strcmp(product,"c45/6366")==0)
+        return 2;
+    else if(strcmp(product,"5a3/9230")==0)
+        return 1;
+    else
+        return 0;
+}

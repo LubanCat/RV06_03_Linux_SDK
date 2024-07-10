@@ -27,5 +27,5 @@ int video_linux_get_frame(video_frame_t *video_frame ,char *data,int* length);
 int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length);
 int capture_stop(video_frame_t *video_frame);
 int capture_jpg(char *device,int width,int height,char* output_path);
-
+int get_video_in_out(int ch);
 #endif // HARDWARE_H

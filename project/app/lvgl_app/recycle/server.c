@@ -11,6 +11,9 @@
 #include <sys/msg.h>
 #include "../custom/custom.h"
 #include "capture.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
@@ -25,6 +28,8 @@
 #define CONFIG_SERVER_PORT 9096
 extern lv_disp_drv_t disp_drv;
 char *preview_data;
+char in_video[12];
+char out_video[12];
 
 void* capture_thread(void* arg) {
     // capture_jpg("/dev/video21",320,240,"320x240.jpg");
@@ -32,7 +37,7 @@ void* capture_thread(void* arg) {
     video_frame_t *video_frame = (video_frame_t *)arg;
     video_frame->width=320;
     video_frame->height=240;
-    sprintf(video_frame->device,"%s","/dev/video21");
+    sprintf(video_frame->device,"%s",out_video);
     capture_start(video_frame);
     lv_color_t *color_p;
     int size=320*240;
@@ -587,10 +592,59 @@ int open_door() {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
+
+            //判断/dev/video0是什么类型
+            int ch = get_video_in_out(0);
+            if(ch == 2){
+                strcpy(out_video,"/dev/video2");
+                strcpy(in_video,"/dev/video0");
+            }else if(ch == 1){
+                strcpy(out_video,"/dev/video0");
+                strcpy(in_video,"/dev/video2");
+            }
+            else{
+                printf("skip\n");
+            }
             //获取当前时间
+            char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
+            time_t now;
+            struct tm *localNow;
+            time(&now);
+            localNow = localtime(&now);
+            strftime(currentTime, sizeof(currentTime), "%Y%m%d_%H%M%S", localNow);
             
+            struct stat statbuf;
+            //创建文件夹
+            char *media_path="/root/media";
+            if (stat(media_path, &statbuf) == -1) {
+                // 文件夹不存在，尝试创建
+                if (mkdir(media_path, 0755) == -1) {
+                    perror("mkdir error");
+                }
+                printf("文件夹 '%s' 已创建\n", media_path);
+            } else if (S_ISDIR(statbuf.st_mode))
+                printf("文件夹 '%s' 已存在\n", media_path);
+            else 
+                printf("路径 '%s' 已存在，但不是文件夹\n", media_path);
+
+            char time_path[32];
+            sprintf(time_path,"%s/%s",media_path,currentTime);
+
+            int result = mkdir(time_path, 0755);
+            if (result == 0) {
+                printf("Folder created successfully.\n");
+            } else {
+                perror("mkdir failed"); // 打印错误信息
+            }
             //柜内拍照
+            char in_video_open_path[64];
+            sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
+            capture_jpg(in_video,1920,1080,in_video_open_path);
+
             //柜外拍照
+            char out_video_open_path[64];
+            sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
+            capture_jpg(out_video,1920,1080,out_video_open_path);
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
@@ -651,8 +705,17 @@ int open_door() {
             free(video_frame);
             if(preview_data != NULL)
                 free(preview_data);
+
             //柜内拍照
+            char in_video_close_path[64];
+            sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
+            capture_jpg(in_video,1920,1080,in_video_close_path);
+
             //柜外拍照
+            char out_video_close_path[64];
+            sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
+            capture_jpg(out_video,1920,1080,out_video_close_path);
+
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
             openDoor.openType = 0;
         }
