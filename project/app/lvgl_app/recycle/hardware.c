@@ -5,7 +5,7 @@
 #include "rk_gpio.h"
 
 Recycle_Box_Cnf g_sRecycle_Box_Cnf;
-int rod_hinder_value = 50;
+int rod_hinder_value = 280;
 
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) {
@@ -93,8 +93,8 @@ int get_self_weight()
     g_sRecycle_Box_Cnf.self_adc_var = read_weight_adc();
     printf("称重去皮值：%d\n", g_sRecycle_Box_Cnf.self_adc_var);
 
-    sprintf(str, "%.16f", g_sRecycle_Box_Cnf.self_adc_var);  // 称重系数保留16位小数
-    write_device_info("rat",str);
+    sprintf(str, "%d", g_sRecycle_Box_Cnf.self_adc_var);
+    write_device_info("self_weight",str);
 
     return 1;
 }
@@ -108,7 +108,7 @@ void set_rat_weight(double rat_weight) {
 
     int sum = 0.0;
     for (int i = 0; i < 5; i++) {
-        int value = read_weight_adc();
+        int value = (read_weight_adc() - g_sRecycle_Box_Cnf.self_adc_var);//去皮
         sum += value;
         msleep(500);
     }
@@ -116,8 +116,8 @@ void set_rat_weight(double rat_weight) {
     g_sRecycle_Box_Cnf.rat = rat_weight / average;
 
     printf("称重计算系数：%.16f\n", g_sRecycle_Box_Cnf.rat);
-    sprintf(str, "%d", g_sRecycle_Box_Cnf.self_adc_var);
-    write_device_info("self_weight",str);    
+    sprintf(str, "%.16f", g_sRecycle_Box_Cnf.rat);  // 称重系数保留16位小数
+    write_device_info("rat",str);
     return 1;
 }
 

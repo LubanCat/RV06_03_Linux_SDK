@@ -25,7 +25,10 @@ int open_clean_door_flag;
 int hand_close_door_flag;
 // 在登录页面
 int screen_login_flag;
-extern int password_2,password_3,password_1,rod_hinder_value;
+extern int rod_hinder_value;
+
+int peels_en=0;
+int cal_en=0;
 
 void device_close_door(){
     printf("close door\n");
@@ -200,6 +203,9 @@ void set_screen_test(bool *screen_del){
                         guider_ui.screen_test_del, screen_del, 
                         setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 
                         200, 200, true, true);
+    char str[20];
+    sprintf(str,"%d",rod_hinder_value);
+    lv_label_set_text(guider_ui.screen_test_rod_hinder_value,str);
 }
 
 void custom_init(lv_ui *ui)

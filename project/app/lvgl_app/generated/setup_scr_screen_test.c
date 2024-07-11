@@ -307,7 +307,7 @@ void setup_scr_screen_test(lv_ui *ui)
 
 	//Write codes screen_test_rod_hinder_value
 	ui->screen_test_rod_hinder_value = lv_label_create(ui->screen_test);
-	lv_label_set_text(ui->screen_test_rod_hinder_value, "50");
+	lv_label_set_text(ui->screen_test_rod_hinder_value, "280");
 	lv_label_set_long_mode(ui->screen_test_rod_hinder_value, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_test_rod_hinder_value, 365, 435);
 	lv_obj_set_size(ui->screen_test_rod_hinder_value, 90, 40);
