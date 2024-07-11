@@ -150,6 +150,7 @@ void init_scr_del_flag(lv_ui *ui)
 	ui->screen_cleaning_del = true;
 	ui->screen_cleaned_del = true;
 	ui->screen_test_del = true;
+	ui->screen_test_cam_del = true;
 }
 
 void setup_ui(lv_ui *ui)

@@ -26,6 +26,7 @@ void events_init_screen_clean(lv_ui *ui);
 void events_init_screen_cleaning(lv_ui *ui);
 void events_init_screen_cleaned(lv_ui *ui);
 void events_init_screen_test(lv_ui *ui);
+void events_init_screen_test_cam(lv_ui *ui);
 
 #ifdef __cplusplus
 }
