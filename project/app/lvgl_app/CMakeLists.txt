@@ -48,6 +48,7 @@ include_directories(
     generated/images
     generated/mPythonImages
     recycle/
+    ${CMAKE_SOURCE_DIR}/../../../media/rockit/rockit/mpi/sdk/include
 )
 
 # Define library directory
@@ -83,6 +84,9 @@ target_link_libraries(lvgl_app
     libcjson.so
     libjpeg.so
     pthread
+    librockit.so
+    librga.so
+    librockchip_mpp.so
     m
 )
 

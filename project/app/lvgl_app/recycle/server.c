@@ -610,12 +610,12 @@ int open_door() {
             //柜内拍照
             char in_video_open_path[64];
             sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
-            capture_jpg(in_video,1920,1080,in_video_open_path);
+            capture_jpg_compass(in_video,1920,1080,in_video_open_path);
 
             //柜外拍照
             char out_video_open_path[64];
             sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
-            capture_jpg(out_video,1920,1080,out_video_open_path);
+            capture_jpg_compass(out_video,1920,1080,out_video_open_path);
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
@@ -678,12 +678,12 @@ int open_door() {
             //柜内拍照
             char in_video_close_path[64];
             sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
-            capture_jpg(in_video,1920,1080,in_video_close_path);
+            capture_jpg_compass(in_video,1920,1080,in_video_close_path);
 
             //柜外拍照
             char out_video_close_path[64];
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
-            capture_jpg(out_video,1920,1080,out_video_close_path);
+            capture_jpg_compass(out_video,1920,1080,out_video_close_path);
 
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
             openDoor.openType = 0;

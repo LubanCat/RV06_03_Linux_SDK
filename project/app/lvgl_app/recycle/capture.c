@@ -11,7 +11,13 @@
 #include <jpeglib.h>
 #include "capture.h"
 
+#include "rk_debug.h"
+#include "rk_mpi_sys.h"
+#include "rk_mpi_mb.h"
+#include "rk_mpi_venc.h"
+
 #define COUNT 1
+#define FORMATE RK_FMT_RGB888
 
 int capture_start(video_frame_t *video_frame)
 {
@@ -210,6 +216,123 @@ int capture_jpg(char *device,int width,int height,char* output_path){
     capture_stop(&video_frame);
 }
 
+
+int capture_jpg_compass(char *device,int width,int height,char *output_path){
+    video_frame_t video_frame;
+    video_frame.width=width;
+    video_frame.height=height;
+    sprintf(video_frame.device,"%s",device);
+    capture_start(&video_frame);
+
+    char *data;
+    int length;
+    video_linux_get_frame_rgb(&video_frame,&data,&length);
+    capture_stop(&video_frame);
+
+    RK_S32 s32Ret = RK_SUCCESS;
+    VENC_RECV_PIC_PARAM_S pstRecvParam;
+    VENC_CHN_ATTR_S stAttr;
+    void *pVirAddr = RK_NULL;
+    int ret;
+    VIDEO_FRAME_INFO_S stFrame;
+    VENC_STREAM_S rcv;
+    int buffersize;
+
+    char *src_buf;
+    //初始化mpi
+    s32Ret = RK_MPI_SYS_Init();
+    if (s32Ret != RK_SUCCESS) {
+        return s32Ret;
+    }
+    
+    PIC_BUF_ATTR_S stPicBufAttr;
+    MB_PIC_CAL_S stMbPicCalResult;
+
+    stPicBufAttr.u32Width = width;
+    stPicBufAttr.u32Height = height;
+    stPicBufAttr.enPixelFormat = (PIXEL_FORMAT_E)FORMATE;
+    stPicBufAttr.enCompMode = COMPRESS_MODE_NONE;
+    s32Ret = RK_MPI_CAL_COMM_GetPicBufferSize(&stPicBufAttr, &stMbPicCalResult);
+    if (s32Ret != RK_SUCCESS) {
+        printf("get picture buffer size failed. err 0x%x", s32Ret);
+        return s32Ret;
+    }
+    
+    buffersize= stMbPicCalResult.u32MBSize;
+    printf("calc picture size: %d\n", buffersize);
+    memset(&stAttr, 0, sizeof(VENC_CHN_ATTR_S));
+    memset(&pstRecvParam, 0, sizeof(VENC_RECV_PIC_PARAM_S));
+
+    //h264
+    stAttr.stVencAttr.enType = RK_VIDEO_ID_JPEG;
+    stAttr.stVencAttr.u32PicWidth = width;
+    stAttr.stVencAttr.u32PicHeight = height;
+    stAttr.stVencAttr.u32VirWidth = width;
+    stAttr.stVencAttr.u32VirHeight = height;    
+    stAttr.stVencAttr.u32MaxPicWidth = width;
+    stAttr.stVencAttr.u32MaxPicHeight = height;
+    stAttr.stVencAttr.u32StreamBufCnt = 2;
+    stAttr.stVencAttr.u32Profile = 0;
+    stAttr.stVencAttr.u32BufSize = width * height;
+    stAttr.stVencAttr.enPixelFormat = FORMATE;
+    stAttr.stVencAttr.bByFrame = RK_TRUE;
+    stAttr.stVencAttr.enMirror = MIRROR_NONE;
+    stAttr.stVencAttr.stAttrJpege.bSupportDCF = RK_FALSE;
+    stAttr.stVencAttr.stAttrJpege.stMPFCfg.u8LargeThumbNailNum = 0;
+    stAttr.stVencAttr.stAttrJpege.enReceiveMode = VENC_PIC_RECEIVE_SINGLE;
+    
+    //初始化通道
+    ret = RK_MPI_VENC_CreateChn(0,&stAttr);
+    if(ret < 0)
+        printf("CreateChn ret = 0x%X\n",ret);
+    pstRecvParam.s32RecvPicNum=1;
+    ret = RK_MPI_VENC_StartRecvFrame(0, &pstRecvParam);
+    if(ret < 0)
+        printf("StartRecvFrame ret = 0x%X\n",ret);
+
+    memset(&stFrame, 0, sizeof(VIDEO_FRAME_INFO_S));
+    MB_BLK blk = RK_NULL;
+    ret = RK_MPI_SYS_MmzAlloc(&blk, RK_NULL, RK_NULL,buffersize);
+    if (RK_NULL == blk) {
+        printf("RK_MPI_MB_GetMB fail\n");
+        usleep(2000llu);
+    }
+
+    pVirAddr = RK_MPI_MB_Handle2VirAddr(blk);
+
+    memcpy(pVirAddr,data,width * height * 3);
+
+    RK_MPI_SYS_MmzFlushCache(blk, RK_FALSE);
+
+    stFrame.stVFrame.pMbBlk = blk;
+    stFrame.stVFrame.u32Width = width;
+    stFrame.stVFrame.u32Height = height;
+    stFrame.stVFrame.u32VirWidth = width;
+    stFrame.stVFrame.u32VirHeight = height;
+    stFrame.stVFrame.enPixelFormat = FORMATE;
+    stFrame.stVFrame.u32FrameFlag |= FRAME_FLAG_SNAP_END;
+
+    ret = RK_MPI_VENC_SendFrame(0, &stFrame, -1);
+    src_buf=(char *)malloc(width*height*3);
+
+    FILE *fp = fopen(output_path, "wb+");
+    rcv.pstPack = (VENC_PACK_S *)malloc(sizeof(VENC_PACK_S));
+    ret = RK_MPI_VENC_GetStream(0, &rcv, 3000);
+    if (ret == RK_SUCCESS) {
+		void *data = RK_MPI_MB_Handle2VirAddr(rcv.pstPack->pMbBlk);
+        memcpy(src_buf,data,rcv.pstPack->u32Len);
+		fwrite(data, 1, rcv.pstPack->u32Len, fp);
+        printf("pic size = %d\n",rcv.pstPack->u32Len);
+        fflush(fp);
+        fclose(fp);
+    }
+    free(data);
+    RK_MPI_SYS_Free(blk);
+    RK_MPI_VENC_ReleaseStream(0, &rcv);
+    RK_MPI_VENC_StopRecvFrame(0);
+    RK_MPI_VENC_DestroyChn(0);
+    return -1;
+}
 
 int get_video_in_out(int ch){
     char path[64];
