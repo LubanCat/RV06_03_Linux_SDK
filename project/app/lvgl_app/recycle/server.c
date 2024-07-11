@@ -202,23 +202,39 @@ int write_device_info(const char *key_name, const char *value) {
         long file_size = ftell(file);
         fseek(file, 0, SEEK_SET);
 
-        char *file_content = (char *)malloc(file_size + 1);
-        if (file_content == NULL) {
-            printf("无法分配内存\n");
+        if (file_size == 0) {
+            // 如果文件内容为空，创建一个空的 JSON 对象
+            root = cJSON_CreateObject();
+            if (root == NULL) {
+                printf("无法创建 JSON 对象\n");
+                fclose(file);
+                return -1;
+            }
+        } else {
+            // 文件内容不为空，读取文件内容并解析
+            char *file_content = (char *)malloc(file_size + 1);
+            if (file_content == NULL) {
+                printf("无法分配内存\n");
+                fclose(file);
+                return -1;
+            }
+
+            fread(file_content, 1, file_size, file);
+            file_content[file_size] = '\0';
+
             fclose(file);
-            return -1;
-        }
 
-        fread(file_content, 1, file_size, file);
-        file_content[file_size] = '\0';
-
-        fclose(file);
-
-        root = cJSON_Parse(file_content);
-        free(file_content);
-        if (root == NULL) {
-            printf("无法解析 JSON 数据\n");
-            return -1;
+            root = cJSON_Parse(file_content);
+            free(file_content);
+            if (root == NULL) {
+                printf("无法解析 JSON 数据, 创建新的 JSON 对象\n");
+                // 如果无法解析 JSON 数据，创建一个新的空 JSON 对象
+                root = cJSON_CreateObject();
+                if (root == NULL) {
+                    printf("无法创建 JSON 对象\n");
+                    return -1;
+                }
+            }
         }
     }
 
@@ -251,6 +267,8 @@ int write_device_info(const char *key_name, const char *value) {
     fclose(file);
     cJSON_Delete(root);
     free(json_str);
+
+    system("sync");
 
     return 0;
 }

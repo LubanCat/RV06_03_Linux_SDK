@@ -194,11 +194,15 @@ get_rod_status() {
 }
 
 rod_push(){
+    rod_stop();
+    msleep(500);
     rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
 }
 
 rod_pull(){
+    rod_stop();
+    msleep(500);
     rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
 }
@@ -218,18 +222,6 @@ int set_post_door_open(){
 
     while (1) {
         status = get_rod_status();
-
-        if (status == 2) {
-            rod_retry++;
-            rod_pull();
-            msleep(3000);
-            if (rod_retry == 5){
-                rod_stop();
-                // 向服务器发送维修信息
-                break;
-            }
-            rod_push();
-        }
 
         if (status == 0) {
             rod_stop();
