@@ -36,6 +36,12 @@ typedef struct
 	lv_obj_t *screen_login_net_status;
 	lv_obj_t *screen_login_singal;
 	lv_obj_t *screen_login_full;
+	lv_obj_t *screen_login_password_1;
+	lv_obj_t *screen_login_password_1_label;
+	lv_obj_t *screen_login_password_2;
+	lv_obj_t *screen_login_password_2_label;
+	lv_obj_t *screen_login_password_3;
+	lv_obj_t *screen_login_password_3_label;
 	lv_obj_t *screen_full;
 	bool screen_full_del;
 	lv_obj_t *screen_full_img_1;
@@ -95,6 +101,50 @@ typedef struct
 	lv_obj_t *screen_cleaned_label_4;
 	lv_obj_t *screen_cleaned_clean_weigth;
 	lv_obj_t *screen_cleaned_label_6;
+	lv_obj_t *screen_test;
+	bool screen_test_del;
+	lv_obj_t *screen_test_label_3;
+	lv_obj_t *screen_test_label_4;
+	lv_obj_t *screen_test_ir1_status;
+	lv_obj_t *screen_test_ir2_status;
+	lv_obj_t *screen_test_label_11;
+	lv_obj_t *screen_test_rod_push_key;
+	lv_obj_t *screen_test_rod_push_key_label;
+	lv_obj_t *screen_test_rod_pull_key;
+	lv_obj_t *screen_test_rod_pull_key_label;
+	lv_obj_t *screen_test_inside_light_key;
+	lv_obj_t *screen_test_inside_light_key_label;
+	lv_obj_t *screen_test_outside_light_key;
+	lv_obj_t *screen_test_outside_light_key_label;
+	lv_obj_t *screen_test_inside_cam_key;
+	lv_obj_t *screen_test_inside_cam_key_label;
+	lv_obj_t *screen_test_outside_cam_key;
+	lv_obj_t *screen_test_outside_cam_key_label;
+	lv_obj_t *screen_test_btn_18;
+	lv_obj_t *screen_test_btn_18_label;
+	lv_obj_t *screen_test_rod_hinder_value;
+	lv_obj_t *screen_test_press_up_key;
+	lv_obj_t *screen_test_press_up_key_label;
+	lv_obj_t *screen_test_press_down_key;
+	lv_obj_t *screen_test_press_down_key_label;
+	lv_obj_t *screen_test_canvas_1;
+	lv_obj_t *screen_test_cal_100_key;
+	lv_obj_t *screen_test_cal_100_key_label;
+	lv_obj_t *screen_test_get_weight_key;
+	lv_obj_t *screen_test_get_weight_key_label;
+	lv_obj_t *screen_test_quit;
+	lv_obj_t *screen_test_quit_label;
+	lv_obj_t *screen_test_open_lock_key;
+	lv_obj_t *screen_test_open_lock_key_label;
+	lv_obj_t *screen_test_ir_status_key;
+	lv_obj_t *screen_test_ir_status_key_label;
+	lv_obj_t *screen_test_peels_key;
+	lv_obj_t *screen_test_peels_key_label;
+	lv_obj_t *screen_test_cal_350_key;
+	lv_obj_t *screen_test_cal_350_key_label;
+	lv_obj_t *screen_test_cal_200_key;
+	lv_obj_t *screen_test_cal_200_key_label;
+	lv_obj_t *screen_test_weight;
 }lv_ui;
 
 typedef void (*ui_setup_scr_t)(lv_ui * ui);
@@ -135,6 +185,7 @@ void setup_scr_screen_submit(lv_ui *ui);
 void setup_scr_screen_clean(lv_ui *ui);
 void setup_scr_screen_cleaning(lv_ui *ui);
 void setup_scr_screen_cleaned(lv_ui *ui);
+void setup_scr_screen_test(lv_ui *ui);
 LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
@@ -154,12 +205,15 @@ LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_56)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_32)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_96)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_36)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_54)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_42)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_28)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_34)
 
 
 #ifdef __cplusplus

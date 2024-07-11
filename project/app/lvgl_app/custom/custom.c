@@ -25,6 +25,7 @@ int open_clean_door_flag;
 int hand_close_door_flag;
 // 在登录页面
 int screen_login_flag;
+extern int password_2,password_3,password_1,rod_hinder_value;
 
 void device_close_door(){
     printf("close door\n");
@@ -192,6 +193,13 @@ void set_screen_cleaned(bool *screen_del,int time,double before_clean_weigth,dou
 
     set_screen_cleaned_weigth(before_clean_weigth,after_clean_weigth,clean_weigth);
     set_screen_cleaned_time(time);
+}
+
+void set_screen_test(bool *screen_del){
+    ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, 
+                        guider_ui.screen_test_del, screen_del, 
+                        setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 
+                        200, 200, true, true);
 }
 
 void custom_init(lv_ui *ui)

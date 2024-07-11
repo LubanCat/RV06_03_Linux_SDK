@@ -149,11 +149,12 @@ void init_scr_del_flag(lv_ui *ui)
 	ui->screen_clean_del = true;
 	ui->screen_cleaning_del = true;
 	ui->screen_cleaned_del = true;
+	ui->screen_test_del = true;
 }
 
 void setup_ui(lv_ui *ui)
 {
 	init_scr_del_flag(ui);
-	setup_scr_screen_login(ui);
-	lv_scr_load(ui->screen_login);
+	setup_scr_screen_test(ui);
+	lv_scr_load(ui->screen_test);
 }

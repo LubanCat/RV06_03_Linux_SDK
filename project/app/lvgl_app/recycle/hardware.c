@@ -98,9 +98,7 @@ int get_self_weight()
 void set_rat_weight(double rat_weight) {
 
     printf("准备校准\n");
-    sleep(5);
-    printf("开始校准\n");
-
+    printf("rat_weight = %f\n",rat_weight);
 
     int sum = 0.0;
     for (int i = 0; i < 5; i++) {

@@ -30,7 +30,7 @@ extern int sock;
 lv_disp_drv_t disp_drv;
 volatile sig_atomic_t g_main_run_ = 1; // 使用 volatile sig_atomic_t 类型，确保在信号处理程序中正确更新
 int msqid;  // 消息队列ID
-int password1 = 0, password2 = 0, password3 = 0
+int password_1 = 0, password_2 = 0, password_3 = 0;
 
 
 typedef struct msgbuf {
@@ -129,6 +129,16 @@ void* aux_task_thread(void* arg) {
 
         sleep(1);
 
+        // 进入配置模式
+        if (password_1 && password_2 && password_3){
+            screen_login_flag=0;
+            set_screen_test(&guider_ui.screen_login_del);
+            password_1 = 0;
+            password_2 = 0;
+            password_3 = 0;
+            
+        }
+
         overflow_count++;
         signal_count++;
         light_count++;
@@ -222,15 +232,6 @@ int main(void) {
     while (g_main_run_) {
         // 主要程序逻辑
         open_door();
-
-        // 进入配置模式
-        if (password1 && password2 && password3){
-            
-            password1 = 0;
-            password2 = 0;
-            password3 = 0;
-        }
-
         // 在循环中处理消息队列，避免被信号中断导致的错误
         message_buf rbuf;
         if (msgrcv(msqid, &rbuf, MSGSZ, 1, IPC_NOWAIT) < 0) {

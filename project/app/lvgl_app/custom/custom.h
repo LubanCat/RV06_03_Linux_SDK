@@ -56,6 +56,7 @@ void set_screen_submit(bool *screen_del,double money,int time,double weigth);
 void set_screen_clean(bool *screen_del,int time,double weigth);
 void set_screen_cleaning(bool *screen_del,double weigth);
 void set_screen_cleaned(bool *screen_del,int time,double before_clean_weigth,double after_clean_weigth,double clean_weigth);
+void set_screen_test(bool *screen_del);
 void custom_init(lv_ui *ui);
 
 
