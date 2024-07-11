@@ -27,7 +27,7 @@ typedef struct
 } Recycle_Box_Cnf;
 
 extern Recycle_Box_Cnf g_sRecycle_Box_Cnf;
-
+extern int rod_hinder_value;
 // 获取当前重量
 double get_current_weight();
 

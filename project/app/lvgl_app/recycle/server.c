@@ -151,6 +151,7 @@ int read_device_info() {
     cJSON *key_item = cJSON_GetObjectItem(root, "key");
     cJSON *self_weight_item = cJSON_GetObjectItem(root, "self_weight");
     cJSON *rat_item = cJSON_GetObjectItem(root, "rat");
+    cJSON *rod_hinder_item = cJSON_GetObjectItem(root, "rod_hinder");
 
     if (cJSON_IsString(sn_item)) {
         strncpy(sn, sn_item->valuestring, 32 - 1); // 复制 sn 字符串到 sn 数组
@@ -170,7 +171,10 @@ int read_device_info() {
         g_sRecycle_Box_Cnf.rat = atof(rat_item->valuestring);
         printf("称重系数 rat: %.16f\n", g_sRecycle_Box_Cnf.rat);
     }
-
+    if (cJSON_IsString(rod_hinder_item)) {
+        rod_hinder_value = atof(rod_hinder_item->valuestring);
+        printf("推杆阻力阈值 rat: %d\n", rod_hinder_value);
+    }
     // 释放内存
     cJSON_Delete(root);
     free(file_content);
