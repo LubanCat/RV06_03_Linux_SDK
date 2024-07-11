@@ -20,12 +20,6 @@
 
 #define GPIO_PEOPLE_CHECK       123
 
-#if 1
-#define ROD_HINDER_ADC_VALUE 280
-#else
-#define ROD_HINDER_ADC_VALUE 80
-#endif
-
 typedef struct
 {
     int self_adc_var;

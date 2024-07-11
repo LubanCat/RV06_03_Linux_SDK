@@ -5,6 +5,7 @@
 #include "rk_gpio.h"
 
 Recycle_Box_Cnf g_sRecycle_Box_Cnf;
+int rod_hinder_value = 50;
 
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) {
@@ -85,15 +86,16 @@ int read_weight_adc(){
 }
 
 // 去皮
-void get_self_weight()
+int get_self_weight()
 {
     // 从adc读取数据
     g_sRecycle_Box_Cnf.self_adc_var = read_weight_adc();
     printf("称重去皮值：%d\n", g_sRecycle_Box_Cnf.self_adc_var);
+    return 1;
 }
 
 // 校准
-void set_rat_weight() {
+void set_rat_weight(double rat_weight) {
 
     printf("准备校准\n");
     sleep(5);
@@ -107,9 +109,10 @@ void set_rat_weight() {
         msleep(500);
     }
     double average = sum / 5;
-    g_sRecycle_Box_Cnf.rat = 50.0 / average;
+    g_sRecycle_Box_Cnf.rat = rat_weight / average;
 
     printf("称重计算系数：%.16f\n", g_sRecycle_Box_Cnf.rat);
+    return 1;
 }
 
 double get_current_weight()
@@ -177,7 +180,7 @@ get_rod_status() {
     // 判断 rod 的状态
     if (voltage < 5) {
         return 0;
-    } else if (voltage < ROD_HINDER_ADC_VALUE) {
+    } else if (voltage < rod_hinder_value) {
         return 1;
     } else {
         return 2;

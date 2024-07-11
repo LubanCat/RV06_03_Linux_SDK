@@ -30,6 +30,8 @@ extern int sock;
 lv_disp_drv_t disp_drv;
 volatile sig_atomic_t g_main_run_ = 1; // 使用 volatile sig_atomic_t 类型，确保在信号处理程序中正确更新
 int msqid;  // 消息队列ID
+int password1 = 0, password2 = 0, password3 = 0
+
 
 typedef struct msgbuf {
     long mtype;
@@ -220,6 +222,14 @@ int main(void) {
     while (g_main_run_) {
         // 主要程序逻辑
         open_door();
+
+        // 进入配置模式
+        if (password1 && password2 && password3){
+            
+            password1 = 0;
+            password2 = 0;
+            password3 = 0;
+        }
 
         // 在循环中处理消息队列，避免被信号中断导致的错误
         message_buf rbuf;
