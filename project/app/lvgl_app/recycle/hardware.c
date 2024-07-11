@@ -88,14 +88,20 @@ int read_weight_adc(){
 // 去皮
 int get_self_weight()
 {
+    char str[32];
     // 从adc读取数据
     g_sRecycle_Box_Cnf.self_adc_var = read_weight_adc();
     printf("称重去皮值：%d\n", g_sRecycle_Box_Cnf.self_adc_var);
+
+    sprintf(str, "%.16f", g_sRecycle_Box_Cnf.self_adc_var);  // 称重系数保留16位小数
+    write_device_info("rat",str);
+
     return 1;
 }
 
 // 校准
 void set_rat_weight(double rat_weight) {
+    char str[32];
 
     printf("准备校准\n");
     printf("rat_weight = %f\n",rat_weight);
@@ -110,6 +116,8 @@ void set_rat_weight(double rat_weight) {
     g_sRecycle_Box_Cnf.rat = rat_weight / average;
 
     printf("称重计算系数：%.16f\n", g_sRecycle_Box_Cnf.rat);
+    sprintf(str, "%d", g_sRecycle_Box_Cnf.self_adc_var);
+    write_device_info("self_weight",str);    
     return 1;
 }
 

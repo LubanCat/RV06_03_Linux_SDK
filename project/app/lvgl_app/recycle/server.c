@@ -180,8 +180,6 @@ int read_device_info() {
 
 // 写入或修改设备配置文件的单个键值
 // 键值转为char后传入
-// write_info("sn","123456");
-// write_info("rat","0.001238");
 int write_device_info(const char *key_name, const char *value) {
     cJSON *root = NULL;
 
