@@ -21,7 +21,7 @@
 
 extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en;
 
-
+#include "server.h"
 static void screen_login_password_1_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
@@ -208,6 +208,36 @@ static void screen_test_outside_light_key_event_handler (lv_event_t *e)
 		break;
 	}
 }
+static void screen_test_inside_cam_key_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		camara_test_start(1);
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_test_outside_cam_key_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		camara_test_start(2);
+		break;
+	}
+	default:
+		break;
+	}
+}
 static void screen_test_press_up_key_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
@@ -250,10 +280,13 @@ static void screen_test_cal_100_key_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		if(peels_en==1){
-	  lv_obj_set_style_bg_color(guider_ui.screen_test_cal_100_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
-	  set_rat_weight(100.00);
-	  lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
-	  cal_en=1;
+	  if(cal_en==0){
+	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_100_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+	    set_rat_weight(100.00);
+	    lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
+	    cal_en=1;
+	  }
+	
 	}else{
 	  cal_en=0;
 	}
@@ -380,10 +413,12 @@ static void screen_test_cal_350_key_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		if(peels_en==1){
-	  lv_obj_set_style_bg_color(guider_ui.screen_test_cal_350_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
-	  set_rat_weight(350.00);
-	  lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
-	  cal_en=1;
+	  if(cal_en==0){
+	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_350_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+	    set_rat_weight(350.00);
+	    lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
+	    cal_en=1;
+	  }
 	}else{
 	  cal_en=0;
 	}
@@ -401,10 +436,12 @@ static void screen_test_cal_200_key_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		if(peels_en==1){
-	  lv_obj_set_style_bg_color(guider_ui.screen_test_cal_200_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
-	  set_rat_weight(200.00);
-	  lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
-	  cal_en=1;
+	  if(cal_en==0){
+	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_200_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+	    set_rat_weight(200.00);
+	    lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
+	    cal_en=1;
+	  }
 	}else{
 	  cal_en=0;
 	}
@@ -420,6 +457,8 @@ void events_init_screen_test(lv_ui *ui)
 	lv_obj_add_event_cb(ui->screen_test_rod_pull_key, screen_test_rod_pull_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_inside_light_key, screen_test_inside_light_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_outside_light_key, screen_test_outside_light_key_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_test_inside_cam_key, screen_test_inside_cam_key_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_test_outside_cam_key, screen_test_outside_cam_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_press_up_key, screen_test_press_up_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_press_down_key, screen_test_press_down_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_cal_100_key, screen_test_cal_100_key_event_handler, LV_EVENT_ALL, ui);
@@ -430,6 +469,25 @@ void events_init_screen_test(lv_ui *ui)
 	lv_obj_add_event_cb(ui->screen_test_peels_key, screen_test_peels_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_cal_350_key, screen_test_cal_350_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_cal_200_key, screen_test_cal_200_key_event_handler, LV_EVENT_ALL, ui);
+}
+static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		camara_test_stop();
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		break;
+	}
+	default:
+		break;
+	}
+}
+void events_init_screen_test_cam(lv_ui *ui)
+{
+	lv_obj_add_event_cb(ui->screen_test_cam_btn_1, screen_test_cam_btn_1_event_handler, LV_EVENT_ALL, ui);
 }
 
 void events_init(lv_ui *ui)

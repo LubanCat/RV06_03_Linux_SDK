@@ -27,6 +27,8 @@ extern lv_disp_drv_t disp_drv;
 char *preview_data;
 char in_video[12];
 char out_video[12];
+pthread_t capture_test_thread_id;
+video_frame_t *video_test_frame;
 
 void* capture_thread(void* arg) {
     sleep(1);
@@ -59,12 +61,86 @@ void* capture_thread(void* arg) {
                     color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+2];
                 }
             }
-
             drm_flush(&disp_drv,&area,color_p);
             free(preview_data);
         }
-
     }
+}
+
+
+void* capture_test_thread(void* arg) {
+    video_frame_t *video_frame = (video_frame_t *)arg;
+    int ret = capture_start(video_frame);
+    if(ret != -1){
+        lv_color_t *color_p;
+        int size=640*480;
+        color_p=malloc(size*sizeof(lv_color_t));
+        int length;
+
+        lv_area_t area;
+        area.x1=0;
+        area.x2=639;
+        area.y1=0;
+        area.y2=479;
+
+        while(1){
+            video_linux_get_frame_rgb(video_frame,&preview_data,&length);
+            memset(color_p,0x00,size*sizeof(lv_color_t));
+
+            for(int j=0;j<480;j++){
+                for(int i=0;i<640;i++){
+                    color_p[j*640+i].full |= 0xff<<24;
+                    color_p[j*640+i].full |= preview_data[(j*640+i)*3+0]<<16;
+                    color_p[j*640+i].full |= preview_data[(j*640+i)*3+1]<<8;
+                    color_p[j*640+i].full |= preview_data[(j*640+i)*3+2];
+                }
+            }
+            drm_flush(&disp_drv,&area,color_p);
+            free(preview_data);
+        }
+    }
+}
+
+
+void camara_test_start(int num){
+    video_test_frame = malloc(sizeof(video_frame_t));
+    video_test_frame->width=640;
+    video_test_frame->height=480;
+    
+    //判断/dev/video0是什么类型
+    int ch = get_video_in_out(0);
+    if(ch == 2){
+        if(num==1)
+            sprintf(video_test_frame->device,"%s","/dev/video0");
+        else if(num==2)
+            sprintf(video_test_frame->device,"%s","/dev/video2");
+        else
+            return -1;
+    }else if(ch == 1){
+        if(num==1)
+            sprintf(video_test_frame->device,"%s","/dev/video2");
+        else if(num==2)
+            sprintf(video_test_frame->device,"%s","/dev/video0");
+        else
+            return -1;
+    }
+    else{
+        printf("skip\n");
+        return -1;
+    }
+
+    int ret = pthread_create(&capture_test_thread_id, NULL, capture_test_thread, (void *)video_test_frame);
+    if (ret != 0) {
+        perror("pthread_create");
+    }
+}
+
+void camara_test_stop(){
+    pthread_cancel(capture_test_thread_id);
+    capture_stop(video_test_frame);
+    free(video_test_frame);
+    if(preview_data != NULL)
+        free(preview_data);
 }
 
 int msgid;

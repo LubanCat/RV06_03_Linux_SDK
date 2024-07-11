@@ -42,6 +42,7 @@ typedef struct
 	lv_obj_t *screen_login_password_2_label;
 	lv_obj_t *screen_login_password_3;
 	lv_obj_t *screen_login_password_3_label;
+	lv_obj_t *screen_login_label_6;
 	lv_obj_t *screen_full;
 	bool screen_full_del;
 	lv_obj_t *screen_full_img_1;
@@ -145,6 +146,10 @@ typedef struct
 	lv_obj_t *screen_test_cal_200_key;
 	lv_obj_t *screen_test_cal_200_key_label;
 	lv_obj_t *screen_test_weight;
+	lv_obj_t *screen_test_cam;
+	bool screen_test_cam_del;
+	lv_obj_t *screen_test_cam_btn_1;
+	lv_obj_t *screen_test_cam_btn_1_label;
 }lv_ui;
 
 typedef void (*ui_setup_scr_t)(lv_ui * ui);
@@ -186,6 +191,7 @@ void setup_scr_screen_clean(lv_ui *ui);
 void setup_scr_screen_cleaning(lv_ui *ui);
 void setup_scr_screen_cleaned(lv_ui *ui);
 void setup_scr_screen_test(lv_ui *ui);
+void setup_scr_screen_test_cam(lv_ui *ui);
 LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);

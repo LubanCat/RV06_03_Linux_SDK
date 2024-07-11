@@ -88,5 +88,7 @@ int send_tcp_packet(char *buf,int size);
 void *tcp_receiver(void *arg);
 void *heartbeat_thread(void *arg);
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+void camara_test_start(int num);
+void camara_test_stop();
 
 #endif // SERVER_H
