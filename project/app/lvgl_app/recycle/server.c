@@ -14,15 +14,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include "hardware.h"
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
-
-// 定义服务器地址和端口
-// #define CONFIG_SERVER_IP "192.168.103.142"
-// #define CONFIG_SERVER_PORT 12345
 
 #define CONFIG_SERVER_IP "47.101.195.22"
 #define CONFIG_SERVER_PORT 9096
@@ -49,7 +46,7 @@ void* capture_thread(void* arg) {
         area.x2=857;
         area.y1=129;
         area.y2=448;
-        
+
         while(1){
             video_linux_get_frame_rgb(video_frame,&preview_data,&length);
             memset(color_p,0x00,size*sizeof(lv_color_t));
@@ -62,7 +59,7 @@ void* capture_thread(void* arg) {
                     color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+2];
                 }
             }
-            
+
             drm_flush(&disp_drv,&area,color_p);
             free(preview_data);
         }
@@ -113,7 +110,7 @@ int send_tcp_packet(char *buf,int size){
     return 1;
 }
 
-int read_info() {
+int read_device_info() {
     // 打开文件
     FILE *file = fopen("/root/device_info.json", "r");
     if (file == NULL) {
@@ -152,27 +149,106 @@ int read_info() {
     // 获取 sn 和 key 字符串
     cJSON *sn_item = cJSON_GetObjectItem(root, "sn");
     cJSON *key_item = cJSON_GetObjectItem(root, "key");
+    cJSON *self_weight_item = cJSON_GetObjectItem(root, "self_weight");
+    cJSON *rat_item = cJSON_GetObjectItem(root, "rat");
 
-    if (cJSON_IsString(sn_item) && cJSON_IsString(key_item)) {
+    if (cJSON_IsString(sn_item)) {
         strncpy(sn, sn_item->valuestring, 32 - 1); // 复制 sn 字符串到 sn 数组
         sn[32 - 1] = '\0'; // 确保字符串以空字符结尾
+        printf("SN: %s\n", sn);
+    }
+    if (cJSON_IsString(key_item)) {
         strncpy(key, key_item->valuestring, 32 - 1); // 复制 key 字符串到 key 数组
         key[32 - 1] = '\0'; // 确保字符串以空字符结尾
-
-        printf("SN: %s\n", sn);
         printf("Key: %s\n", key);
-    } else {
-        printf("无法获取 sn 或 key\n");
-        // 释放内存
-        cJSON_Delete(root);
-        free(file_content);
-
-        return -1;
+    }
+    if (cJSON_IsString(self_weight_item)) {
+        g_sRecycle_Box_Cnf.self_adc_var = atoi(self_weight_item->valuestring);
+        printf("去皮重量 self_weight_adc: %d\n", g_sRecycle_Box_Cnf.self_adc_var);
+    }
+    if (cJSON_IsString(rat_item)) {
+        g_sRecycle_Box_Cnf.rat = atof(rat_item->valuestring);
+        printf("称重系数 rat: %.16f\n", g_sRecycle_Box_Cnf.rat);
     }
 
     // 释放内存
     cJSON_Delete(root);
     free(file_content);
+
+    return 0;
+}
+
+// 写入或修改设备配置文件的单个键值
+// 键值转为char后传入
+// write_info("sn","123456");
+// write_info("rat","0.001238");
+int write_device_info(const char *key_name, const char *value) {
+    cJSON *root = NULL;
+
+    // 尝试打开现有配置文件
+    FILE *file = fopen("/root/device_info.json", "r");
+    if (file == NULL) {
+        // 如果文件不存在，创建一个空的 JSON 对象
+        root = cJSON_CreateObject();
+        if (root == NULL) {
+            printf("无法创建 JSON 对象\n");
+            return -1;
+        }
+    } else {
+        // 文件存在，解析其中的 JSON 数据
+        fseek(file, 0, SEEK_END);
+        long file_size = ftell(file);
+        fseek(file, 0, SEEK_SET);
+
+        char *file_content = (char *)malloc(file_size + 1);
+        if (file_content == NULL) {
+            printf("无法分配内存\n");
+            fclose(file);
+            return -1;
+        }
+
+        fread(file_content, 1, file_size, file);
+        file_content[file_size] = '\0';
+
+        fclose(file);
+
+        root = cJSON_Parse(file_content);
+        free(file_content);
+        if (root == NULL) {
+            printf("无法解析 JSON 数据\n");
+            return -1;
+        }
+    }
+
+    // 添加或修改键值对
+    cJSON *item = cJSON_GetObjectItem(root, key_name);
+    if (item == NULL) {
+        cJSON_AddStringToObject(root, key_name, value);
+    } else {
+        cJSON_SetValuestring(item, value);
+    }
+
+    // 将 JSON 对象转换为字符串
+    char *json_str = cJSON_PrintUnformatted(root);
+    if (json_str == NULL) {
+        printf("无法生成 JSON 字符串\n");
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    // 将字符串写入配置文件
+    file = fopen("/root/device_info.json", "w");
+    if (file == NULL) {
+        perror("无法打开设备配置文件");
+        cJSON_Delete(root);
+        free(json_str);
+        return -1;
+    }
+
+    fprintf(file, "%s", json_str);
+    fclose(file);
+    cJSON_Delete(root);
+    free(json_str);
 
     return 0;
 }
@@ -539,8 +615,8 @@ int open_door() {
         perror("msgrcv failed");
         exit(EXIT_FAILURE);
     }
-    
-    // 关闭登录页面元素更新 
+
+    // 关闭登录页面元素更新
     screen_login_flag=0;
 
     double sub_weight =  openDoor.curWeight; //开门命令上传给服务器的重量
@@ -583,7 +659,7 @@ int open_door() {
             time(&now);
             localNow = localtime(&now);
             strftime(currentTime, sizeof(currentTime), "%Y%m%d_%H%M%S", localNow);
-            
+
             struct stat statbuf;
             //创建文件夹
             char *media_path="/root/media";
@@ -595,7 +671,7 @@ int open_door() {
                 printf("文件夹 '%s' 已创建\n", media_path);
             } else if (S_ISDIR(statbuf.st_mode))
                 printf("文件夹 '%s' 已存在\n", media_path);
-            else 
+            else
                 printf("路径 '%s' 已存在，但不是文件夹\n", media_path);
 
             char time_path[32];
@@ -663,8 +739,8 @@ int open_door() {
                     lv_obj_add_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                 }
-                // usleep(1000000 / REFRESH_RATE); 
-                usleep(600000 / REFRESH_RATE); 
+                // usleep(1000000 / REFRESH_RATE);
+                usleep(800000 / REFRESH_RATE);
             }
             set_post_door_close();
             close_door(cur_weight, diff_weight);
@@ -719,7 +795,7 @@ int open_door() {
                 quit_flag=0;
                 break;
             }
-            usleep(1000000 / REFRESH_RATE); 
+            usleep(1000000 / REFRESH_RATE);
         }
 
         // 判断是否进入清运状态，显示正在清运
@@ -728,7 +804,7 @@ int open_door() {
             // 清运操作页面2
             set_screen_cleaning(&guider_ui.screen_login_del,sub_weight);
             while (1) {
-                if ((i % REFRESH_RATE) == 0) {                
+                if ((i % REFRESH_RATE) == 0) {
                     cur_weight = get_current_weight();
                     diff_weight = sub_weight - cur_weight;
                     // diff_weight = round((sub_weight - cur_weight) * 100) / 100; //手动保留两位小数
@@ -746,14 +822,14 @@ int open_door() {
                     clearing = 2;
                     break;
                 }
-                usleep(1000000 / REFRESH_RATE); 
+                usleep(1000000 / REFRESH_RATE);
                 i++;
             }
         }
 
-        // 判断进入清运完成状态 
+        // 判断进入清运完成状态
         if (clearing == 2) {
-            // 更新清运完成页面 
+            // 更新清运完成页面
             set_screen_cleaned(&guider_ui.screen_login_del,COUNT_DOWN10,sub_weight, cur_weight, diff_weight);
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = COUNT_DOWN10; i > 0; i--) {
@@ -969,15 +1045,14 @@ int server_start() {
     // 默认参数
     strcpy(sn, "00016000000001");
     strcpy(key, "device_key");
+    g_sRecycle_Box_Cnf.self_adc_var = 83819;
+    g_sRecycle_Box_Cnf.rat = 0.0064;
 
-    ret = read_info();
+    ret = read_device_info();
     if (ret != 0){
         // {"sn":"00016000000002","key":"device_key"}
-        printf("无法获取 sn 或 key，设置默认参数\n");
+        printf("配置文件参数设置失败\n");
         // LVGL提示 未设置SN和Key
-        // 默认参数
-        strcpy(sn, "00016000000001");
-        strcpy(key, "device_key");
     }
 
     // 获取登录配置

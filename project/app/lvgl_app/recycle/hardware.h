@@ -22,9 +22,17 @@
 
 #if 1
 #define ROD_HINDER_ADC_VALUE 280
-#else 
+#else
 #define ROD_HINDER_ADC_VALUE 80
 #endif
+
+typedef struct
+{
+    int self_adc_var;
+    double rat;
+} Recycle_Box_Cnf;
+
+extern Recycle_Box_Cnf g_sRecycle_Box_Cnf;
 
 // 获取当前重量
 double get_current_weight();

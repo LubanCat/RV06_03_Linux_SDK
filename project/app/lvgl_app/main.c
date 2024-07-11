@@ -8,6 +8,8 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/ipc.h>
+#include <signal.h>
 #include <cjson/cJSON.h>
 #include "lv_conf.h"
 #include "server.h"
@@ -21,17 +23,33 @@
 #define DISP_BUF_SIZE (480 * 480)
 #define MAX_WEIGHT 200
 #define LIGHT_CHECK_TIME 60
+#define MSGSZ 128
 
 lv_ui guider_ui;
 extern int sock;
 lv_disp_drv_t disp_drv;
+volatile sig_atomic_t g_main_run_ = 1; // 使用 volatile sig_atomic_t 类型，确保在信号处理程序中正确更新
+int msqid;  // 消息队列ID
+
+typedef struct msgbuf {
+    long mtype;
+    char mtext[MSGSZ];
+} message_buf;
+
+void sig_proc(int signo) {
+    if (signo == SIGINT || signo == SIGTERM) {
+        printf("received signal %d\n", signo);
+        g_main_run_ = 0; // 将运行标志设置为 0，以便退出 while 循环
+    }
+}
 
 void* lv_task_thread(void* arg) {
 
-    while (1) {
+    while (g_main_run_) {
         lv_task_handler();
         usleep(5000);
     }
+    printf("exit lv_task_thread");
     return NULL;
 }
 
@@ -45,7 +63,7 @@ void* aux_task_thread(void* arg) {
     loginRes.turnOffLight.tm_hour = 7;
     loginRes.turnOffLight.tm_min = 0;
 
-    while (1) {
+    while (g_main_run_) {
         // LVGL 更新4G信号强度
         if (signal_count == 5) {
             heartBeat.signal = module_signal();
@@ -84,7 +102,7 @@ void* aux_task_thread(void* arg) {
         }
 
         if (overflow_count == 90) {
-            // 获取超重、满溢 
+            // 获取超重、满溢
             int curCapacity = get_overflow_status();
             if (curCapacity == 3){
                 upload_overflow(curCapacity);
@@ -113,14 +131,17 @@ void* aux_task_thread(void* arg) {
         signal_count++;
         light_count++;
     }
+    printf("exit aux_task_thread");
     return NULL;
 }
 
-int main(void)
-{
+int main(void) {
     pthread_t lv_task_thread_id;
     pthread_t aux_task_thread_id;
     int ret;
+
+    signal(SIGINT, sig_proc);
+    signal(SIGTERM, sig_proc);
 
     // 同步时间
     system("ntpdate ntp1.aliyun.com");
@@ -130,7 +151,6 @@ int main(void)
 
     /*Linux DRM device init*/
     drm_init();
-
 
     /*A small buffer for LittlevGL to draw the screen's content*/
     static lv_color_t buf1[DISP_BUF_SIZE];
@@ -143,9 +163,9 @@ int main(void)
     /*Initialize and register a display driver*/
     uint32_t dpi = 0;
     lv_disp_drv_init(&disp_drv);
-    disp_drv.draw_buf   = &disp_buf;
-    disp_drv.flush_cb   = drm_flush;
-    disp_drv.wait_cb    = drm_wait_vsync;
+    disp_drv.draw_buf = &disp_buf;
+    disp_drv.flush_cb = drm_flush;
+    disp_drv.wait_cb = drm_wait_vsync;
     disp_drv.sw_rotate = 1;
     disp_drv.rotated = LV_DISP_ROT_90;
     drm_get_sizes(&disp_drv.hor_res, &disp_drv.ver_res, &dpi);
@@ -157,9 +177,8 @@ int main(void)
     /* Initialize and register a display input driver */
     lv_indev_drv_t indev_drv;
     lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
-
     indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read_cb = evdev_read;   //lv_gesture_dir_t lv_indev_get_gesture_dir(const lv_indev_t * indev)
+    indev_drv.read_cb = evdev_read;
     lv_indev_drv_register(&indev_drv);
 
     recycle_gpio_init();
@@ -178,7 +197,7 @@ int main(void)
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
-    
+
     server_start();
 
     ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);
@@ -191,16 +210,32 @@ int main(void)
 
     int curCapacity = get_overflow_status();
     upload_overflow(curCapacity);
-    if (curCapacity == 3){
+    if (curCapacity == 3) {
         // LVGL_UI 回收柜已满
         lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
-    }else{
+    } else {
         lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
     }
 
-    while(1){
+    while (g_main_run_) {
+        // 主要程序逻辑
         open_door();
+
+        // 在循环中处理消息队列，避免被信号中断导致的错误
+        message_buf rbuf;
+        if (msgrcv(msqid, &rbuf, MSGSZ, 1, IPC_NOWAIT) < 0) {
+            if (errno != ENOMSG && errno != EINTR) {
+                perror("msgrcv");
+                break;
+            }
+        } else {
+            printf("Received message: %s\n", rbuf.mtext);
+        }
     }
+
+    // deinit
+    pthread_join(lv_task_thread_id, NULL);
+    pthread_join(aux_task_thread_id, NULL);
 
     return 0;
 }

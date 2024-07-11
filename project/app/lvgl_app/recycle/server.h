@@ -78,7 +78,9 @@ int upload_video(const char *url, const char *file_path);
 int server_start();
 
 // 读取配置文件
-int read_info();
+int read_device_info();
+
+int write_device_info(const char *key_name, const char *value);
 
 int get_overflow_status();
 double get_current_weight();

@@ -4,6 +4,8 @@
 #include "hardware.h"
 #include "rk_gpio.h"
 
+Recycle_Box_Cnf g_sRecycle_Box_Cnf;
+
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) {
     rk_gpio_export(gpio);
@@ -50,15 +52,11 @@ double generate_random_number() {
     return random_number;
 }
 
-int read_weight_adc(int ch){
+int read_weight_adc(){
     char path[64];
     int value;
     char buffer[16];
-
-    if(ch!=0&&ch!=1){
-        printf("error chanel\n");
-        return -1;
-    }
+    int ch = 0;
 
     sprintf(path,"/sys/bus/iio/devices/iio:device0/in_voltage%d_raw",ch);
     
@@ -77,38 +75,54 @@ int read_weight_adc(int ch){
 
     buffer[num_read] = '\0'; // 确保字符串以null结尾
     // 将读取的内容转换为int型数据
-    value = atoi(buffer);
+    value = atoi(buffer) / 100; //最后两位无精度，舍去
     // 关闭文件
     close(fd);
+
+    msleep(500);
 
     return value;
 }
 
-// 获取当前重量
-double get_current_weight() {
-    int weight_zero=8381900;
-    int dd;
-    // 需要修改成从硬件获取重量
-    double weight,weight_ch0,weight_ch1;
+// 去皮
+void get_self_weight()
+{
+    // 从adc读取数据
+    g_sRecycle_Box_Cnf.self_adc_var = read_weight_adc();
+    printf("称重去皮值：%d\n", g_sRecycle_Box_Cnf.self_adc_var);
+}
 
-    // 定义两个从adc上读到的数据
-    int adc_read_ch0,adc_read_ch1;
-    adc_read_ch0 = read_weight_adc(0);
-    adc_read_ch1 = read_weight_adc(1);
+// 校准
+void set_rat_weight() {
 
-    //重量转换，
-    if(adc_read_ch0 > weight_zero)
-        dd=adc_read_ch0-weight_zero;
-    else
-        dd=weight_zero-adc_read_ch0;
-    
-    dd /=100;
-    weight_ch0 = (double)dd/20; //转换系数，现在随便给的
-    weight_ch1 = 0.0;
+    printf("准备校准\n");
+    sleep(5);
+    printf("开始校准\n");
 
-    // 总重等于两个通道重量相加
-    weight = weight_ch0 + weight_ch1;
-    return weight; 
+
+    int sum = 0.0;
+    for (int i = 0; i < 5; i++) {
+        int value = read_weight_adc();
+        sum += value;
+        msleep(500);
+    }
+    double average = sum / 5;
+    g_sRecycle_Box_Cnf.rat = 50.0 / average;
+
+    printf("称重计算系数：%.16f\n", g_sRecycle_Box_Cnf.rat);
+}
+
+double get_current_weight()
+{
+    // 从adc读取数据
+    int adc_read = read_weight_adc();
+
+    int diff_adc_value = adc_read - g_sRecycle_Box_Cnf.self_adc_var;
+    // 重量转换
+    double weight = diff_adc_value * 1.0 * g_sRecycle_Box_Cnf.rat;
+    printf("称重 ADC=%d diff_adc_value=%d\n", adc_read, diff_adc_value);
+
+    return weight;
 }
 
 // 获取溢出状态
@@ -177,7 +191,7 @@ rod_push(){
 
 rod_pull(){
     rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
-    rk_gpio_set_value(GPIO_PUSH_ROD1, 0);    
+    rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
 }
 
 rod_stop(){
@@ -205,7 +219,7 @@ int set_post_door_open(){
                 // 向服务器发送维修信息
                 break;
             }
-            rod_push();         
+            rod_push();
         }
 
         if (status == 0) {
@@ -239,7 +253,7 @@ int set_post_door_close(){
                 // 向服务器发送维修信息
                 break;
             }
-            rod_pull();        
+            rod_pull();
         }
 
         if (status == 0) {
