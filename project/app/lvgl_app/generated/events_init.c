@@ -124,7 +124,7 @@ static void screen_clean_quit_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		
+		quit_flag = 1;
 		break;
 	}
 	default:
@@ -307,7 +307,12 @@ static void screen_test_get_weight_key_event_handler (lv_event_t *e)
 	  if(cal_en==1){
 	    double weight=get_current_weight();
 	    char str[10];
-	    sprintf(str,"%.2fkg",weight);
+
+		if (isinf(weight) || isnan(weight)) {
+			sprintf(str,"校准错误");
+		} else {
+			sprintf(str,"%.2fkg",weight);
+		}
 	    lv_label_set_text(guider_ui.screen_test_weight,str);
 	  }
 	}

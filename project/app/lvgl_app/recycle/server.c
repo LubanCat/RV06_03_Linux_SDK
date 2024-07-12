@@ -30,6 +30,8 @@ char in_video[12];
 char out_video[12];
 pthread_t capture_test_thread_id;
 video_frame_t *video_test_frame;
+extern pthread_mutex_t lv_task_mutex;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* capture_thread(void* arg) {
     sleep(1);
@@ -172,7 +174,6 @@ int sock;
 char trans_Id[64];  // 事务ID
 
 // 声明互斥锁
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 LoginConfig loginConfig;
 LoginRes loginRes;
@@ -682,7 +683,9 @@ void *tcp_receiver(void *arg) {
                 }
 
                 int retCode = 0;
-
+                if (get_overflow_status() == 3) {
+                    retCode = 1;
+                }
                 cJSON *root = cJSON_CreateObject();
                 cJSON_AddStringToObject(root, "cmd", "openDoor");
                 cJSON_AddNumberToObject(root, "retCode", retCode);  // Assuming retCode is set elsewhere
@@ -788,12 +791,16 @@ int open_door() {
 
     if (openDoor.openType == 1) {
         // 满溢时进入满溢界面，不开投递门
-        if (get_overflow_status() == 3) {
+        int overflow_status = get_overflow_status();
+        upload_overflow(overflow_status);
+        if (overflow_status == 3) {
             printf("当前回收柜已满，请清运后再投递\n");
             set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,COUNT_DOWN10);
             for (int i = COUNT_DOWN10; i > 0; i--) {
                 printf("倒计时: %d秒 后返回登录界面\n", i);
+                pthread_mutex_lock(&lv_task_mutex);
                 set_screen_full_time(i);
+                pthread_mutex_unlock(&lv_task_mutex);
                 sleep(1);
             }
             // 返回到登录页面
@@ -875,9 +882,11 @@ int open_door() {
                     money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
                     // printf("倒计时: 总重量%fKG，当前重量%fKG，计费重量%fKG，计费%f元\n", sub_weight, cur_weight, diff_weight, money);
                     printf("倒计时: %d秒 后关闭可回收物仓门\n", i/REFRESH_RATE);
+                    pthread_mutex_lock(&lv_task_mutex);
                     set_screen_submit_time(i/REFRESH_RATE);
                     set_screen_submit_money(money);
                     set_screen_submit_weigth(diff_weight);
+                    pthread_mutex_unlock(&lv_task_mutex);
                 }
 
                 // 获取关闭仓门按键状态
@@ -889,8 +898,10 @@ int open_door() {
 
                 if (i <= COUNT_DOWN10 * REFRESH_RATE) {
                     // 投递重量、金额，10s倒计时
+                    pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_add_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
+                    pthread_mutex_unlock(&lv_task_mutex);
 
                     // 获取继续投递按键状态，按下倒计时重新从99开始
                     if (post_flag) {
@@ -899,8 +910,10 @@ int open_door() {
                         post_flag=0;
                     }
                 }else{
+                    pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_add_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
+                    pthread_mutex_unlock(&lv_task_mutex);
                 }
                 // usleep(1000000 / REFRESH_RATE);
                 usleep(800000 / REFRESH_RATE);
@@ -938,7 +951,9 @@ int open_door() {
         for (; i > 0; i--) {
             if ((i % REFRESH_RATE) == 0) {
                 // 更新清运界面倒计时
+                pthread_mutex_lock(&lv_task_mutex);
                 set_screen_clean_time(i/REFRESH_RATE);
+                pthread_mutex_unlock(&lv_task_mutex);
                 printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i/REFRESH_RATE, sub_weight);
             }
             // 获取开启清运门按键状态，按下开启清运门
@@ -954,7 +969,6 @@ int open_door() {
             // 获取退出按键状态，按下返回登录界面
             if (quit_flag) {
                 printf("按键：退出该模式\n");
-                set_screen_login(&guider_ui.screen_clean_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
                 quit_flag=0;
                 break;
             }
@@ -972,7 +986,9 @@ int open_door() {
                     diff_weight = sub_weight - cur_weight;
                     // diff_weight = round((sub_weight - cur_weight) * 100) / 100; //手动保留两位小数
                     // 清运操作页面2 更新当前重量
+                    pthread_mutex_lock(&lv_task_mutex);
                     set_screen_cleaning_weigth(cur_weight);
+                    pthread_mutex_unlock(&lv_task_mutex);
                     printf("清运中: 当前重量%.2fKG\n", cur_weight);
                 }
 
@@ -997,7 +1013,9 @@ int open_door() {
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = COUNT_DOWN10; i > 0; i--) {
                 printf("清运完成: %d秒后返回登录界面\n", i);
+                pthread_mutex_lock(&lv_task_mutex);
                 set_screen_cleaned_time(i);
+                pthread_mutex_unlock(&lv_task_mutex);
                 sleep(1);
             }
         }

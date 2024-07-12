@@ -31,7 +31,7 @@ lv_disp_drv_t disp_drv;
 volatile sig_atomic_t g_main_run_ = 1; // 使用 volatile sig_atomic_t 类型，确保在信号处理程序中正确更新
 int msqid;  // 消息队列ID
 int password_1 = 0, password_2 = 0, password_3 = 0;
-
+pthread_mutex_t lv_task_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct msgbuf {
     long mtype;
@@ -48,7 +48,9 @@ void sig_proc(int signo) {
 void* lv_task_thread(void* arg) {
 
     while (g_main_run_) {
+        pthread_mutex_lock(&lv_task_mutex);
         lv_task_handler();
+        pthread_mutex_unlock(&lv_task_mutex);
         usleep(5000);
     }
     printf("exit lv_task_thread");
@@ -71,7 +73,9 @@ void* aux_task_thread(void* arg) {
             heartBeat.signal = module_signal();
             if(screen_login_flag == 1){
                 // 在登录页面才更新
+                pthread_mutex_lock(&lv_task_mutex);
                 set_screen_login_net_status(heartBeat.signal);
+                pthread_mutex_unlock(&lv_task_mutex);
             }
             signal_count = 0;
         }
@@ -111,19 +115,22 @@ void* aux_task_thread(void* arg) {
                  // LVGL_UI 回收柜已满
                 if(screen_login_flag == 1){
                     // 在登录页面才更新
+                    pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                    pthread_mutex_unlock(&lv_task_mutex);
                 }
             }else{
                 if(screen_login_flag == 1){
                     // 在登录页面才更新
+                    pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                    pthread_mutex_unlock(&lv_task_mutex);
                 }
             }
 
-            int cur_weight = get_current_weight();
-            if (cur_weight >= MAX_WEIGHT){
-                upload_overweight(cur_weight);
-            }
+            // int cur_weight = get_current_weight();
+            // upload_overweight(cur_weight);
+
             overflow_count = 0;
         }
 
@@ -195,6 +202,7 @@ int main(void) {
     recycle_gpio_init();
 
     // 获取4G模块信息
+
     module_info();
     heartBeat.signal = module_signal();
 
@@ -222,9 +230,13 @@ int main(void) {
     upload_overflow(curCapacity);
     if (curCapacity == 3) {
         // LVGL_UI 回收柜已满
+        pthread_mutex_lock(&lv_task_mutex);
         lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+        pthread_mutex_unlock(&lv_task_mutex);
     } else {
+        pthread_mutex_lock(&lv_task_mutex);
         lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+        pthread_mutex_unlock(&lv_task_mutex);
     }
 
     while (g_main_run_) {
@@ -243,6 +255,7 @@ int main(void) {
     }
 
     // deinit
+    pthread_mutex_destroy(&lv_task_mutex);
     pthread_join(lv_task_thread_id, NULL);
     pthread_join(aux_task_thread_id, NULL);
 
