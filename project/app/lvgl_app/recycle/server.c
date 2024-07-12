@@ -409,12 +409,19 @@ int get_login_config() {
     while (retry_count < max_retries) {
         if (ping_and_extract_ip(host, ip) == 0) {
             printf("提取的 IP 地址: %s\n", ip);
+            break;
         } else {
             printf("无法提取 IP 地址，10 秒后重试...\n");
             sleep(10); // 等待 10 秒
             retry_count++;
         }
     }
+
+    if (retry_count == max_retries) {
+        printf("无法获取服务器IP，程序退出。\n");
+        return -1;
+    }
+
     // 创建套接字
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Socket creation failed");
@@ -766,9 +773,6 @@ int open_door() {
     open_clean_door_flag=0;
     hand_close_door_flag=0;
     message_queue_t msg;
-
-    printf("开门:1\n");
-
 
     if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OPENDOOR, 0) == -1) {
         perror("msgrcv failed");

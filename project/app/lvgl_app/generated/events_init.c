@@ -330,8 +330,10 @@ static void screen_test_quit_event_handler (lv_event_t *e)
 	{
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, guider_ui.screen_login_del, &guider_ui.screen_test_del, setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
 		char str[20];
-	sprintf(str, "%d", rod_hinder_value);
-	write_device_info("rod_hinder",str);
+		sprintf(str, "%d", rod_hinder_value);
+		write_device_info("rod_hinder",str);
+        set_screen_login_qrcode(loginRes.qrCode);
+		screen_login_flag = 1;
 		break;
 	}
 	default:

@@ -164,8 +164,8 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_qrcode
 	ui->screen_login_qrcode = lv_qrcode_create(ui->screen_login, 170, lv_color_hex(0x2C3224), lv_color_hex(0xffffff));
-	const char * screen_login_qrcode_data = "https://api.recycling.maizucity.com/index.html?sn=DEVICE123";
-	lv_qrcode_update(ui->screen_login_qrcode, screen_login_qrcode_data, strlen(screen_login_qrcode_data));
+	// const char * screen_login_qrcode_data = "https://api.recycling.maizucity.com/index.html?sn=DEVICE123";
+	// lv_qrcode_update(ui->screen_login_qrcode, screen_login_qrcode_data, strlen(screen_login_qrcode_data));
 	lv_obj_set_pos(ui->screen_login_qrcode, 215, 706);
 	lv_obj_set_size(ui->screen_login_qrcode, 170, 170);
 

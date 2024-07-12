@@ -136,7 +136,6 @@ void* aux_task_thread(void* arg) {
             password_1 = 0;
             password_2 = 0;
             password_3 = 0;
-            
         }
 
         overflow_count++;
@@ -196,7 +195,6 @@ int main(void) {
     recycle_gpio_init();
 
     // 获取4G模块信息
-    module_init();
     module_info();
     heartBeat.signal = module_signal();
 

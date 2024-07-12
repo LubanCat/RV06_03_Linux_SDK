@@ -21,8 +21,9 @@ int recycle_gpio_init() {
     gpio_init(GPIO_LOCK_INT, GPIO_DIRECTION_INPUT, 1);
 
     // 推杆，默认输出低电平
-    gpio_init(GPIO_PUSH_ROD0, GPIO_DIRECTION_OUTPUT, 1);
+    gpio_init(GPIO_PUSH_ROD0, GPIO_DIRECTION_OUTPUT, 0);
     gpio_init(GPIO_PUSH_ROD1, GPIO_DIRECTION_OUTPUT, 0);
+    set_post_door_close();
 
     // 柜内灯，默认输出低电平关灯
     gpio_init(GPIO_LIGHT_INSIDE, GPIO_DIRECTION_OUTPUT, 0);
@@ -220,21 +221,18 @@ rod_stop(){
 int set_post_door_open(){
     int status;
     int rod_retry = 0;
-    rod_push();
 
+    rod_push();
     msleep(1000);
 
     while (1) {
         status = get_rod_status();
-
         if (status == 0) {
             rod_stop();
             break; // 跳出循环
         }
-
         msleep(100);
     }
-
     return 0;
 }
 
@@ -242,8 +240,8 @@ int set_post_door_open(){
 int set_post_door_close(){
     int status;
     int rod_retry = 0;
-    rod_pull();
 
+    rod_pull();
     msleep(1000);
 
     while (1) {
@@ -267,7 +265,6 @@ int set_post_door_close(){
         }
         msleep(100);
     }
-
     return 0;
 }
 
