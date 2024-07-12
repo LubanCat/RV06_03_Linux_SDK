@@ -57,13 +57,17 @@ lvgl_init()
 	echo "/dev/ttyUSB2 设备已连接，进行下一步操作。"
 	ifconfig eth1 up && udhcpc -i eth1
 
-	sleep 5
+	sleep 3
 
 	/oem/usr/bin/lvgl_app &
 }
 
 post_chk()
 {
+	echo 0 > /sys/class/gpio/export
+	echo out > /sys/class/gpio/gpio0/direction
+	echo 0 > /sys/class/gpio/gpio0/value
+
 	#TODO: ensure /userdata mount done
 	cnt=0
 	while [ $cnt -lt 30 ];
