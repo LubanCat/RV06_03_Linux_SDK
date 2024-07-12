@@ -18,23 +18,17 @@ typedef struct {
 
 extern ModuleInfo moduleInfo;
 
-// 初始化模块
-int module_init(void);
-
 // 获取信号强度
 int module_signal(void);
 
 // 获取ICCID
-int module_iccid(void);
+int module_iccid(int fd);
 
 // 获取IMSI
-int module_imsi(void);
+int module_imsi(int fd);
 
 // 获取IMEI
-int module_imei(void);
-
-// 反初始化模块
-int module_deinit(void);
+int module_imei(int fd);
 
 // 获取模块所有信息
 int module_info(void);
