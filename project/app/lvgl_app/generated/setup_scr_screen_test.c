@@ -592,6 +592,30 @@ void setup_scr_screen_test(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_test_weight, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_test_weight, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+	//Write codes screen_test_label_12
+	ui->screen_test_label_12 = lv_label_create(ui->screen_test);
+	lv_label_set_text(ui->screen_test_label_12, "校准失败");
+	lv_label_set_long_mode(ui->screen_test_label_12, LV_LABEL_LONG_WRAP);
+	lv_obj_set_pos(ui->screen_test_label_12, 149, 894);
+	lv_obj_set_size(ui->screen_test_label_12, 303, 67);
+	lv_obj_add_flag(ui->screen_test_label_12, LV_OBJ_FLAG_HIDDEN);
+
+	//Write style for screen_test_label_12, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_border_width(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_test_label_12, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_test_label_12, &lv_font_SourceHanSerifCN2_48, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_test_label_12, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_letter_space(ui->screen_test_label_12, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_line_space(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_test_label_12, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_opa(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_top(ui->screen_test_label_12, 3, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_right(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_bottom(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_left(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_test_label_12, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
 	//The custom code of screen_test.
 	
 

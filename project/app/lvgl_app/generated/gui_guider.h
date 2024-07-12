@@ -146,6 +146,7 @@ typedef struct
 	lv_obj_t *screen_test_cal_200_key;
 	lv_obj_t *screen_test_cal_200_key_label;
 	lv_obj_t *screen_test_weight;
+	lv_obj_t *screen_test_label_12;
 	lv_obj_t *screen_test_cam;
 	bool screen_test_cam_del;
 	lv_obj_t *screen_test_cam_btn_1;
