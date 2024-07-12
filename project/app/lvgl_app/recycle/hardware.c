@@ -129,6 +129,10 @@ double get_current_weight()
     int diff_adc_value = adc_read - g_sRecycle_Box_Cnf.self_adc_var;
     // 重量转换
     double weight = diff_adc_value * 1.0 * g_sRecycle_Box_Cnf.rat;
+    if (weight < 0){
+        weight = 0.00;
+    }
+    weight = round(weight * 100) / 100; // 保留两位小数
     printf("称重 ADC=%d diff_adc_value=%d\n", adc_read, diff_adc_value);
 
     return weight;

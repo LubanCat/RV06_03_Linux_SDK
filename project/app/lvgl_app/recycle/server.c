@@ -13,6 +13,7 @@
 #include "capture.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <regex.h>
 #include <time.h>
 #include "hardware.h"
 
@@ -21,7 +22,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 
-#define CONFIG_SERVER_IP "47.101.195.22"
+#define CONFIG_SERVER "api.recycling.maizucity.com"
 #define CONFIG_SERVER_PORT 9096
 extern lv_disp_drv_t disp_drv;
 char *preview_data;
@@ -349,12 +350,71 @@ int write_device_info(const char *key_name, const char *value) {
     return 0;
 }
 
+int ping_and_extract_ip(const char *host, char *ip) {
+    FILE *fp;
+    char path[1035];
+    regex_t regex;
+    regmatch_t pmatch[1];
+    const char *pattern = "([0-9]{1,3}\\.){3}[0-9]{1,3}";
+
+    // 打开用于读取的命令
+    char command[256];
+    snprintf(command, sizeof(command), "ping -c 1 %s", host);
+    fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("无法执行命令\n");
+        return -1;
+    }
+
+    // 编译正则表达式
+    if (regcomp(&regex, pattern, REG_EXTENDED) != 0) {
+        printf("无法编译正则表达式\n");
+        pclose(fp);
+        return -1;
+    }
+
+    // 读取命令的输出并查找匹配的 IP 地址
+    while (fgets(path, sizeof(path) - 1, fp) != NULL) {
+        if (regexec(&regex, path, 1, pmatch, 0) == 0) {
+            int start = pmatch[0].rm_so;
+            int end = pmatch[0].rm_eo;
+            strncpy(ip, path + start, end - start);
+            ip[end - start] = '\0';
+            regfree(&regex);
+            pclose(fp);
+            return 0;
+        }
+    }
+
+    // 释放正则表达式和关闭文件指针
+    regfree(&regex);
+    pclose(fp);
+
+    printf("未找到匹配的 IP 地址\n");
+    return -1;
+}
+
+
 // 获取登录配置
 int get_login_config() {
     struct sockaddr_in server_addr;
     char recv_buf[MAX_BUF_SIZE];
     int recv_len;
 
+    char ip[16];
+    const char *host = CONFIG_SERVER;
+    int max_retries = 5; // 最大重试次数
+    int retry_count = 0;
+
+    while (retry_count < max_retries) {
+        if (ping_and_extract_ip(host, ip) == 0) {
+            printf("提取的 IP 地址: %s\n", ip);
+        } else {
+            printf("无法提取 IP 地址，10 秒后重试...\n");
+            sleep(10); // 等待 10 秒
+            retry_count++;
+        }
+    }
     // 创建套接字
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Socket creation failed");
@@ -364,7 +424,7 @@ int get_login_config() {
     // 设置服务器地址
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(CONFIG_SERVER_PORT);
-    server_addr.sin_addr.s_addr = inet_addr(CONFIG_SERVER_IP);
+    server_addr.sin_addr.s_addr = inet_addr(ip);
 
     // 连接到服务器
     if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
@@ -706,6 +766,9 @@ int open_door() {
     open_clean_door_flag=0;
     hand_close_door_flag=0;
     message_queue_t msg;
+
+    printf("开门:1\n");
+
 
     if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OPENDOOR, 0) == -1) {
         perror("msgrcv failed");
