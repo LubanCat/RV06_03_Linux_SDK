@@ -414,20 +414,34 @@ int write_device_info(const char *key_name, const char *value) {
     }
 
     // 将字符串写入配置文件
-    file = fopen("/root/device_info.json", "w");
-    if (file == NULL) {
+    int fd = open("/root/device_info.json", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd == -1) {
         perror("无法打开设备配置文件");
         cJSON_Delete(root);
         free(json_str);
         return -1;
     }
 
-    fprintf(file, "%s", json_str);
-    fclose(file);
+    if (write(fd, json_str, strlen(json_str)) == -1) {
+        perror("写入失败");
+        close(fd);
+        cJSON_Delete(root);
+        free(json_str);
+        return -1;
+    }
+
+    // 确保数据立即同步到磁盘
+    if (fsync(fd) == -1) {
+        perror("fsync 失败");
+        close(fd);
+        cJSON_Delete(root);
+        free(json_str);
+        return -1;
+    }
+
+    close(fd);
     cJSON_Delete(root);
     free(json_str);
-
-    system("sync");
 
     return 0;
 }
@@ -877,8 +891,8 @@ int open_door() {
     if (openDoor.openType == 1) {
         // 满溢时进入满溢界面，不开投递门
         int overflow_status = get_overflow_status();
-        upload_overflow(overflow_status);
         if (overflow_status == 3) {
+            upload_overflow(overflow_status);
             printf("当前回收柜已满，请清运后再投递\n");
             set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,COUNT_DOWN10);
             for (int i = COUNT_DOWN10; i > 0; i--) {
@@ -1099,7 +1113,7 @@ int open_door() {
         // 判断进入清运完成状态
         if (clearing == 2) {
             // 更新清运完成页面
-            set_screen_cleaned(&guider_ui.screen_login_del,COUNT_DOWN10,sub_weight, cur_weight, diff_weight);
+            set_screen_cleaned(&guider_ui.screen_login_del, COUNT_DOWN10, sub_weight, cur_weight, diff_weight);
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = COUNT_DOWN10; i > 0; i--) {
                 printf("清运完成: %d秒后返回登录界面\n", i);
@@ -1109,8 +1123,8 @@ int open_door() {
                 sleep(1);
             }
 
-            FILE *file = fopen("/root/cleantime.txt", "w");
-            if (file == NULL) {
+            int fd = open("/root/cleantime.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (fd == -1) {
                 perror("无法打开文件");
                 return;
             }
@@ -1118,10 +1132,23 @@ int open_door() {
             time_t now = time(NULL);
             struct tm *t = localtime(&now);
 
+            char cleantime_str[20];
             strftime(cleantime_str, sizeof(cleantime_str), "%Y/%m/%d %H:%M:%S", t);
 
-            fprintf(file, "%s\n", cleantime_str);
-            fclose(file);
+            if (write(fd, cleantime_str, strlen(cleantime_str)) == -1) {
+                perror("写入失败");
+                close(fd);
+                return;
+            }
+
+            // 确保数据立即同步到磁盘
+            if (fsync(fd) == -1) {
+                perror("fsync 失败");
+                close(fd);
+                return;
+            }
+
+            close(fd);
         }
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
