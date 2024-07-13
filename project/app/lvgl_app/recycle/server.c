@@ -64,7 +64,7 @@ int check_dir_num(int num){
     int folder_count = 0;
 
     // 打开目标文件夹
-    dir = opendir("./media");
+    dir = opendir("/root/media");
     if (dir == NULL) {
         perror("Failed to open directory");
         return 1;
@@ -79,7 +79,7 @@ int check_dir_num(int num){
 
         // 获取当前项的状态信息
         char entry_path[1024];
-        snprintf(entry_path, sizeof(entry_path), "./%s", entry->d_name);
+        snprintf(entry_path, sizeof(entry_path), "/root/media/%s", entry->d_name);
         if (stat(entry_path, &entry_stat) == -1) {
             perror("Failed to get file status");
             continue;

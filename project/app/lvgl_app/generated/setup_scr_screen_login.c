@@ -40,7 +40,7 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_price
 	ui->screen_login_price = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_price, "0.70");
+	lv_label_set_text(ui->screen_login_price, "***");
 	lv_label_set_long_mode(ui->screen_login_price, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_login_price, 274, 434);
 	lv_obj_set_size(ui->screen_login_price, 154, 94);
@@ -109,7 +109,7 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_weigth
 	ui->screen_login_weigth = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_weigth, "8.35KG");
+	lv_label_set_text(ui->screen_login_weigth, "***");
 	lv_label_set_long_mode(ui->screen_login_weigth, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_login_weigth, 261, 608);
 	lv_obj_set_size(ui->screen_login_weigth, 131, 31);
@@ -132,7 +132,7 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_clean_time
 	ui->screen_login_clean_time = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_clean_time, "2024-05-21 15:26:21");
+	lv_label_set_text(ui->screen_login_clean_time, "***************");
 	lv_label_set_long_mode(ui->screen_login_clean_time, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_login_clean_time, 206, 643);
 	lv_obj_set_size(ui->screen_login_clean_time, 361, 31);
@@ -217,7 +217,7 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_net_status
 	ui->screen_login_net_status = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_net_status, "已连网");
+	lv_label_set_text(ui->screen_login_net_status, "***");
 	lv_label_set_long_mode(ui->screen_login_net_status, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_login_net_status, 130, 981);
 	lv_obj_set_size(ui->screen_login_net_status, 88, 31);
@@ -240,7 +240,7 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_singal
 	ui->screen_login_singal = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_singal, "99");
+	lv_label_set_text(ui->screen_login_singal, "**");
 	lv_label_set_long_mode(ui->screen_login_singal, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_login_singal, 218, 981);
 	lv_obj_set_size(ui->screen_login_singal, 39, 31);
@@ -397,7 +397,7 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_server_status
 	ui->screen_login_server_status = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_server_status, "未连接");
+	lv_label_set_text(ui->screen_login_server_status, "***");
 	lv_label_set_long_mode(ui->screen_login_server_status, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_login_server_status, 490, 981);
 	lv_obj_set_size(ui->screen_login_server_status, 88, 31);
