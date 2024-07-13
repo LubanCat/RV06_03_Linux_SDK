@@ -16,12 +16,14 @@
 #include <regex.h>
 #include <time.h>
 #include "hardware.h"
+#include <dirent.h>
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
 #define COUNT_DOWN20 20
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
+#define DIR_NUM 20
 
 #define CONFIG_SERVER "api.recycling.maizucity.com"
 #define CONFIG_SERVER_PORT 9096
@@ -38,6 +40,80 @@ extern int server_connect;
 
 extern pthread_mutex_t lv_task_mutex;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
+    if (stat1->st_ctime < stat2->st_ctime) {
+        return path1;
+    }
+    return path2;
+}
+
+// 删除指定路径的文件夹
+void delete_folder(const char* folder_path) {
+    char command[1024];
+    snprintf(command, sizeof(command), "rm -rf %s", folder_path);
+    system(command);
+}
+
+// 检查文件夹有没有超过特定的文件夹大小
+int check_dir_num(int num){
+    DIR *dir;
+    struct dirent *entry;
+    struct stat entry_stat;
+    const char* oldest_folder = NULL;
+    int folder_count = 0;
+
+    // 打开目标文件夹
+    dir = opendir("./media");
+    if (dir == NULL) {
+        perror("Failed to open directory");
+        return 1;
+    }
+
+    // 遍历文件夹
+    while ((entry = readdir(dir)) != NULL) {
+        // 跳过当前目录和上级目录
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        // 获取当前项的状态信息
+        char entry_path[1024];
+        snprintf(entry_path, sizeof(entry_path), "./%s", entry->d_name);
+        if (stat(entry_path, &entry_stat) == -1) {
+            perror("Failed to get file status");
+            continue;
+        }
+
+        // 如果是文件夹，则进行处理
+        if (S_ISDIR(entry_stat.st_mode)) {
+            folder_count++;
+
+            // 如果是第一个文件夹，或者找到了更旧的文件夹，则更新oldest_folder
+            if (oldest_folder == NULL || get_oldest_folder(oldest_folder, entry_path, &entry_stat, (struct stat*)oldest_folder) == entry_path) {
+                oldest_folder = strdup(entry_path); // 复制路径以保留它
+            }
+        }
+    }
+    // 关闭目录
+    closedir(dir);
+
+    // 如果文件夹数量大于num，则删除最旧的文件夹
+    if (folder_count > num) {
+        if (oldest_folder != NULL) {
+            printf("Deleting oldest folder: %s\n", oldest_folder);
+            delete_folder(oldest_folder);
+            free((void*)oldest_folder); // 释放复制的路径
+        } else {
+            printf("No folders to delete.\n");
+        }
+    } else {
+        printf("Folder count is %d, no need to delete.\n", folder_count);
+    }
+
+    return 0;    
+}
+
 
 void* capture_thread(void* arg) {
     sleep(1);
@@ -839,6 +915,7 @@ int open_door() {
             localNow = localtime(&now);
             strftime(currentTime, sizeof(currentTime), "%Y%m%d_%H%M%S", localNow);
 
+            check_dir_num(DIR_NUM);
             struct stat statbuf;
             //创建文件夹
             char *media_path="/root/media";
