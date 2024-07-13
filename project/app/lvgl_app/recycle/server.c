@@ -1071,8 +1071,10 @@ int open_door() {
             while (1) {
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight = get_current_weight();
-                    diff_weight = sub_weight - cur_weight;
-                    // diff_weight = round((sub_weight - cur_weight) * 100) / 100; //手动保留两位小数
+                    diff_weight = round((sub_weight - cur_weight) * 100) / 100; //手动保留两位小数
+                    if (diff_weight < 0){
+                        diff_weight = 0.00;
+                    }
                     // 清运操作页面2 更新当前重量
                     pthread_mutex_lock(&lv_task_mutex);
                     set_screen_cleaning_weigth(cur_weight);
@@ -1118,7 +1120,7 @@ int open_door() {
 
             strftime(cleantime_str, sizeof(cleantime_str), "%Y/%m/%d %H:%M:%S", t);
 
-            fprintf(file, "清运完成时间: %s\n", cleantime_str);
+            fprintf(file, "%s\n", cleantime_str);
             fclose(file);
         }
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
@@ -1358,6 +1360,9 @@ int server_start() {
 
     // 打印读取的清运时间
     printf("读取的清运时间: %s\n", cleantime_str);
+
+    // 初始化引脚
+    recycle_gpio_init();
 
     // 获取登录配置
     while (1) {

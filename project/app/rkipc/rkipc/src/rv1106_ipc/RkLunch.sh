@@ -57,9 +57,7 @@ lvgl_init()
 	echo "/dev/ttyUSB2 设备已连接，进行下一步操作。"
 	ifconfig eth1 up && udhcpc -i eth1
 
-	sleep 3
-
-	/oem/usr/bin/lvgl_app &
+	/oem/usr/bin/lvgl_app.sh &
 }
 
 post_chk()

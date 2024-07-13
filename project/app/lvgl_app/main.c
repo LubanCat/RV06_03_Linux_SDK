@@ -205,8 +205,6 @@ int main(void) {
     indev_drv.read_cb = evdev_read;
     lv_indev_drv_register(&indev_drv);
 
-    recycle_gpio_init();
-
     // 获取4G模块信息
 
     module_info();
