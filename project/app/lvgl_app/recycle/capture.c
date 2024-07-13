@@ -99,7 +99,7 @@ int capture_start(video_frame_t *video_frame)
     return 1;
 }
 
-int video_linux_get_frame(video_frame_t *video_frame ,char *data,int* length)
+int video_linux_get_frame(video_frame_t *video_frame)
 {
     //出队
     struct v4l2_buffer readbuf;
@@ -108,8 +108,8 @@ int video_linux_get_frame(video_frame_t *video_frame ,char *data,int* length)
     if(ioctl(video_frame->fd, VIDIOC_DQBUF, &readbuf) < 0){
         perror("dqbuf fail");
     }
-    memcpy(data, video_frame->start, video_frame->length);
-    length[0] = readbuf.length;
+    // memcpy(data, video_frame->start, video_frame->length);
+    // length[0] = readbuf.length;
     //入队
     if(ioctl(video_frame->fd, VIDIOC_QBUF, &readbuf) < 0){
         perror("qbuf fail");
@@ -127,11 +127,6 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length
     readbuf.memory = V4L2_MEMORY_MMAP;
     if(ioctl(video_frame->fd, VIDIOC_DQBUF, &readbuf) < 0){
         perror("dqbuf fail");
-    }
-    // memcpy(data, video_frame->start, video_frame->length);
-    //入队
-    if(ioctl(video_frame->fd, VIDIOC_QBUF, &readbuf) < 0){
-        perror("qbuf fail");
     }
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
@@ -168,6 +163,10 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length
     // 释放 JPEG 解码器
     jpeg_destroy_decompress(&cinfo);
 
+    if(ioctl(video_frame->fd, VIDIOC_QBUF, &readbuf) < 0){
+        perror("qbuf fail");
+    }
+
     return 1;
 }
 
@@ -194,25 +193,19 @@ int capture_jpg(char *device,int width,int height,char* output_path){
     sprintf(video_frame.device,"%s",device);
     capture_start(&video_frame);
 
-    char *data;
-    data=malloc(video_frame.height*video_frame.width*2);
-    int length;
-
     int afd = open(output_path, O_WRONLY | O_CREAT, 0644);
     if (afd == -1) {
         perror("open");
         return -1;
     }
-
-    video_linux_get_frame(&video_frame,data,&length);
+    video_linux_get_frame(&video_frame);
     // 写入数组内容到文件
-    if (write(afd, data, length) != length) {
+    if (write(afd, video_frame.start, video_frame.length) != video_frame.length) {
         perror("write");
         close(afd);
         return -1;
     }
     close(afd);
-    free(data);
     capture_stop(&video_frame);
 }
 

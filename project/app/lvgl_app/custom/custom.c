@@ -79,6 +79,15 @@ void set_screen_login_net_status(int singal){
     }
 }
 
+
+void set_screen_login_server_status(int server_status){
+    if(server_status){
+        lv_label_set_text(guider_ui.screen_login_server_status, "已连接");
+    }else{
+        lv_label_set_text(guider_ui.screen_login_server_status, "未连接");
+    }
+}
+
 void set_screen_login_qrcode(char *qrcode){
     lv_qrcode_update(guider_ui.screen_login_qrcode, qrcode, strlen(qrcode));
 }
@@ -133,7 +142,7 @@ void set_screen_cleaned_time(int time){
     set_lv_label_text_int(guider_ui.screen_cleaned_time,time);
 }
 
-void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int singal){
+void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int singal,int server_status){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, 
                         guider_ui.screen_login_del, screen_del, 
                         setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 
@@ -144,6 +153,7 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
     set_screen_login_clean_time(time);
     set_screen_login_net_status(singal);
     set_screen_login_qrcode(qrcode);
+    set_screen_login_server_status(server_status);
     // 当在登录页面时，开启其他线程在登录页面的更新
     screen_login_flag = 1;
 }

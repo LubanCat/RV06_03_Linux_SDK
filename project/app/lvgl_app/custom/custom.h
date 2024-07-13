@@ -38,6 +38,7 @@ void set_screen_login_weigth(double weigth);
 void set_screen_login_clean_time(char *time);
 void set_screen_login_net_status(int singal);
 void set_screen_login_qrcode(char *qrcode);
+void set_screen_login_server_status(int server_status);
 void set_screen_full_price(double price);
 void set_screen_full_time(int time);
 void set_screen_submit_money(double money);
@@ -50,7 +51,7 @@ void set_screen_cleaning_weigth(double weigth);
 void set_screen_cleaned_weigth(double before_clean_weigth,double after_clean_weigth,double clean_weigth);
 void set_screen_cleaned_time(int time);
 
-void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int singal);
+void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int singal,int server_status);
 void set_screen_full(bool *screen_del,double price,int time);
 void set_screen_submit(bool *screen_del,double money,int time,double weigth);
 void set_screen_clean(bool *screen_del,int time,double weigth);

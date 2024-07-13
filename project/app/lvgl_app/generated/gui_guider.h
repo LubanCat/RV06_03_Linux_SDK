@@ -43,6 +43,8 @@ typedef struct
 	lv_obj_t *screen_login_password_3;
 	lv_obj_t *screen_login_password_3_label;
 	lv_obj_t *screen_login_label_6;
+	lv_obj_t *screen_login_label_7;
+	lv_obj_t *screen_login_server_status;
 	lv_obj_t *screen_full;
 	bool screen_full_del;
 	lv_obj_t *screen_full_img_1;

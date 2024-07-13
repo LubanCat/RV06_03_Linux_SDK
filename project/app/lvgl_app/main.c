@@ -32,6 +32,7 @@ volatile sig_atomic_t g_main_run_ = 1; // 使用 volatile sig_atomic_t 类型，
 int msqid;  // 消息队列ID
 int password_1 = 0, password_2 = 0, password_3 = 0;
 pthread_mutex_t lv_task_mutex = PTHREAD_MUTEX_INITIALIZER;
+int server_connect;
 
 typedef struct msgbuf {
     long mtype;
@@ -224,7 +225,7 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
 
-    set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
+    set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
 
     int curCapacity = get_overflow_status();
     upload_overflow(curCapacity);
