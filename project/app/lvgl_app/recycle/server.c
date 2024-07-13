@@ -28,6 +28,7 @@ extern lv_disp_drv_t disp_drv;
 char *preview_data;
 char in_video[12];
 char out_video[12];
+char cleantime_str[100];
 pthread_t capture_test_thread_id;
 video_frame_t *video_test_frame;
 pthread_t heartbeat_thread_id = NULL;
@@ -811,7 +812,7 @@ int open_door() {
                 sleep(1);
             }
             // 返回到登录页面
-            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
+            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         } else {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
@@ -946,7 +947,7 @@ int open_door() {
             capture_jpg_compass(out_video,1920,1080,out_video_close_path);
             upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
 
-            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
@@ -1027,8 +1028,22 @@ int open_door() {
                 pthread_mutex_unlock(&lv_task_mutex);
                 sleep(1);
             }
+
+            FILE *file = fopen("/root/cleantime.txt", "w");
+            if (file == NULL) {
+                perror("无法打开文件");
+                return;
+            }
+
+            time_t now = time(NULL);
+            struct tm *t = localtime(&now);
+
+            strftime(cleantime_str, sizeof(cleantime_str), "%Y/%m/%d %H:%M:%S", t);
+
+            fprintf(file, "清运完成时间: %s\n", cleantime_str);
+            fclose(file);
         }
-        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
+        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
         openDoor.openType = 0;
     }
@@ -1244,6 +1259,27 @@ int server_start() {
         printf("配置文件参数设置失败\n");
         // LVGL提示 未设置SN和Key
     }
+
+    FILE *file = fopen("/root/cleantime.txt", "r");
+
+    if (file == NULL) {
+        // 文件不存在
+        perror("无法打开文件");
+        snprintf(cleantime_str, sizeof(cleantime_str), "未清运");
+    } else {
+        if (fgets(cleantime_str, sizeof(cleantime_str), file) == NULL) {
+            // 文件为空或读取失败
+            perror("文件为空或读取失败");
+            snprintf(cleantime_str, sizeof(cleantime_str), "未清运");
+        } else {
+            // 读取成功，移除换行符
+            cleantime_str[strcspn(cleantime_str, "\n")] = 0;
+        }
+        fclose(file);
+    }
+
+    // 打印读取的清运时间
+    printf("读取的清运时间: %s\n", cleantime_str);
 
     // 获取登录配置
     while (1) {
