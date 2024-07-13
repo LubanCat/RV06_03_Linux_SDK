@@ -142,6 +142,10 @@ void set_screen_cleaned_time(int time){
     set_lv_label_text_int(guider_ui.screen_cleaned_time,time);
 }
 
+void set_screen_test_rod_hinder_value(int rod_hinder_value){
+    set_lv_label_text_int(guider_ui.screen_test_rod_hinder_value,rod_hinder_value);
+}
+
 void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int singal,int server_status){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, 
                         guider_ui.screen_login_del, screen_del, 

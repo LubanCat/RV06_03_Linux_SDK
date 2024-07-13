@@ -282,7 +282,7 @@ static void screen_test_cal_100_key_event_handler (lv_event_t *e)
 		if(peels_en==1){
 	  if(cal_en==0){
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_100_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
-	    set_rat_weight(100.00);
+	    set_rat_weight(25.00);
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
 	    cal_en=1;
 	  }
@@ -423,7 +423,7 @@ static void screen_test_cal_350_key_event_handler (lv_event_t *e)
 		if(peels_en==1){
 	  if(cal_en==0){
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_350_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
-	    set_rat_weight(350.00);
+	    set_rat_weight(200.00);
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
 	    cal_en=1;
 	  }
@@ -446,7 +446,7 @@ static void screen_test_cal_200_key_event_handler (lv_event_t *e)
 		if(peels_en==1){
 	  if(cal_en==0){
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_200_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
-	    set_rat_weight(200.00);
+	    set_rat_weight(100.00);
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_get_weight_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
 	    cal_en=1;
 	  }
@@ -487,6 +487,7 @@ static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
 	{
 		camara_test_stop();
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		set_screen_test_rod_hinder_value(rod_hinder_value);
 		break;
 	}
 	default:

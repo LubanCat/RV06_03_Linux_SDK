@@ -388,7 +388,7 @@ void setup_scr_screen_test(lv_ui *ui)
 	//Write codes screen_test_cal_100_key
 	ui->screen_test_cal_100_key = lv_btn_create(ui->screen_test);
 	ui->screen_test_cal_100_key_label = lv_label_create(ui->screen_test_cal_100_key);
-	lv_label_set_text(ui->screen_test_cal_100_key_label, "100kg校准");
+	lv_label_set_text(ui->screen_test_cal_100_key_label, "25kg校准");
 	lv_label_set_long_mode(ui->screen_test_cal_100_key_label, LV_LABEL_LONG_WRAP);
 	lv_obj_align(ui->screen_test_cal_100_key_label, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_style_pad_all(ui->screen_test_cal_100_key, 0, LV_STATE_DEFAULT);
@@ -526,7 +526,7 @@ void setup_scr_screen_test(lv_ui *ui)
 	//Write codes screen_test_cal_350_key
 	ui->screen_test_cal_350_key = lv_btn_create(ui->screen_test);
 	ui->screen_test_cal_350_key_label = lv_label_create(ui->screen_test_cal_350_key);
-	lv_label_set_text(ui->screen_test_cal_350_key_label, "350kg校准");
+	lv_label_set_text(ui->screen_test_cal_350_key_label, "200kg校准");
 	lv_label_set_long_mode(ui->screen_test_cal_350_key_label, LV_LABEL_LONG_WRAP);
 	lv_obj_align(ui->screen_test_cal_350_key_label, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_style_pad_all(ui->screen_test_cal_350_key, 0, LV_STATE_DEFAULT);
@@ -549,7 +549,7 @@ void setup_scr_screen_test(lv_ui *ui)
 	//Write codes screen_test_cal_200_key
 	ui->screen_test_cal_200_key = lv_btn_create(ui->screen_test);
 	ui->screen_test_cal_200_key_label = lv_label_create(ui->screen_test_cal_200_key);
-	lv_label_set_text(ui->screen_test_cal_200_key_label, "200kg校准");
+	lv_label_set_text(ui->screen_test_cal_200_key_label, "100kg校准");
 	lv_label_set_long_mode(ui->screen_test_cal_200_key_label, LV_LABEL_LONG_WRAP);
 	lv_obj_align(ui->screen_test_cal_200_key_label, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_style_pad_all(ui->screen_test_cal_200_key, 0, LV_STATE_DEFAULT);
