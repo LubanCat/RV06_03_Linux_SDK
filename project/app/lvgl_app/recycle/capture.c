@@ -191,7 +191,10 @@ int capture_jpg(char *device,int width,int height,char* output_path){
     video_frame.width=width;
     video_frame.height=height;
     sprintf(video_frame.device,"%s",device);
-    capture_start(&video_frame);
+    int ret = capture_start(&video_frame);
+    if(ret < 0 ){
+        return -1;
+    }
 
     int afd = open(output_path, O_WRONLY | O_CREAT, 0644);
     if (afd == -1) {
@@ -215,7 +218,10 @@ int capture_jpg_compass(char *device,int width,int height,char *output_path){
     video_frame.width=width;
     video_frame.height=height;
     sprintf(video_frame.device,"%s",device);
-    capture_start(&video_frame);
+    int ret = capture_start(&video_frame);
+    if(ret < 0 ){
+        return -1;
+    }
 
     char *data;
     int length;
@@ -226,7 +232,6 @@ int capture_jpg_compass(char *device,int width,int height,char *output_path){
     VENC_RECV_PIC_PARAM_S pstRecvParam;
     VENC_CHN_ATTR_S stAttr;
     void *pVirAddr = RK_NULL;
-    int ret;
     VIDEO_FRAME_INFO_S stFrame;
     VENC_STREAM_S rcv;
     int buffersize;
