@@ -220,7 +220,8 @@ void camara_test_start(int num){
 }
 
 void camara_test_stop(){
-    pthread_cancel(capture_test_thread_id);
+    if(capture_test_thread_id != NULL)
+        pthread_cancel(capture_test_thread_id);
     capture_stop(video_test_frame);
     free(video_test_frame);
     if(preview_data != NULL)
