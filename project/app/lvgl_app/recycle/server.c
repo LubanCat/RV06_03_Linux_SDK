@@ -30,6 +30,10 @@ char in_video[12];
 char out_video[12];
 pthread_t capture_test_thread_id;
 video_frame_t *video_test_frame;
+pthread_t heartbeat_thread_id = NULL;
+pthread_t tcp_receiver_thread_id = NULL;
+extern int server_connect;
+
 extern pthread_mutex_t lv_task_mutex;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -75,9 +79,8 @@ void* capture_test_thread(void* arg) {
     video_frame_t *video_frame = (video_frame_t *)arg;
     int ret = capture_start(video_frame);
     if(ret != -1){
-        lv_color_t *color_p;
+        lv_color_t color_p[640*480];
         int size=640*480;
-        color_p=malloc(size*sizeof(lv_color_t));
         int length;
 
         lv_area_t area;
@@ -114,16 +117,16 @@ void camara_test_start(int num){
     int ch = get_video_in_out(0);
     if(ch == 2){
         if(num==1)
-            sprintf(video_test_frame->device,"%s","/dev/video0");
-        else if(num==2)
             sprintf(video_test_frame->device,"%s","/dev/video2");
+        else if(num==2)
+            sprintf(video_test_frame->device,"%s","/dev/video0");
         else
             return -1;
     }else if(ch == 1){
         if(num==1)
-            sprintf(video_test_frame->device,"%s","/dev/video2");
-        else if(num==2)
             sprintf(video_test_frame->device,"%s","/dev/video0");
+        else if(num==2)
+            sprintf(video_test_frame->device,"%s","/dev/video2");
         else
             return -1;
     }
@@ -556,7 +559,7 @@ int server_login() {
     if (recv_len <= 0) {
         perror("Receive failed");
         return -1;
-    } else {
+    }else {
         recv_buf[recv_len] = '\0';
         printf("Server response: %s\n", recv_buf);
 
@@ -645,8 +648,12 @@ void *tcp_receiver(void *arg) {
     while (1) {
         recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
         printf("sock = %d ,recv_len=%d\n",sock,recv_len);
-        if (recv_len <= 0) {
+        if (recv_len < 0) {
             printf("wrong\n");
+        }else if(recv_len == 0){
+            printf("server restart\n");
+            server_connect=0;
+            server_start();
         } else {
             recv_buf[recv_len] = '\0';
             printf("Server response: %s\n", recv_buf);
@@ -804,7 +811,7 @@ int open_door() {
                 sleep(1);
             }
             // 返回到登录页面
-            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
+            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
         } else {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
@@ -857,11 +864,12 @@ int open_door() {
             char in_video_open_path[64];
             sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
             capture_jpg_compass(in_video,1920,1080,in_video_open_path);
-
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
             //柜外拍照
             char out_video_open_path[64];
             sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
             capture_jpg_compass(out_video,1920,1080,out_video_open_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
@@ -931,13 +939,14 @@ int open_door() {
             char in_video_close_path[64];
             sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
             capture_jpg_compass(in_video,1920,1080,in_video_close_path);
-
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
             //柜外拍照
             char out_video_close_path[64];
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
             capture_jpg_compass(out_video,1920,1080,out_video_close_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
 
-            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
@@ -1019,7 +1028,7 @@ int open_door() {
                 sleep(1);
             }
         }
-        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal);
+        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
         openDoor.openType = 0;
     }
@@ -1293,21 +1302,22 @@ int server_start() {
             sleep(60); // 获取失败时，等待60秒后重试
         }
     }
-
-    // 创建心跳线程
-    pthread_t heartbeat_thread_id;
-    if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) {
-        perror("Failed to create heartbeat thread");
-        return -1;
+    server_connect=1;
+    if(heartbeat_thread_id == NULL){
+        // 创建心跳线程
+        if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) {
+            perror("Failed to create heartbeat thread");
+            return -1;
+        }
     }
 
-    // 创建接收线程
-    pthread_t tcp_receiver_thread_id;
-    if (pthread_create(&tcp_receiver_thread_id, NULL, tcp_receiver, NULL) != 0) {
-        perror("Failed to create heartbeat thread");
-        return -1;
+    if(tcp_receiver_thread_id == NULL){
+        // 创建接收线程
+        if (pthread_create(&tcp_receiver_thread_id, NULL, tcp_receiver, NULL) != 0) {
+            perror("Failed to create heartbeat thread");
+            return -1;
+        }
     }
-
     return 0;
 }
 

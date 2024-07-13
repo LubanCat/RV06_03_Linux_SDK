@@ -19,7 +19,7 @@
 #include "hardware.h"
 #include "custom.h"
 
-extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en;
+extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect;
 
 #include "server.h"
 static void screen_login_password_1_event_handler (lv_event_t *e)
@@ -333,7 +333,8 @@ static void screen_test_quit_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, guider_ui.screen_login_del, &guider_ui.screen_test_del, setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		double cur_weight= get_current_weight();
+		set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
 		char str[20];
 		sprintf(str, "%d", rod_hinder_value);
 		write_device_info("rod_hinder",str);

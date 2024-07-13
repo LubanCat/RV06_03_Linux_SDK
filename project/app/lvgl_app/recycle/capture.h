@@ -23,7 +23,7 @@ typedef struct {
 
 
 int capture_start(video_frame_t *video_frame);
-int video_linux_get_frame(video_frame_t *video_frame ,char *data,int* length);
+int video_linux_get_frame(video_frame_t *video_frames);
 int video_linux_get_frame_rgb(video_frame_t *video_frame,char **data,int *length);
 int capture_stop(video_frame_t *video_frame);
 int capture_jpg(char *device,int width,int height,char* output_path);
