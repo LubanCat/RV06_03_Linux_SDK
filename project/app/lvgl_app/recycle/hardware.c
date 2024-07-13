@@ -5,7 +5,7 @@
 #include "rk_gpio.h"
 
 Recycle_Box_Cnf g_sRecycle_Box_Cnf;
-int rod_hinder_value = 280;
+int rod_hinder_value = 200;
 
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) {

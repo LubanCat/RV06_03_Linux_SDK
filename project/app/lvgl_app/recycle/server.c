@@ -19,6 +19,7 @@
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
+#define COUNT_DOWN20 20
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 
@@ -905,7 +906,7 @@ int open_door() {
                     break;
                 }
 
-                if (i <= COUNT_DOWN10 * REFRESH_RATE) {
+                if (i <= COUNT_DOWN20 * REFRESH_RATE) {
                     // 投递重量、金额，10s倒计时
                     pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_add_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
