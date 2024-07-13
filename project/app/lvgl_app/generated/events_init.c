@@ -309,7 +309,7 @@ static void screen_test_get_weight_key_event_handler (lv_event_t *e)
 	    char str[10];
 
 		if (isinf(weight) || isnan(weight)) {
-			sprintf(str,"校准错误");
+			sprintf(str,"校准失败");
 		} else {
 			sprintf(str,"%.2fkg",weight);
 		}

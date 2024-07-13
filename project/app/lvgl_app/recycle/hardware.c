@@ -145,7 +145,7 @@ int get_overflow_status() {
 
     // 有阻挡，输入0
     if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0){
-        overflow_status = 2;
+        overflow_status = 3;
     }
 
     if (rk_gpio_get_value(GPIO_IR2_STATUS) == 0){
@@ -240,6 +240,8 @@ int set_post_door_open(){
 int set_post_door_close(){
     int status;
     int rod_retry = 0;
+
+    system("/usr/bin/aplay -Dhw:0 /oem/usr/share/closedoor.wav");
 
     rod_pull();
     msleep(1000);

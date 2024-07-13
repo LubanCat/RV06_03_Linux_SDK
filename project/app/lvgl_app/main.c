@@ -62,6 +62,7 @@ void* aux_task_thread(void* arg) {
     int signal_count = 0;
     int light_count = LIGHT_CHECK_TIME;
     int overflow_count = 0;
+    int curCapacity,curCapacityBefore;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
     loginRes.turnOffLight.tm_hour = 7;
@@ -107,30 +108,33 @@ void* aux_task_thread(void* arg) {
             light_count = 0;
         }
 
-        if (overflow_count == 90) {
+        if (overflow_count == 10) {
             // 获取超重、满溢
             int curCapacity = get_overflow_status();
-            if (curCapacity == 3){
+            if (curCapacity != curCapacityBefore) {
                 upload_overflow(curCapacity);
-                 // LVGL_UI 回收柜已满
-                if(screen_login_flag == 1){
-                    // 在登录页面才更新
-                    pthread_mutex_lock(&lv_task_mutex);
-                    lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
-                    pthread_mutex_unlock(&lv_task_mutex);
-                }
-            }else{
-                if(screen_login_flag == 1){
-                    // 在登录页面才更新
-                    pthread_mutex_lock(&lv_task_mutex);
-                    lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
-                    pthread_mutex_unlock(&lv_task_mutex);
+                if (curCapacity == 3){
+                    // LVGL_UI 回收柜已满
+                    if(screen_login_flag == 1){
+                        // 在登录页面才更新
+                        pthread_mutex_lock(&lv_task_mutex);
+                        lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                        pthread_mutex_unlock(&lv_task_mutex);
+                    }
+                }else{
+                    if(screen_login_flag == 1){
+                        // 在登录页面才更新
+                        pthread_mutex_lock(&lv_task_mutex);
+                        lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                        pthread_mutex_unlock(&lv_task_mutex);
+                    }
                 }
             }
 
             // int cur_weight = get_current_weight();
             // upload_overweight(cur_weight);
 
+            curCapacityBefore = curCapacity;
             overflow_count = 0;
         }
 
