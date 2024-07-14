@@ -65,14 +65,14 @@ void setup_scr_screen_login(lv_ui *ui)
 	ui->screen_login_label_1 = lv_label_create(ui->screen_login);
 	lv_label_set_text(ui->screen_login_label_1, "当前重量：");
 	lv_label_set_long_mode(ui->screen_login_label_1, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_label_1, 143, 608);
-	lv_obj_set_size(ui->screen_login_label_1, 131, 31);
+	lv_obj_set_pos(ui->screen_login_label_1, 63, 620);
+	lv_obj_set_size(ui->screen_login_label_1, 181, 31);
 
 	//Write style for screen_login_label_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_login_label_1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_radius(ui->screen_login_label_1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(ui->screen_login_label_1, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_login_label_1, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_login_label_1, &lv_font_SourceHanSerifCN2_28, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_opa(ui->screen_login_label_1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_letter_space(ui->screen_login_label_1, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_line_space(ui->screen_login_label_1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -84,74 +84,28 @@ void setup_scr_screen_login(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_login_label_1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_login_label_1, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_login_label_2
-	ui->screen_login_label_2 = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_label_2, "最近清运：");
-	lv_label_set_long_mode(ui->screen_login_label_2, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_label_2, 104, 643);
-	lv_obj_set_size(ui->screen_login_label_2, 131, 31);
-
-	//Write style for screen_login_label_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_border_width(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_login_label_2, lv_color_hex(0x26B08C), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_login_label_2, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_opa(ui->screen_login_label_2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_letter_space(ui->screen_login_label_2, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_line_space(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_login_label_2, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_opa(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_top(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_right(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_bottom(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_left(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_login_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
 	//Write codes screen_login_weigth
 	ui->screen_login_weigth = lv_label_create(ui->screen_login);
 	lv_label_set_text(ui->screen_login_weigth, "***");
 	lv_label_set_long_mode(ui->screen_login_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_weigth, 261, 608);
-	lv_obj_set_size(ui->screen_login_weigth, 131, 31);
+	lv_obj_set_pos(ui->screen_login_weigth, 228, 620);
+	lv_obj_set_size(ui->screen_login_weigth, 191, 31);
 
 	//Write style for screen_login_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_radius(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(ui->screen_login_weigth, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_login_weigth, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_login_weigth, &lv_font_SourceHanSerifCN2_28, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_opa(ui->screen_login_weigth, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_letter_space(ui->screen_login_weigth, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_line_space(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_login_weigth, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_login_weigth, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_bg_opa(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_top(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_right(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_bottom(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_left(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_login_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-	//Write codes screen_login_clean_time
-	ui->screen_login_clean_time = lv_label_create(ui->screen_login);
-	lv_label_set_text(ui->screen_login_clean_time, "***************");
-	lv_label_set_long_mode(ui->screen_login_clean_time, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_clean_time, 206, 643);
-	lv_obj_set_size(ui->screen_login_clean_time, 361, 31);
-
-	//Write style for screen_login_clean_time, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_border_width(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_login_clean_time, lv_color_hex(0x26B08C), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_login_clean_time, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_opa(ui->screen_login_clean_time, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_letter_space(ui->screen_login_clean_time, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_line_space(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_login_clean_time, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_opa(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_top(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_right(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_bottom(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_left(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_login_clean_time, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_login_canvas_1
 	ui->screen_login_canvas_1 = lv_canvas_create(ui->screen_login);
@@ -164,8 +118,8 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write codes screen_login_qrcode
 	ui->screen_login_qrcode = lv_qrcode_create(ui->screen_login, 170, lv_color_hex(0x2C3224), lv_color_hex(0xffffff));
-	// const char * screen_login_qrcode_data = "https://api.recycling.maizucity.com/index.html?sn=DEVICE123";
-	// lv_qrcode_update(ui->screen_login_qrcode, screen_login_qrcode_data, strlen(screen_login_qrcode_data));
+	const char * screen_login_qrcode_data = "https://api.recycling.maizucity.com/index.html?sn=DEVICE123";
+	lv_qrcode_update(ui->screen_login_qrcode, screen_login_qrcode_data, strlen(screen_login_qrcode_data));
 	lv_obj_set_pos(ui->screen_login_qrcode, 215, 706);
 	lv_obj_set_size(ui->screen_login_qrcode, 170, 170);
 
@@ -265,7 +219,7 @@ void setup_scr_screen_login(lv_ui *ui)
 	ui->screen_login_full = lv_label_create(ui->screen_login);
 	lv_label_set_text(ui->screen_login_full, "回收柜已满");
 	lv_label_set_long_mode(ui->screen_login_full, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_full, 389, 608);
+	lv_obj_set_pos(ui->screen_login_full, 398, 622);
 	lv_obj_set_size(ui->screen_login_full, 131, 31);
 	lv_obj_add_flag(ui->screen_login_full, LV_OBJ_FLAG_HIDDEN);
 

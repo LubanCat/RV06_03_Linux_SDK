@@ -20,15 +20,15 @@ typedef struct
   
 	lv_obj_t *blank;
 	bool blank_del;
+	lv_obj_t *blank_img_1;
 	lv_obj_t *blank_label_1;
+	lv_obj_t *blank_label_2;
 	lv_obj_t *screen_login;
 	bool screen_login_del;
 	lv_obj_t *screen_login_img_1;
 	lv_obj_t *screen_login_price;
 	lv_obj_t *screen_login_label_1;
-	lv_obj_t *screen_login_label_2;
 	lv_obj_t *screen_login_weigth;
-	lv_obj_t *screen_login_clean_time;
 	lv_obj_t *screen_login_canvas_1;
 	lv_obj_t *screen_login_qrcode;
 	lv_obj_t *screen_login_label_3;
@@ -197,6 +197,7 @@ void setup_scr_screen_test(lv_ui *ui);
 void setup_scr_screen_test_cam(lv_ui *ui);
 LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
 LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
@@ -208,21 +209,21 @@ LV_IMG_DECLARE(_cycle_alpha_200x200);
 LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
 
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_64)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_56)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_28)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_32)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_96)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_36)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_54)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_42)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_28)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_34)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_64)
 
 
 #ifdef __cplusplus

@@ -77,7 +77,7 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 	ui->screen_cleaned_label_2 = lv_label_create(ui->screen_cleaned);
 	lv_label_set_text(ui->screen_cleaned_label_2, "清运前重量");
 	lv_label_set_long_mode(ui->screen_cleaned_label_2, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaned_label_2, 90, 640);
+	lv_obj_set_pos(ui->screen_cleaned_label_2, 42, 647);
 	lv_obj_set_size(ui->screen_cleaned_label_2, 243, 58);
 
 	//Write style for screen_cleaned_label_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -98,10 +98,10 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 
 	//Write codes screen_cleaned_before_clean_weigth
 	ui->screen_cleaned_before_clean_weigth = lv_label_create(ui->screen_cleaned);
-	lv_label_set_text(ui->screen_cleaned_before_clean_weigth, "4.53KG");
+	lv_label_set_text(ui->screen_cleaned_before_clean_weigth, "000.00KG");
 	lv_label_set_long_mode(ui->screen_cleaned_before_clean_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaned_before_clean_weigth, 315, 640);
-	lv_obj_set_size(ui->screen_cleaned_before_clean_weigth, 220, 49);
+	lv_obj_set_pos(ui->screen_cleaned_before_clean_weigth, 284, 640);
+	lv_obj_set_size(ui->screen_cleaned_before_clean_weigth, 308, 49);
 
 	//Write style for screen_cleaned_before_clean_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_cleaned_before_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -144,10 +144,10 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 
 	//Write codes screen_cleaned_after_clean_weigth
 	ui->screen_cleaned_after_clean_weigth = lv_label_create(ui->screen_cleaned);
-	lv_label_set_text(ui->screen_cleaned_after_clean_weigth, "0.00KG");
+	lv_label_set_text(ui->screen_cleaned_after_clean_weigth, "000.00KG");
 	lv_label_set_long_mode(ui->screen_cleaned_after_clean_weigth, LV_LABEL_LONG_WRAP);
 	lv_obj_set_pos(ui->screen_cleaned_after_clean_weigth, 313, 701);
-	lv_obj_set_size(ui->screen_cleaned_after_clean_weigth, 220, 50);
+	lv_obj_set_size(ui->screen_cleaned_after_clean_weigth, 255, 50);
 
 	//Write style for screen_cleaned_after_clean_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_cleaned_after_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -169,7 +169,7 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 	ui->screen_cleaned_label_4 = lv_label_create(ui->screen_cleaned);
 	lv_label_set_text(ui->screen_cleaned_label_4, "清运后重量");
 	lv_label_set_long_mode(ui->screen_cleaned_label_4, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaned_label_4, 90, 701);
+	lv_obj_set_pos(ui->screen_cleaned_label_4, 42, 701);
 	lv_obj_set_size(ui->screen_cleaned_label_4, 243, 58);
 
 	//Write style for screen_cleaned_label_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -190,10 +190,10 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 
 	//Write codes screen_cleaned_clean_weigth
 	ui->screen_cleaned_clean_weigth = lv_label_create(ui->screen_cleaned);
-	lv_label_set_text(ui->screen_cleaned_clean_weigth, "4.53KG");
+	lv_label_set_text(ui->screen_cleaned_clean_weigth, "000.00KG");
 	lv_label_set_long_mode(ui->screen_cleaned_clean_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaned_clean_weigth, 313, 759);
-	lv_obj_set_size(ui->screen_cleaned_clean_weigth, 220, 49);
+	lv_obj_set_pos(ui->screen_cleaned_clean_weigth, 310, 759);
+	lv_obj_set_size(ui->screen_cleaned_clean_weigth, 262, 49);
 
 	//Write style for screen_cleaned_clean_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_cleaned_clean_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -215,7 +215,7 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 	ui->screen_cleaned_label_6 = lv_label_create(ui->screen_cleaned);
 	lv_label_set_text(ui->screen_cleaned_label_6, "清运重量");
 	lv_label_set_long_mode(ui->screen_cleaned_label_6, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaned_label_6, 90, 763);
+	lv_obj_set_pos(ui->screen_cleaned_label_6, 67, 759);
 	lv_obj_set_size(ui->screen_cleaned_label_6, 243, 58);
 
 	//Write style for screen_cleaned_label_6, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.

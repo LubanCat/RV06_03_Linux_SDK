@@ -120,14 +120,14 @@ void* aux_task_thread(void* arg) {
                     if(screen_login_flag == 1){
                         // 在登录页面才更新
                         pthread_mutex_lock(&lv_task_mutex);
-                        lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                        set_screen_login_full(1);
                         pthread_mutex_unlock(&lv_task_mutex);
                     }
                 }else{
                     if(screen_login_flag == 1){
                         // 在登录页面才更新
                         pthread_mutex_lock(&lv_task_mutex);
-                        lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+                        set_screen_login_full(0);
                         pthread_mutex_unlock(&lv_task_mutex);
                     }
                 }
@@ -235,11 +235,11 @@ int main(void) {
     if (curCapacity == 3) {
         // LVGL_UI 回收柜已满
         pthread_mutex_lock(&lv_task_mutex);
-        lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+        set_screen_login_full(1);
         pthread_mutex_unlock(&lv_task_mutex);
     } else {
         pthread_mutex_lock(&lv_task_mutex);
-        lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+        set_screen_login_full(0);
         pthread_mutex_unlock(&lv_task_mutex);
     }
 

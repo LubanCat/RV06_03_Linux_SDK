@@ -19,7 +19,7 @@
 #include "hardware.h"
 #include "custom.h"
 
-extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect;
+extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect,full;
 
 #include "server.h"
 static void screen_login_password_1_event_handler (lv_event_t *e)

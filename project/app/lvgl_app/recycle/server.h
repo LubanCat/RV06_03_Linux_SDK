@@ -83,7 +83,6 @@ int read_device_info();
 int write_device_info(const char *key_name, const char *value);
 
 int get_overflow_status();
-double get_current_weight();
 int send_tcp_packet(char *buf,int size);
 void *tcp_receiver(void *arg);
 void *heartbeat_thread(void *arg);

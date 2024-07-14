@@ -77,7 +77,7 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	ui->screen_cleaning_label_2 = lv_label_create(ui->screen_cleaning);
 	lv_label_set_text(ui->screen_cleaning_label_2, "当前重量");
 	lv_label_set_long_mode(ui->screen_cleaning_label_2, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaning_label_2, 86, 604);
+	lv_obj_set_pos(ui->screen_cleaning_label_2, 33, 599);
 	lv_obj_set_size(ui->screen_cleaning_label_2, 243, 58);
 
 	//Write style for screen_cleaning_label_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -98,10 +98,10 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 
 	//Write codes screen_cleaning_weigth
 	ui->screen_cleaning_weigth = lv_label_create(ui->screen_cleaning);
-	lv_label_set_text(ui->screen_cleaning_weigth, "4.53KG");
+	lv_label_set_text(ui->screen_cleaning_weigth, "000.00KG");
 	lv_label_set_long_mode(ui->screen_cleaning_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaning_weigth, 311, 604);
-	lv_obj_set_size(ui->screen_cleaning_weigth, 220, 49);
+	lv_obj_set_pos(ui->screen_cleaning_weigth, 258, 601);
+	lv_obj_set_size(ui->screen_cleaning_weigth, 319, 49);
 
 	//Write style for screen_cleaning_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_border_width(ui->screen_cleaning_weigth, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

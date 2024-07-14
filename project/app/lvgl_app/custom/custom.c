@@ -44,6 +44,12 @@ void set_lv_label_text_float(lv_obj_t * name,double value){
     lv_label_set_text(name,str);
 }
 
+void set_lv_label_text_weight(lv_obj_t * name,double value){
+    char str[10];
+    sprintf(str,"%.2fKG",value);
+    lv_label_set_text(name,str);
+}
+
 void set_lv_label_text_int(lv_obj_t * name,int value){
     lv_label_set_text_fmt(name, "%d", value);
 }
@@ -54,11 +60,7 @@ void set_screen_login_price(double price){
 }
 
 void set_screen_login_weigth(double weigth){
-    set_lv_label_text_float(guider_ui.screen_login_weigth,weigth);
-}
-
-void set_screen_login_clean_time(char *time){
-    lv_label_set_text_fmt(guider_ui.screen_login_clean_time, "%s", time);
+    set_lv_label_text_weight(guider_ui.screen_login_weigth,weigth);
 }
 
 void set_screen_login_net_status(int singal){
@@ -92,6 +94,15 @@ void set_screen_login_qrcode(char *qrcode){
     lv_qrcode_update(guider_ui.screen_login_qrcode, qrcode, strlen(qrcode));
 }
 
+
+void set_screen_login_full(int full){
+    if(full)
+        lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+    else
+        lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
+        
+}
+
 //screen_full
 void set_screen_full_price(double price){
     set_lv_label_text_float(guider_ui.screen_full_price,price);
@@ -123,19 +134,19 @@ void set_screen_clean_time(int time){
 }
 
 void set_screen_clean_weigth(double weigth){
-    set_lv_label_text_float(guider_ui.screen_clean_weigth,weigth);
+    set_lv_label_text_weight(guider_ui.screen_clean_weigth,weigth);
 }
 
 //screen_cleaning
 void set_screen_cleaning_weigth(double weigth){
-    set_lv_label_text_float(guider_ui.screen_cleaning_weigth,weigth);
+    set_lv_label_text_weight(guider_ui.screen_cleaning_weigth,weigth);
 }
 
 //screen_cleaned
 void set_screen_cleaned_weigth(double before_clean_weigth,double after_clean_weigth,double clean_weigth){
-    set_lv_label_text_float(guider_ui.screen_cleaned_before_clean_weigth,before_clean_weigth);
-    set_lv_label_text_float(guider_ui.screen_cleaned_after_clean_weigth,after_clean_weigth);
-    set_lv_label_text_float(guider_ui.screen_cleaned_clean_weigth,clean_weigth);
+    set_lv_label_text_weight(guider_ui.screen_cleaned_before_clean_weigth,before_clean_weigth);
+    set_lv_label_text_weight(guider_ui.screen_cleaned_after_clean_weigth,after_clean_weigth);
+    set_lv_label_text_weight(guider_ui.screen_cleaned_clean_weigth,clean_weigth);
 }
 
 void set_screen_cleaned_time(int time){
@@ -154,7 +165,6 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
 
     set_screen_login_price(price);
     set_screen_login_weigth(weigth);
-    set_screen_login_clean_time(time);
     set_screen_login_net_status(singal);
     set_screen_login_qrcode(qrcode);
     set_screen_login_server_status(server_status);

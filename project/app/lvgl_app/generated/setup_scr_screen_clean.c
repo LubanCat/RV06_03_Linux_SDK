@@ -162,7 +162,7 @@ void setup_scr_screen_clean(lv_ui *ui)
 	lv_obj_align(ui->screen_clean_quit_label, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_style_pad_all(ui->screen_clean_quit, 0, LV_STATE_DEFAULT);
 	lv_obj_set_width(ui->screen_clean_quit_label, LV_PCT(100));
-	lv_obj_set_pos(ui->screen_clean_quit, 16, 25);
+	lv_obj_set_pos(ui->screen_clean_quit, 59, 51);
 	lv_obj_set_size(ui->screen_clean_quit, 130, 60);
 
 	//Write style for screen_clean_quit, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.

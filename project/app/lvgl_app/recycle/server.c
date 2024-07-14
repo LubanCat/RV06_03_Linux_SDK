@@ -228,7 +228,7 @@ void camara_test_stop(){
         free(preview_data);
 }
 
-int msgid;
+int msgid=0;
 typedef enum {
     TYPE_HEARTBEAT  = 1,
     TYPE_OPENDOOR  = 2,
@@ -774,7 +774,10 @@ void *tcp_receiver(void *arg) {
                 strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
                 trans_Id[sizeof(trans_Id) - 1] = '\0';
                 openDoor.openType = openType->valueint;
-                openDoor.curWeight = get_current_weight();  // Example function to get current weight
+                double current_weight = get_current_weight();  // Example function to get current weight
+                if(current_weight < 0)
+                    current_weight=0.0;
+                openDoor.curWeight = current_weight;
                 cJSON_Delete(response_json);
 
                 if (msgsnd(msgid, &msg, sizeof(msg), 0) == -1) {
@@ -786,6 +789,7 @@ void *tcp_receiver(void *arg) {
                 if (get_overflow_status() == 3) {
                     retCode = 1;
                 }
+
                 cJSON *root = cJSON_CreateObject();
                 cJSON_AddStringToObject(root, "cmd", "openDoor");
                 cJSON_AddNumberToObject(root, "retCode", retCode);  // Assuming retCode is set elsewhere
@@ -980,6 +984,8 @@ int open_door() {
                 // 获取重量，循环更新页面
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight= get_current_weight();
+                    if(cur_weight < 0)
+                        cur_weight=0.0;
                     diff_weight = round((cur_weight - sub_weight) * 100) / 100; //手动保留两位小数
                     money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
                     // printf("倒计时: 总重量%fKG，当前重量%fKG，计费重量%fKG，计费%f元\n", sub_weight, cur_weight, diff_weight, money);
@@ -1086,6 +1092,8 @@ int open_door() {
             while (1) {
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight = get_current_weight();
+                    if(cur_weight < 0)
+                        cur_weight=0.0;
                     diff_weight = round((sub_weight - cur_weight) * 100) / 100; //手动保留两位小数
                     if (diff_weight < 0){
                         diff_weight = 0.00;
@@ -1416,10 +1424,12 @@ int server_start() {
         return -1;
     }
 
-    msgid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    if (msgid == -1) {
-        perror("msgget failed");
-        exit(EXIT_FAILURE);
+    if(msgid != 0){
+        msgid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+        if (msgid == -1) {
+            perror("msgget failed");
+            exit(EXIT_FAILURE);
+        }
     }
 
     // 设置服务器地址
