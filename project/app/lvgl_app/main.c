@@ -219,7 +219,7 @@ int main(void) {
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
-
+    get_msgid();
     server_start();
 
     ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);

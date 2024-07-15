@@ -26,6 +26,7 @@ int hand_close_door_flag;
 // 在登录页面
 int screen_login_flag;
 extern int rod_hinder_value;
+extern int local_version;
 
 int peels_en=0;
 int cal_en=0;
@@ -66,19 +67,37 @@ void set_screen_login_weigth(double weigth){
 void set_screen_login_net_status(int singal){
     int net_status;
 
+    lv_obj_add_flag(guider_ui.screen_login_net_0, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_login_net_1, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_login_net_2, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_login_net_3, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_login_net_4, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(guider_ui.screen_login_net_5, LV_OBJ_FLAG_HIDDEN);
+
     if (singal == 99) {
         net_status = 0;
-    } else {
+        lv_obj_clear_flag(guider_ui.screen_login_net_0, LV_OBJ_FLAG_HIDDEN);
+    }else if(singal > 0 && singal<5){
         net_status = 1;
+        lv_obj_clear_flag(guider_ui.screen_login_net_1, LV_OBJ_FLAG_HIDDEN);
+    }else if(singal > 5 && singal<11){
+        net_status = 2;
+        lv_obj_clear_flag(guider_ui.screen_login_net_2, LV_OBJ_FLAG_HIDDEN);
+    }else if(singal > 10 && singal<16){
+        net_status = 3;
+        lv_obj_clear_flag(guider_ui.screen_login_net_3, LV_OBJ_FLAG_HIDDEN);
+    }else if(singal > 15 && singal<21){
+        net_status = 4;
+        lv_obj_clear_flag(guider_ui.screen_login_net_4, LV_OBJ_FLAG_HIDDEN);
+    }else if(singal > 20 && singal<32){
+        net_status = 5;
+        lv_obj_clear_flag(guider_ui.screen_login_net_5, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if(net_status){
+    if(net_status)
         lv_label_set_text(guider_ui.screen_login_net_status, "已连网");
-        set_lv_label_text_int(guider_ui.screen_login_singal,singal);
-    }else{
+    else
         lv_label_set_text(guider_ui.screen_login_net_status, "无网络");
-        set_lv_label_text_int(guider_ui.screen_login_singal,singal);
-    }
 }
 
 
@@ -168,6 +187,7 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
     set_screen_login_net_status(singal);
     set_screen_login_qrcode(qrcode);
     set_screen_login_server_status(server_status);
+    lv_label_set_text(guider_ui.screen_login_version,local_version);
     // 当在登录页面时，开启其他线程在登录页面的更新
     screen_login_flag = 1;
 }

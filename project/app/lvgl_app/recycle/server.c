@@ -1543,14 +1543,6 @@ int server_start() {
         return -1;
     }
 
-    if(msgid != 0){
-        msgid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-        if (msgid == -1) {
-            perror("msgget failed");
-            exit(EXIT_FAILURE);
-        }
-    }
-
     // 设置服务器地址
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(loginConfig.tcpPort);
@@ -1595,6 +1587,14 @@ int server_start() {
         }
     }
     return 0;
+}
+
+int get_msgid(){
+    msgid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    if (msgid == -1) {
+        perror("msgget failed");
+        exit(EXIT_FAILURE);
+    }
 }
 
 int test() {
