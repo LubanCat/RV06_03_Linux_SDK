@@ -17,6 +17,7 @@
 #include <time.h>
 #include "hardware.h"
 #include <dirent.h>
+#include <curl/curl.h>
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
@@ -246,7 +247,7 @@ typedef struct {
 // 设备信息
 char sn[32];
 char key[32];
-char *version = "1.0";
+char *local_version = "1.0";
 
 // 文件路径
 char *photo_file = "/root/photo.jpg";
@@ -635,7 +636,7 @@ int server_login() {
     cJSON_AddStringToObject(root, "cmd", "login");
     cJSON_AddStringToObject(root, "imsi", moduleInfo.imsi);
     cJSON_AddStringToObject(root, "imei", moduleInfo.imei);
-    cJSON_AddStringToObject(root, "version", version);
+    cJSON_AddStringToObject(root, "version", local_version);
     cJSON_AddStringToObject(root, "iccid", moduleInfo.iccid);
     cJSON_AddStringToObject(root, "sn", sn);
     char *json_str = cJSON_PrintUnformatted(root);
@@ -802,7 +803,125 @@ void *tcp_receiver(void *arg) {
                 send_tcp_packet(json_str, strlen(json_str));
                 free(json_str);
                 cJSON_Delete(root);
-            }else{
+            } else if (strcmp(str, "ota") == 0) {
+                char version[16], url[64], md5[64];
+                cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
+                cJSON *url_item = cJSON_GetObjectItem(response_json, "url");
+                cJSON *md5_item = cJSON_GetObjectItem(response_json, "md5");
+
+                if (version_item && url_item && md5_item) {
+                    strncpy(version, version_item->valuestring, sizeof(version) - 1);
+                    version[sizeof(version) - 1] = '\0';
+                    strncpy(url, url_item->valuestring, sizeof(url) - 1);
+                    url[sizeof(url) - 1] = '\0';
+                    strncpy(md5, md5_item->valuestring, sizeof(md5) - 1);
+                    md5[sizeof(md5) - 1] = '\0';
+                    cJSON_Delete(response_json);
+
+                    int retCode = 1;
+
+                    // Compare versions
+                    int compare_versions(const char *v1, const char *v2) {
+                        int v1_major, v1_minor, v2_major, v2_minor;
+                        sscanf(v1, "%d.%d", &v1_major, &v1_minor);
+                        sscanf(v2, "%d.%d", &v2_major, &v2_minor);
+
+                        if (v1_major > v2_major) return 1;
+                        if (v1_major < v2_major) return -1;
+                        if (v1_minor > v2_minor) return 1;
+                        if (v1_minor < v2_minor) return -1;
+                        return 0;
+                    }
+
+                    if (compare_versions(version, local_version) > 0) {
+                        const char *filename = "/root/lvgl_app";
+
+                        int download_file(const char *url, const char *filename) {
+                            CURL *curl;
+                            FILE *fp;
+                            CURLcode res;
+
+                            curl = curl_easy_init();
+                            if (curl) {
+                                fp = fopen(filename, "wb");
+                                if (fp == NULL) {
+                                    curl_easy_cleanup(curl);
+                                    return 1;
+                                }
+                                curl_easy_setopt(curl, CURLOPT_URL, url);
+                                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+                                curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+                                res = curl_easy_perform(curl);
+                                fclose(fp);
+                                curl_easy_cleanup(curl);
+                                return res == CURLE_OK ? 0 : 1;
+                            }
+                            return 1;
+                        }
+
+                        int calculate_md5(const char *filename, char *md5_str) {
+                            char command[128];
+                            sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
+                            FILE *fp = popen(command, "r");
+                            if (fp == NULL) {
+                                return 1;
+                            }
+                            fgets(md5_str, 64, fp);
+                            pclose(fp);
+
+                            // Remove the trailing newline character
+                            md5_str[strcspn(md5_str, "\n")] = 0;
+
+                            return 0;
+                        }
+
+                        void delete_file(const char *filename) {
+                            if (remove(filename) != 0) {
+                                perror("Error deleting file");
+                            } else {
+                                printf("File %s successfully deleted\n", filename);
+                            }
+                        }
+
+                        // Download file
+                        if (download_file(url, filename) == 0) {
+                            // Verify MD5
+                            char downloaded_md5[64];
+                            if (calculate_md5(filename, downloaded_md5) == 0 && strcmp(downloaded_md5, md5) == 0) {
+                                retCode = 0; // Success
+                                cJSON *root = cJSON_CreateObject();
+                                cJSON_AddStringToObject(root, "cmd", "ota");
+                                cJSON_AddNumberToObject(root, "retCode", retCode);
+                                char *json_str = cJSON_PrintUnformatted(root);
+
+                                // Send response
+                                printf("Sending openDoor response: %s\n", json_str);
+                                send_tcp_packet(json_str, strlen(json_str));
+                                free(json_str);
+                                cJSON_Delete(root);
+
+                                // Exit the program
+                                exit(0);
+                            } else {
+                                // Delete the file if MD5 check fails
+                                delete_file(filename);
+                            }
+                        }
+                    }
+
+                    // Send response for failure cases
+                    cJSON *root = cJSON_CreateObject();
+                    cJSON_AddStringToObject(root, "cmd", "ota");
+                    cJSON_AddNumberToObject(root, "retCode", retCode);
+                    char *json_str = cJSON_PrintUnformatted(root);
+
+                    // Send response
+                    printf("Sending openDoor response: %s\n", json_str);
+                    send_tcp_packet(json_str, strlen(json_str));
+                    free(json_str);
+                    cJSON_Delete(root);
+                }
+            } else {
                 if(strcmp(str,"closeDoor")==0){
                     msg.type=TYPE_CLOSEDOOR;
                 }else if(strcmp(str,"heartBeat")==0){

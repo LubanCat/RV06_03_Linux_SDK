@@ -3,6 +3,9 @@
 # lvgl_app 的路径
 APP_PATH="/oem/usr/bin/lvgl_app"
 
+# lvgl_app 更新包的路径
+UPDATE_PATH="/root/lvgl_app"
+
 # 守护进程日志文件
 LOG_FILE="/var/log/lvgl_app_monitor.log"
 
@@ -13,6 +16,7 @@ cd "$(dirname "$0")"
 start_lvgl_app() {
     echo "$(date +'%Y-%m-%d %H:%M:%S') - 启动 lvgl_app" >> "$LOG_FILE"
     $APP_PATH &
+    # $APP_PATH >> "$LOG_FILE" 2>&1
     APP_PID=$!
 }
 
@@ -24,6 +28,14 @@ check_lvgl_app() {
     fi
 }
 
+# 检测 lvgl_app 是否有更新版本
+check_lvgl_update() {
+    if [ -e $UPDATE_PATH ]; then
+        echo "$(date +'%Y-%m-%d %H:%M:%S') - lvgl_app 正在更新..." >> "$LOG_FILE"
+        mv $UPDATE_PATH $APP_PATH
+    fi
+}
+
 # 将脚本置于后台运行
 if [ "$1" != "daemon" ]; then
     nohup "$0" daemon > /dev/null 2>&1 &
@@ -31,8 +43,10 @@ if [ "$1" != "daemon" ]; then
 fi
 
 # 主循环
+check_lvgl_update
 start_lvgl_app
 while true; do
+    check_lvgl_update
     check_lvgl_app
     sleep 10
 done
