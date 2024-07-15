@@ -485,8 +485,8 @@ static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		camara_test_stop();
-	set_screen_test_rod_hinder_value(rod_hinder_value);
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		set_screen_test_rod_hinder_value(rod_hinder_value);
 		break;
 	}
 	default:

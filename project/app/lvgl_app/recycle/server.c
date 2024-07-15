@@ -120,32 +120,32 @@ int check_dir_num(int num){
 void* capture_thread(void* arg) {
     sleep(1);
     video_frame_t *video_frame = (video_frame_t *)arg;
-    video_frame->width=320;
-    video_frame->height=240;
+    video_frame->width=640;
+    video_frame->height=480;
     sprintf(video_frame->device,"%s",out_video);
     int ret = capture_start(video_frame);
     if(ret != -1){
         lv_color_t *color_p;
-        int size=320*240;
+        int size=480*320;
         color_p=malloc(size*sizeof(lv_color_t));
         int length;
 
         lv_area_t area;
-        area.x1=618;
-        area.x2=857;
-        area.y1=129;
-        area.y2=448;
+        area.x1=578;
+        area.x2=897;
+        area.y1=60;
+        area.y2=539;
 
         while(1){
             video_linux_get_frame_rgb(video_frame,&preview_data,&length);
             memset(color_p,0x00,size*sizeof(lv_color_t));
 
-            for(int j=0;j<240;j++){
-                for(int i=0;i<320;i++){
-                    color_p[j+(319-i)*240].full |= 0xff<<24;
-                    color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+0]<<16;
-                    color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+1]<<8;
-                    color_p[j+(319-i)*240].full |= preview_data[(j*320+i)*3+2];
+            for(int j=0;j<320;j++){
+                for(int i=0;i<480;i++){
+                    color_p[j+(479-i)*320].full |= 0xff<<24;
+                    color_p[j+(479-i)*320].full |= preview_data[(j*640+i)*3+0]<<16;
+                    color_p[j+(479-i)*320].full |= preview_data[(j*640+i)*3+1]<<8;
+                    color_p[j+(479-i)*320].full |= preview_data[(j*640+i)*3+2];
                 }
             }
             drm_flush(&disp_drv,&area,color_p);
@@ -164,10 +164,10 @@ void* capture_test_thread(void* arg) {
         int length;
 
         lv_area_t area;
-        area.x1=0;
-        area.x2=639;
-        area.y1=0;
-        area.y2=479;
+        area.x1=140;
+        area.x2=779;
+        area.y1=60;
+        area.y2=539;
 
         while(1){
             video_linux_get_frame_rgb(video_frame,&preview_data,&length);
