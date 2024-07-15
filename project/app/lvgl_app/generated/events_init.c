@@ -307,9 +307,8 @@ static void screen_test_get_weight_key_event_handler (lv_event_t *e)
 	  if(cal_en==1){
 	    double weight=get_current_weight();
 	    char str[10];
-
-		if (isinf(weight) || isnan(weight)) {
-			sprintf(str,"校准失败");
+	    if (isinf(weight) || isnan(weight)) {
+	    	sprintf(str,"校准失败");
 		} else {
 			sprintf(str,"%.2fkg",weight);
 		}
@@ -334,12 +333,12 @@ static void screen_test_quit_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		double cur_weight= get_current_weight();
-		set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
-		char str[20];
-		sprintf(str, "%d", rod_hinder_value);
-		write_device_info("rod_hinder",str);
-        set_screen_login_qrcode(loginRes.qrCode);
-		screen_login_flag = 1;
+	set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
+	char str[20];
+	sprintf(str, "%d", rod_hinder_value);
+	write_device_info("rod_hinder",str);
+	set_screen_login_qrcode(loginRes.qrCode);
+	screen_login_flag = 1;
 		break;
 	}
 	default:
@@ -486,8 +485,8 @@ static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		camara_test_stop();
+	set_screen_test_rod_hinder_value(rod_hinder_value);
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
-		set_screen_test_rod_hinder_value(rod_hinder_value);
 		break;
 	}
 	default:

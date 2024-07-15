@@ -246,7 +246,7 @@ typedef struct {
 // 设备信息
 char sn[32];
 char key[32];
-char *version = "1.0";
+char *local_version = "1.0";
 
 // 文件路径
 char *photo_file = "/root/photo.jpg";
@@ -635,7 +635,7 @@ int server_login() {
     cJSON_AddStringToObject(root, "cmd", "login");
     cJSON_AddStringToObject(root, "imsi", moduleInfo.imsi);
     cJSON_AddStringToObject(root, "imei", moduleInfo.imei);
-    cJSON_AddStringToObject(root, "version", version);
+    cJSON_AddStringToObject(root, "version", local_version);
     cJSON_AddStringToObject(root, "iccid", moduleInfo.iccid);
     cJSON_AddStringToObject(root, "sn", sn);
     char *json_str = cJSON_PrintUnformatted(root);
