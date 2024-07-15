@@ -25,6 +25,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
+char *local_version = "1.1";
 
 #define CONFIG_SERVER "api.recycling.maizucity.com"
 #define CONFIG_SERVER_PORT 9096
@@ -247,7 +248,6 @@ typedef struct {
 // 设备信息
 char sn[32];
 char key[32];
-char *local_version = "1.0";
 
 // 文件路径
 char *photo_file = "/root/photo.jpg";
@@ -804,12 +804,18 @@ void *tcp_receiver(void *arg) {
                 free(json_str);
                 cJSON_Delete(root);
             } else if (strcmp(str, "ota") == 0) {
+                printf("Received 'ota' command.\n");
                 char version[16], url[64], md5[64];
                 cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
                 cJSON *url_item = cJSON_GetObjectItem(response_json, "url");
                 cJSON *md5_item = cJSON_GetObjectItem(response_json, "md5");
 
                 if (version_item && url_item && md5_item) {
+                    printf("Parsed JSON successfully.\n");
+                    printf("Version: %s\n", version_item->valuestring);
+                    printf("URL: %s\n", url_item->valuestring);
+                    printf("MD5: %s\n", md5_item->valuestring);
+
                     strncpy(version, version_item->valuestring, sizeof(version) - 1);
                     version[sizeof(version) - 1] = '\0';
                     strncpy(url, url_item->valuestring, sizeof(url) - 1);
@@ -834,9 +840,11 @@ void *tcp_receiver(void *arg) {
                     }
 
                     if (compare_versions(version, local_version) > 0) {
+                        printf("New version available: %s\n", version);
                         const char *filename = "/root/lvgl_app";
 
                         int download_file(const char *url, const char *filename) {
+                            printf("Downloading file from %s to %s\n", url, filename);
                             CURL *curl;
                             FILE *fp;
                             CURLcode res;
@@ -845,6 +853,7 @@ void *tcp_receiver(void *arg) {
                             if (curl) {
                                 fp = fopen(filename, "wb");
                                 if (fp == NULL) {
+                                    printf("Error opening file %s for writing.\n", filename);
                                     curl_easy_cleanup(curl);
                                     return 1;
                                 }
@@ -854,16 +863,25 @@ void *tcp_receiver(void *arg) {
                                 res = curl_easy_perform(curl);
                                 fclose(fp);
                                 curl_easy_cleanup(curl);
-                                return res == CURLE_OK ? 0 : 1;
+                                if (res == CURLE_OK) {
+                                    printf("File downloaded successfully.\n");
+                                    return 0;
+                                } else {
+                                    printf("File download failed: %s\n", curl_easy_strerror(res));
+                                    return 1;
+                                }
                             }
+                            printf("Error initializing CURL.\n");
                             return 1;
                         }
 
                         int calculate_md5(const char *filename, char *md5_str) {
+                            printf("Calculating MD5 for %s\n", filename);
                             char command[128];
                             sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
                             FILE *fp = popen(command, "r");
                             if (fp == NULL) {
+                                printf("Error opening pipe for MD5 calculation.\n");
                                 return 1;
                             }
                             fgets(md5_str, 64, fp);
@@ -871,6 +889,7 @@ void *tcp_receiver(void *arg) {
 
                             // Remove the trailing newline character
                             md5_str[strcspn(md5_str, "\n")] = 0;
+                            printf("Calculated MD5: %s\n", md5_str);
 
                             return 0;
                         }
@@ -883,11 +902,24 @@ void *tcp_receiver(void *arg) {
                             }
                         }
 
+                        void set_file_executable(const char *filename) {
+                            if (chmod(filename, S_IRWXU) != 0) {
+                                perror("Error setting file executable");
+                            } else {
+                                printf("File %s is now executable\n", filename);
+                            }
+                        }
+
                         // Download file
                         if (download_file(url, filename) == 0) {
                             // Verify MD5
                             char downloaded_md5[64];
                             if (calculate_md5(filename, downloaded_md5) == 0 && strcmp(downloaded_md5, md5) == 0) {
+                                printf("MD5 verification succeeded.\n");
+
+                                // Set the file executable
+                                set_file_executable(filename);
+
                                 retCode = 0; // Success
                                 cJSON *root = cJSON_CreateObject();
                                 cJSON_AddStringToObject(root, "cmd", "ota");
@@ -903,10 +935,15 @@ void *tcp_receiver(void *arg) {
                                 // Exit the program
                                 exit(0);
                             } else {
+                                printf("MD5 verification failed.\n");
                                 // Delete the file if MD5 check fails
                                 delete_file(filename);
                             }
+                        } else {
+                            printf("File download failed.\n");
                         }
+                    } else {
+                        printf("Current version is up to date.\n");
                     }
 
                     // Send response for failure cases
@@ -920,6 +957,8 @@ void *tcp_receiver(void *arg) {
                     send_tcp_packet(json_str, strlen(json_str));
                     free(json_str);
                     cJSON_Delete(root);
+                } else {
+                    printf("Failed to parse JSON.\n");
                 }
             } else {
                 if(strcmp(str,"closeDoor")==0){
@@ -1106,6 +1145,8 @@ int open_door() {
                     if(cur_weight < 0)
                         cur_weight=0.0;
                     diff_weight = round((cur_weight - sub_weight) * 100) / 100; //手动保留两位小数
+                    if(diff_weight < 0)
+                        diff_weight=0.0;
                     money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
                     // printf("倒计时: 总重量%fKG，当前重量%fKG，计费重量%fKG，计费%f元\n", sub_weight, cur_weight, diff_weight, money);
                     printf("倒计时: %d秒 后关闭可回收物仓门\n", i/REFRESH_RATE);
