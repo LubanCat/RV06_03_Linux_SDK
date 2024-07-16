@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <pthread.h>
 #include "module.h"
 #include "hardware.h"
 #include "rk_gpio.h"
 
 Recycle_Box_Cnf g_sRecycle_Box_Cnf;
 int rod_hinder_value = 200;
+int stop_music = 0;
 
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) {
@@ -122,8 +124,7 @@ void set_rat_weight(double rat_weight) {
     return 1;
 }
 
-double get_current_weight()
-{
+double get_current_weight() {
     // 从adc读取数据
     int adc_read = read_weight_adc();
 
@@ -156,7 +157,7 @@ int get_overflow_status() {
 }
 
 // 设置清运门打开
-int set_clear_door_open(){
+int set_clear_door_open() {
     rk_gpio_set_value(GPIO_LOCK_CEN, 1);
     msleep(100);
     rk_gpio_set_value(GPIO_LOCK_CEN, 0);
@@ -164,7 +165,7 @@ int set_clear_door_open(){
 }
 
 // 获取清运门状态
-int get_clear_door_status(){
+int get_clear_door_status() {
     // 关锁状态低电平，开锁状态高电平
     int rev = rk_gpio_get_value(GPIO_LOCK_INT);
     // 关锁返回0，开锁返回1
@@ -198,27 +199,27 @@ get_rod_status() {
     }
 }
 
-rod_push(){
+rod_push() {
     rod_stop();
-    msleep(500);
+    msleep(200);
     rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 1);
 }
 
-rod_pull(){
+rod_pull() {
     rod_stop();
-    msleep(500);
+    msleep(200);
     rk_gpio_set_value(GPIO_PUSH_ROD0, 1);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
 }
 
-rod_stop(){
+rod_stop() {
     rk_gpio_set_value(GPIO_PUSH_ROD0, 0);
     rk_gpio_set_value(GPIO_PUSH_ROD1, 0);
 }
 
 // 设置推杆开启投递门
-int set_post_door_open(){
+int set_post_door_open() {
     int status;
     int rod_retry = 0;
 
@@ -236,12 +237,33 @@ int set_post_door_open(){
     return 0;
 }
 
+// 音乐播放线程函数
+void *play_music(void *arg) {
+    while (1) {
+        system("/usr/bin/aplay -Dhw:0 /oem/usr/share/closedoor.wav");
+
+        // 检查是否需要停止播放音乐
+        if (stop_music) {
+            stop_music = 0;
+            break;
+        }
+
+        sleep(1); // 避免音乐播放完成后过于频繁地重新启动播放
+    }
+    return NULL;
+}
+
 // 设置推杆关闭投递门
-int set_post_door_close(){
+int set_post_door_close() {
     int status;
     int rod_retry = 0;
 
-    system("/usr/bin/aplay -Dhw:0 /oem/usr/share/closedoor.wav");
+    // 创建播放音乐的线程
+    pthread_t music_thread;
+    if (pthread_create(&music_thread, NULL, play_music, NULL) != 0) {
+        perror("Failed to create music thread");
+        return 1;
+    }
 
     rod_pull();
     msleep(1000);
@@ -267,6 +289,10 @@ int set_post_door_close(){
         }
         msleep(100);
     }
+
+    // 设置停止播放音乐标志
+    stop_music = 1;
+
     return 0;
 }
 

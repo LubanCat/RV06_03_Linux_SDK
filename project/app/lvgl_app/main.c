@@ -113,24 +113,25 @@ void* aux_task_thread(void* arg) {
         if (overflow_count == 10) {
             // 获取超重、满溢
             int curCapacity = get_overflow_status();
+            if (curCapacity == 3){
+                // LVGL_UI 回收柜已满
+                if(screen_login_flag == 1){
+                    // 在登录页面才更新
+                    pthread_mutex_lock(&lv_task_mutex);
+                    set_screen_login_full(1);
+                    pthread_mutex_unlock(&lv_task_mutex);
+                }
+            }else{
+                if(screen_login_flag == 1){
+                    // 在登录页面才更新
+                    pthread_mutex_lock(&lv_task_mutex);
+                    set_screen_login_full(0);
+                    pthread_mutex_unlock(&lv_task_mutex);
+                }
+            }
+                  
             if (curCapacity != curCapacityBefore) {
                 upload_overflow(curCapacity);
-                if (curCapacity == 3){
-                    // LVGL_UI 回收柜已满
-                    if(screen_login_flag == 1){
-                        // 在登录页面才更新
-                        pthread_mutex_lock(&lv_task_mutex);
-                        set_screen_login_full(1);
-                        pthread_mutex_unlock(&lv_task_mutex);
-                    }
-                }else{
-                    if(screen_login_flag == 1){
-                        // 在登录页面才更新
-                        pthread_mutex_lock(&lv_task_mutex);
-                        set_screen_login_full(0);
-                        pthread_mutex_unlock(&lv_task_mutex);
-                    }
-                }
             }
 
             // int cur_weight = get_current_weight();

@@ -14,10 +14,26 @@ cd "$(dirname "$0")"
 
 # 启动 lvgl_app 的函数
 start_lvgl_app() {
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - 检查 lvgl_app 权限" >> "$LOG_FILE"
+    
+    # 检查是否有执行权限
+    if [ ! -x "$APP_PATH" ]; then
+        echo "$(date +'%Y-%m-%d %H:%M:%S') - lvgl_app 没有执行权限，正在修改权限" >> "$LOG_FILE"
+        chmod +x "$APP_PATH"
+        
+        # 再次检查是否成功修改权限
+        if [ ! -x "$APP_PATH" ]; then
+            echo "$(date +'%Y-%m-%d %H:%M:%S') - 修改权限失败" >> "$LOG_FILE"
+            exit 1
+        fi
+    fi
+    
     echo "$(date +'%Y-%m-%d %H:%M:%S') - 启动 lvgl_app" >> "$LOG_FILE"
-    $APP_PATH &
+    # $APP_PATH &
     # $APP_PATH >> "$LOG_FILE" 2>&1
+    $APP_PATH >> /dev/ttyFIQ0 2>&1
     APP_PID=$!
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - lvgl_app 启动成功，PID: $APP_PID" >> "$LOG_FILE"
 }
 
 # 检测 lvgl_app 是否运行的函数
