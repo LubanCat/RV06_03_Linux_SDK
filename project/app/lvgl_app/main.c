@@ -20,7 +20,7 @@
 #include "generated/events_init.h"
 #include "capture.h"
 
-#define DISP_BUF_SIZE (480 * 480)
+#define DISP_BUF_SIZE (600 * 1024 * 4)
 #define MAX_WEIGHT 200
 #define LIGHT_CHECK_TIME 60
 #define MSGSZ 128

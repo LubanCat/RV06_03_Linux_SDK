@@ -27,18 +27,8 @@ void setup_scr_blank(lv_ui *ui)
 	lv_obj_set_style_bg_opa(ui->blank, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_bg_color(ui->blank, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_bg_grad_dir(ui->blank, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-	//Write codes blank_img_1
-	ui->blank_img_1 = lv_img_create(ui->blank);
-	lv_obj_add_flag(ui->blank_img_1, LV_OBJ_FLAG_CLICKABLE);
-	lv_img_set_src(ui->blank_img_1, &_main_600x1024_alpha_600x1024);
-	lv_img_set_pivot(ui->blank_img_1, 50,50);
-	lv_img_set_angle(ui->blank_img_1, 0);
-	lv_obj_set_pos(ui->blank_img_1, 0, 0);
-	lv_obj_set_size(ui->blank_img_1, 600, 1024);
-
-	//Write style for blank_img_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_img_opa(ui->blank_img_1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_img_src(ui->blank, &_main_600x1024_600x1024, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_img_opa(ui->blank, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes blank_label_1
 	ui->blank_label_1 = lv_label_create(ui->blank);

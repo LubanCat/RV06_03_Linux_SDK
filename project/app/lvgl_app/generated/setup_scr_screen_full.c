@@ -25,18 +25,8 @@ void setup_scr_screen_full(lv_ui *ui)
 
 	//Write style for screen_full, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_bg_opa(ui->screen_full, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-	//Write codes screen_full_img_1
-	ui->screen_full_img_1 = lv_img_create(ui->screen_full);
-	lv_obj_add_flag(ui->screen_full_img_1, LV_OBJ_FLAG_CLICKABLE);
-	lv_img_set_src(ui->screen_full_img_1, &_main_600x1024_alpha_600x1024);
-	lv_img_set_pivot(ui->screen_full_img_1, 50,50);
-	lv_img_set_angle(ui->screen_full_img_1, 0);
-	lv_obj_set_pos(ui->screen_full_img_1, 0, 0);
-	lv_obj_set_size(ui->screen_full_img_1, 600, 1024);
-
-	//Write style for screen_full_img_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_img_opa(ui->screen_full_img_1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_img_src(ui->screen_full, &_main_600x1024_600x1024, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_img_opa(ui->screen_full, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_full_price
 	ui->screen_full_price = lv_label_create(ui->screen_full);

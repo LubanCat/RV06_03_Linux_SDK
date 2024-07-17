@@ -20,12 +20,10 @@ typedef struct
   
 	lv_obj_t *blank;
 	bool blank_del;
-	lv_obj_t *blank_img_1;
 	lv_obj_t *blank_label_1;
 	lv_obj_t *blank_label_2;
 	lv_obj_t *screen_login;
 	bool screen_login_del;
-	lv_obj_t *screen_login_img_1;
 	lv_obj_t *screen_login_price;
 	lv_obj_t *screen_login_label_1;
 	lv_obj_t *screen_login_weigth;
@@ -54,7 +52,6 @@ typedef struct
 	lv_obj_t *screen_login_full;
 	lv_obj_t *screen_full;
 	bool screen_full_del;
-	lv_obj_t *screen_full_img_1;
 	lv_obj_t *screen_full_price;
 	lv_obj_t *screen_full_img_2;
 	lv_obj_t *screen_full_time;
@@ -62,7 +59,6 @@ typedef struct
 	lv_obj_t *screen_full_spangroup_1;
 	lv_obj_t *screen_submit;
 	bool screen_submit_del;
-	lv_obj_t *screen_submit_img_1;
 	lv_obj_t *screen_submit_line_1;
 	lv_obj_t *screen_submit_img_2;
 	lv_obj_t *screen_submit_time;
@@ -81,7 +77,6 @@ typedef struct
 	lv_obj_t *screen_submit_label_7;
 	lv_obj_t *screen_clean;
 	bool screen_clean_del;
-	lv_obj_t *screen_clean_img_1;
 	lv_obj_t *screen_clean_img_2;
 	lv_obj_t *screen_clean_time;
 	lv_obj_t *screen_clean_label_2;
@@ -93,7 +88,6 @@ typedef struct
 	lv_obj_t *screen_clean_quit_label;
 	lv_obj_t *screen_cleaning;
 	bool screen_cleaning_del;
-	lv_obj_t *screen_cleaning_img_1;
 	lv_obj_t *screen_cleaning_img_2;
 	lv_obj_t *screen_cleaning_time;
 	lv_obj_t *screen_cleaning_label_2;
@@ -101,7 +95,6 @@ typedef struct
 	lv_obj_t *screen_cleaning_label_3;
 	lv_obj_t *screen_cleaned;
 	bool screen_cleaned_del;
-	lv_obj_t *screen_cleaned_img_1;
 	lv_obj_t *screen_cleaned_img_2;
 	lv_obj_t *screen_cleaned_time;
 	lv_obj_t *screen_cleaned_label_2;
@@ -202,8 +195,10 @@ void setup_scr_screen_cleaning(lv_ui *ui);
 void setup_scr_screen_cleaned(lv_ui *ui);
 void setup_scr_screen_test(lv_ui *ui);
 void setup_scr_screen_test_cam(lv_ui *ui);
-LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
-LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
+
+LV_IMG_DECLARE(_main_600x1024_600x1024);
+
+LV_IMG_DECLARE(_main_600x1024_600x1024);
 LV_IMG_DECLARE(_0_alpha_30x29);
 LV_IMG_DECLARE(_1_alpha_30x29);
 LV_IMG_DECLARE(_2_alpha_30x29);
@@ -211,16 +206,13 @@ LV_IMG_DECLARE(_3_alpha_30x29);
 LV_IMG_DECLARE(_4_alpha_30x29);
 LV_IMG_DECLARE(_5_alpha_30x29);
 LV_IMG_DECLARE(_9_alpha_555x350);
-LV_IMG_DECLARE(_main_600x1024_alpha_600x1024);
+
+LV_IMG_DECLARE(_main_600x1024_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
-LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
-LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
-LV_IMG_DECLARE(_3_alpha_222x216);
-LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
+LV_IMG_DECLARE(_re_alpha_222x216);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
-LV_IMG_DECLARE(_backup_600x1024_alpha_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
 
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)

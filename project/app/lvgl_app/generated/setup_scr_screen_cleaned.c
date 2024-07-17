@@ -24,19 +24,9 @@ void setup_scr_screen_cleaned(lv_ui *ui)
 	lv_obj_set_scrollbar_mode(ui->screen_cleaned, LV_SCROLLBAR_MODE_OFF);
 
 	//Write style for screen_cleaned, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_bg_opa(ui->screen_cleaned, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-	//Write codes screen_cleaned_img_1
-	ui->screen_cleaned_img_1 = lv_img_create(ui->screen_cleaned);
-	lv_obj_add_flag(ui->screen_cleaned_img_1, LV_OBJ_FLAG_CLICKABLE);
-	lv_img_set_src(ui->screen_cleaned_img_1, &_backup_600x1024_alpha_600x1024);
-	lv_img_set_pivot(ui->screen_cleaned_img_1, 50,50);
-	lv_img_set_angle(ui->screen_cleaned_img_1, 0);
-	lv_obj_set_pos(ui->screen_cleaned_img_1, 0, 0);
-	lv_obj_set_size(ui->screen_cleaned_img_1, 600, 1024);
-
-	//Write style for screen_cleaned_img_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_img_opa(ui->screen_cleaned_img_1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_opa(ui->screen_cleaned, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_cleaned, lv_color_hex(0xf5f5f5), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_cleaned, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_cleaned_img_2
 	ui->screen_cleaned_img_2 = lv_img_create(ui->screen_cleaned);

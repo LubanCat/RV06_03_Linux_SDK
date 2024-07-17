@@ -46,7 +46,7 @@
  *=========================*/
 
 /*1: use custom malloc/free, 0: use the built-in `lv_mem_alloc()` and `lv_mem_free()`*/
-#define LV_MEM_CUSTOM 0
+#define LV_MEM_CUSTOM 1
 #if LV_MEM_CUSTOM == 0
     /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
     #define LV_MEM_SIZE (1024U * 1024U * 4U)          /*[bytes]*/
@@ -71,14 +71,14 @@
 #define LV_MEM_BUF_MAX_NUM 16
 
 /*Use the standard `memcpy` and `memset` instead of LVGL's own functions. (Might or might not be faster).*/
-#define LV_MEMCPY_MEMSET_STD 0
+#define LV_MEMCPY_MEMSET_STD 1
 
 /*====================
    HAL SETTINGS
  *====================*/
 
 /*Default display refresh period. LVG will redraw changed areas with this period time*/
-#define LV_DISP_DEF_REFR_PERIOD 15      /*[ms]*/
+#define LV_DISP_DEF_REFR_PERIOD 33      /*[ms]*/
 
 /*Input device read period in milliseconds*/
 #define LV_INDEV_DEF_READ_PERIOD 15     /*[ms]*/
@@ -133,15 +133,15 @@
  * "Transformed layers" (where transform_angle/zoom properties are used) use larger buffers
  * and can't be drawn in chunks. So these settings affects only widgets with opacity.
  */
-#define LV_LAYER_SIMPLE_BUF_SIZE          (24 * 1024)
-#define LV_LAYER_SIMPLE_FALLBACK_BUF_SIZE (3 * 1024)
+#define LV_LAYER_SIMPLE_BUF_SIZE          (4*600*1024)
+#define LV_LAYER_SIMPLE_FALLBACK_BUF_SIZE (4*600*1024)
 
 /*Default image cache size. Image caching keeps the images opened.
  *If only the built-in image formats are used there is no real advantage of caching. (I.e. if no new image decoder is added)
  *With complex image decoders (e.g. PNG or JPG) caching can save the continuous open/decode of images.
  *However the opened images might consume additional RAM.
  *0: to disable caching*/
-#define LV_IMG_CACHE_DEF_SIZE 0
+#define LV_IMG_CACHE_DEF_SIZE (4*600*1024)
 
 /*Number of stops allowed per gradient. Increase this to allow more stops.
  *This adds (sizeof(lv_color_t) + 1) bytes per additional stop*/
@@ -167,7 +167,7 @@
 
 /*Maximum buffer size to allocate for rotation.
  *Only used if software rotation is enabled in the display driver.*/
-#define LV_DISP_ROT_MAX_BUF (600*1024)
+#define LV_DISP_ROT_MAX_BUF (4*600*1024)
 
 /*-------------
  * GPU

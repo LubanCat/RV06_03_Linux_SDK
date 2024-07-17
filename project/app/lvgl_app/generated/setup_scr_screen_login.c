@@ -25,24 +25,14 @@ void setup_scr_screen_login(lv_ui *ui)
 
 	//Write style for screen_login, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_bg_opa(ui->screen_login, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-
-	//Write codes screen_login_img_1
-	ui->screen_login_img_1 = lv_img_create(ui->screen_login);
-	lv_obj_add_flag(ui->screen_login_img_1, LV_OBJ_FLAG_CLICKABLE);
-	lv_img_set_src(ui->screen_login_img_1, &_main_600x1024_alpha_600x1024);
-	lv_img_set_pivot(ui->screen_login_img_1, 50,50);
-	lv_img_set_angle(ui->screen_login_img_1, 0);
-	lv_obj_set_pos(ui->screen_login_img_1, 0, 0);
-	lv_obj_set_size(ui->screen_login_img_1, 600, 1024);
-
-	//Write style for screen_login_img_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_img_opa(ui->screen_login_img_1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_img_src(ui->screen_login, &_main_600x1024_600x1024, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_img_opa(ui->screen_login, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_login_price
 	ui->screen_login_price = lv_label_create(ui->screen_login);
 	lv_label_set_text(ui->screen_login_price, "***");
 	lv_label_set_long_mode(ui->screen_login_price, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_login_price, 274, 434);
+	lv_obj_set_pos(ui->screen_login_price, 274, 433);
 	lv_obj_set_size(ui->screen_login_price, 154, 94);
 
 	//Write style for screen_login_price, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -396,7 +386,6 @@ void setup_scr_screen_login(lv_ui *ui)
 	lv_img_set_angle(ui->screen_login_net_3, 0);
 	lv_obj_set_pos(ui->screen_login_net_3, 220, 975);
 	lv_obj_set_size(ui->screen_login_net_3, 30, 29);
-	lv_obj_add_flag(ui->screen_login_net_3, LV_OBJ_FLAG_HIDDEN);
 
 	//Write style for screen_login_net_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_img_opa(ui->screen_login_net_3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
