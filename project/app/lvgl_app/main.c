@@ -110,7 +110,7 @@ void* aux_task_thread(void* arg) {
             light_count = 0;
         }
 
-        if (overflow_count == 10) {
+        if (overflow_count == 1) {
             // 获取超重、满溢
             int curCapacity = get_overflow_status();
             if (curCapacity == 3){

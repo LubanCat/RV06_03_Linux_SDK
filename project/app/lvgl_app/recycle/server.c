@@ -1120,12 +1120,10 @@ int open_door() {
             char in_video_open_path[64];
             sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
             capture_jpg_compass(in_video,1920,1080,in_video_open_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
             //柜外拍照
             char out_video_open_path[64];
             sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
             capture_jpg_compass(out_video,1920,1080,out_video_open_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
@@ -1138,7 +1136,7 @@ int open_door() {
             inside_light(1);
             set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
-            for (; i > 0; i--) {
+            for (; i >= 0; i--) {
                 // 获取重量，循环更新页面
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight= get_current_weight();
@@ -1164,27 +1162,27 @@ int open_door() {
                     break;
                 }
 
-                if (i <= COUNT_DOWN20 * REFRESH_RATE) {
+                // 获取继续投递按键状态，按下倒计时重新从99开始
+                if (post_flag) {
+                    printf("按键：继续投递\n");
+                    i = COUNT_DOWN99 * REFRESH_RATE;
+                    post_flag=0;
+                }
+
+                if (i == COUNT_DOWN20 * REFRESH_RATE) {
                     // 投递重量、金额，10s倒计时
                     pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_add_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
                     pthread_mutex_unlock(&lv_task_mutex);
-
-                    // 获取继续投递按键状态，按下倒计时重新从99开始
-                    if (post_flag) {
-                        printf("按键：继续投递\n");
-                        i = COUNT_DOWN99 * REFRESH_RATE;
-                        post_flag=0;
-                    }
-                }else{
+                } else if (i == COUNT_DOWN99 * REFRESH_RATE) {
                     pthread_mutex_lock(&lv_task_mutex);
                     lv_obj_add_flag(guider_ui.screen_submit_post, LV_OBJ_FLAG_HIDDEN);
                     lv_obj_clear_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
                 // usleep(1000000 / REFRESH_RATE);
-                usleep(800000 / REFRESH_RATE);
+                usleep(600000 / REFRESH_RATE);
             }
             set_post_door_close();
             close_door(cur_weight, diff_weight);
@@ -1199,14 +1197,18 @@ int open_door() {
             char in_video_close_path[64];
             sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
             capture_jpg_compass(in_video,1920,1080,in_video_close_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
             //柜外拍照
             char out_video_close_path[64];
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
             capture_jpg_compass(out_video,1920,1080,out_video_close_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
 
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+
+            // 上传照片
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
