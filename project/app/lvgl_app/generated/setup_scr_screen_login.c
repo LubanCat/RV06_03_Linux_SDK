@@ -386,6 +386,7 @@ void setup_scr_screen_login(lv_ui *ui)
 	lv_img_set_angle(ui->screen_login_net_3, 0);
 	lv_obj_set_pos(ui->screen_login_net_3, 220, 975);
 	lv_obj_set_size(ui->screen_login_net_3, 30, 29);
+	lv_obj_add_flag(ui->screen_login_net_3, LV_OBJ_FLAG_HIDDEN);
 
 	//Write style for screen_login_net_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_img_opa(ui->screen_login_net_3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
