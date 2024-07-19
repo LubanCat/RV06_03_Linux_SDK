@@ -75,12 +75,16 @@ int upload_photo(const char *url, int photoType, const char *file_path);
 int upload_video(const char *url, const char *file_path);
 
 // 服务器注册和通信
-int server_start();
+void* socket_task_thread(void* arg);
 
 // 读取配置文件
 int read_device_info();
 
+// 写配置文件
 int write_device_info(const char *key_name, const char *value);
+
+// 系统读配置文件接口
+int read_info();
 
 int get_overflow_status();
 int send_tcp_packet(char *buf,int size);

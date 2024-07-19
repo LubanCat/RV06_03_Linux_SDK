@@ -8,7 +8,6 @@
 #include <cjson/cJSON.h>
 #include <pthread.h>
 #include "module.h"
-#include <sys/msg.h>
 #include "../custom/custom.h"
 #include "capture.h"
 #include <sys/stat.h>
@@ -18,6 +17,8 @@
 #include "hardware.h"
 #include <dirent.h>
 #include <curl/curl.h>
+#include <math.h>
+#include <poll.h>
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
@@ -213,23 +214,6 @@ void camara_test_stop(){
         free(preview_data);
 }
 
-int msgid=0;
-typedef enum {
-    TYPE_HEARTBEAT  = 1,
-    TYPE_OPENDOOR   = 2,
-    TYPE_CLOSEDOOR  = 3,
-    TYPE_OVERWEIGHT = 4,
-    TYPE_OVERFLOWER = 5,
-    TYPE_RESTART    = 6,
-    TYPE_DEBUG      = 7,
-} receive_type;
-
-typedef struct {
-    receive_type type; // 消息类型
-    int retcode;
-    int open_type;
-} message_queue_t;
-
 // 设备信息
 char sn[32];
 char key[32];
@@ -241,6 +225,8 @@ char *video_file = "/root/video.mp4";
 int sock;
 char trans_Id[64];  // 事务ID
 
+bool g_blConnected = false;
+
 // 声明互斥锁
 
 LoginConfig loginConfig;
@@ -249,10 +235,30 @@ OpenDoor openDoor;
 CloseDoor closeDoor;
 HeartBeat heartBeat;
 
-int send_tcp_packet(char *buf,int size){
+int send_tcp_packet(char *buf, int size)
+{
     pthread_mutex_lock(&mutex);
-    send(sock, buf, size, 0);
+	
+    // 发送数据
+    int bytes_sent = send(sock, buf, size, 0);
+	
+    if (bytes_sent < 0) 
+	{
+        // 发送失败，打印错误信息
+        perror("send");
+        pthread_mutex_unlock(&mutex);
+        return -1;
+    }
+	else if (bytes_sent != size) 
+	{
+        // 发送的数据量不匹配，可能是网络问题
+        fprintf(stderr, "Warning: Only %d bytes sent out of %d\n", bytes_sent, size);
+        pthread_mutex_unlock(&mutex);
+        return -1;
+    }
+
     pthread_mutex_unlock(&mutex);
+	
     return 1;
 }
 
@@ -719,297 +725,325 @@ int server_login() {
     return 0;
 }
 
-void *tcp_receiver(void *arg) {
-    char recv_buf[MAX_BUF_SIZE];
-    int recv_len;
+void handle_open_door(cJSON *response_json) {
 
-    printf("tcp_receiver\n");
-    while (1) {
-        recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
-        printf("sock = %d ,recv_len=%d\n",sock,recv_len);
-        if (recv_len < 0) {
-            printf("wrong\n");
-        }else if(recv_len == 0){
-            printf("server restart\n");
-            server_connect=0;
-            server_start();
-        } else {
-            recv_buf[recv_len] = '\0';
-            printf("Server response: %s\n", recv_buf);
+    cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
+    cJSON *openType = cJSON_GetObjectItem(response_json, "openType");
 
-            // 解析 JSON 响应
-            cJSON *response_json = cJSON_Parse(recv_buf);
-            if (response_json == NULL) {
-                printf("JSON parse error\n");
-            }
+    strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
+    trans_Id[sizeof(trans_Id) - 1] = '\0';
+    openDoor.openType = openType->valueint;
+    double current_weight = get_current_weight(); // 获取当前重量的示例函数
+    if (current_weight < 0)
+        current_weight = 0.0;
+    openDoor.curWeight = current_weight;
 
-            cJSON *cmd = cJSON_GetObjectItem(response_json, "cmd");
-            if (cmd == NULL) {
-                printf("Invalid retCode\n");
-                cJSON_Delete(response_json);
-            }
-            char str[20];
-            strncpy(str, cmd->valuestring, sizeof(str)-1);
-            message_queue_t msg;
-            printf("get %s\n",str);
-            if(strcmp(str,"openDoor")==0){
-                msg.type=TYPE_OPENDOOR;
-                cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
-                cJSON *openType = cJSON_GetObjectItem(response_json, "openType");
+    int retCode = 0;
+    if (get_overflow_status() == 3) {
+        retCode = 1;
+    }
 
-                strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
-                trans_Id[sizeof(trans_Id) - 1] = '\0';
-                openDoor.openType = openType->valueint;
-                double current_weight = get_current_weight();  // Example function to get current weight
-                if(current_weight < 0)
-                    current_weight=0.0;
-                openDoor.curWeight = current_weight;
-                cJSON_Delete(response_json);
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "cmd", "openDoor");
+    cJSON_AddNumberToObject(root, "retCode", retCode);
+    cJSON_AddStringToObject(root, "transId", trans_Id);
+    cJSON_AddNumberToObject(root, "curWeight", openDoor.curWeight);
+    char *json_str = cJSON_PrintUnformatted(root);
 
-                if (msgsnd(msgid, &msg, sizeof(msg), 0) == -1) {
-                    perror("msgsnd failed");
-                    exit(EXIT_FAILURE);
-                }
+    // 发送响应
+    printf("Sending openDoor response: %s\n", json_str);
+    send_tcp_packet(json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
 
-                int retCode = 0;
-                if (get_overflow_status() == 3) {
-                    retCode = 1;
-                }
+    open_door();
+}
 
-                cJSON *root = cJSON_CreateObject();
-                cJSON_AddStringToObject(root, "cmd", "openDoor");
-                cJSON_AddNumberToObject(root, "retCode", retCode);  // Assuming retCode is set elsewhere
-                cJSON_AddStringToObject(root, "transId", trans_Id);
-                cJSON_AddNumberToObject(root, "curWeight", openDoor.curWeight);
-                char *json_str = cJSON_PrintUnformatted(root);
+void handle_ota(cJSON *response_json) {
+    char version[16], url[64], md5[64];
+    cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
+    cJSON *url_item = cJSON_GetObjectItem(response_json, "url");
+    cJSON *md5_item = cJSON_GetObjectItem(response_json, "md5");
 
-                // Send response
-                printf("Sending openDoor response: %s\n", json_str);
-                send_tcp_packet(json_str, strlen(json_str));
-                free(json_str);
-                cJSON_Delete(root);
-            } else if (strcmp(str, "ota") == 0) {
-                printf("Received 'ota' command.\n");
-                char version[16], url[64], md5[64];
-                cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
-                cJSON *url_item = cJSON_GetObjectItem(response_json, "url");
-                cJSON *md5_item = cJSON_GetObjectItem(response_json, "md5");
+    if (version_item && url_item && md5_item) {
+        printf("Parsed JSON successfully.\n");
+        printf("Version: %s\n", version_item->valuestring);
+        printf("URL: %s\n", url_item->valuestring);
+        printf("MD5: %s\n", md5_item->valuestring);
 
-                if (version_item && url_item && md5_item) {
-                    printf("Parsed JSON successfully.\n");
-                    printf("Version: %s\n", version_item->valuestring);
-                    printf("URL: %s\n", url_item->valuestring);
-                    printf("MD5: %s\n", md5_item->valuestring);
+        strncpy(version, version_item->valuestring, sizeof(version) - 1);
+        version[sizeof(version) - 1] = '\0';
+        strncpy(url, url_item->valuestring, sizeof(url) - 1);
+        url[sizeof(url) - 1] = '\0';
+        strncpy(md5, md5_item->valuestring, sizeof(md5) - 1);
+        md5[sizeof(md5) - 1] = '\0';
 
-                    strncpy(version, version_item->valuestring, sizeof(version) - 1);
-                    version[sizeof(version) - 1] = '\0';
-                    strncpy(url, url_item->valuestring, sizeof(url) - 1);
-                    url[sizeof(url) - 1] = '\0';
-                    strncpy(md5, md5_item->valuestring, sizeof(md5) - 1);
-                    md5[sizeof(md5) - 1] = '\0';
-                    cJSON_Delete(response_json);
+        int retCode = 1;
 
-                    int retCode = 1;
+        // 比较版本
+        int compare_versions(const char *v1, const char *v2) {
+            int v1_major, v1_minor, v2_major, v2_minor;
+            sscanf(v1, "%d.%d", &v1_major, &v1_minor);
+            sscanf(v2, "%d.%d", &v2_major, &v2_minor);
 
-                    // Compare versions
-                    int compare_versions(const char *v1, const char *v2) {
-                        int v1_major, v1_minor, v2_major, v2_minor;
-                        sscanf(v1, "%d.%d", &v1_major, &v1_minor);
-                        sscanf(v2, "%d.%d", &v2_major, &v2_minor);
+            if (v1_major > v2_major) return 1;
+            if (v1_major < v2_major) return -1;
+            if (v1_minor > v2_minor) return 1;
+            if (v1_minor < v2_minor) return -1;
+            return 0;
+        }
 
-                        if (v1_major > v2_major) return 1;
-                        if (v1_major < v2_major) return -1;
-                        if (v1_minor > v2_minor) return 1;
-                        if (v1_minor < v2_minor) return -1;
+        if (compare_versions(version, local_version) > 0) {
+            printf("New version available: %s\n", version);
+            const char *filename = "/root/lvgl_app";
+
+            int download_file(const char *url, const char *filename) {
+                printf("Downloading file from %s to %s\n", url, filename);
+                CURL *curl;
+                FILE *fp;
+                CURLcode res;
+
+                curl = curl_easy_init();
+                if (curl) {
+                    fp = fopen(filename, "wb");
+                    if (fp == NULL) {
+                        printf("Error opening file %s for writing.\n", filename);
+                        curl_easy_cleanup(curl);
+                        return 1;
+                    }
+                    curl_easy_setopt(curl, CURLOPT_URL, url);
+                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+                    res = curl_easy_perform(curl);
+                    fclose(fp);
+                    curl_easy_cleanup(curl);
+                    if (res == CURLE_OK) {
+                        printf("File downloaded successfully.\n");
                         return 0;
-                    }
-
-                    if (compare_versions(version, local_version) > 0) {
-                        printf("New version available: %s\n", version);
-                        const char *filename = "/root/lvgl_app";
-
-                        int download_file(const char *url, const char *filename) {
-                            printf("Downloading file from %s to %s\n", url, filename);
-                            CURL *curl;
-                            FILE *fp;
-                            CURLcode res;
-
-                            curl = curl_easy_init();
-                            if (curl) {
-                                fp = fopen(filename, "wb");
-                                if (fp == NULL) {
-                                    printf("Error opening file %s for writing.\n", filename);
-                                    curl_easy_cleanup(curl);
-                                    return 1;
-                                }
-                                curl_easy_setopt(curl, CURLOPT_URL, url);
-                                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-                                curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-                                res = curl_easy_perform(curl);
-                                fclose(fp);
-                                curl_easy_cleanup(curl);
-                                if (res == CURLE_OK) {
-                                    printf("File downloaded successfully.\n");
-                                    return 0;
-                                } else {
-                                    printf("File download failed: %s\n", curl_easy_strerror(res));
-                                    return 1;
-                                }
-                            }
-                            printf("Error initializing CURL.\n");
-                            return 1;
-                        }
-
-                        int calculate_md5(const char *filename, char *md5_str) {
-                            printf("Calculating MD5 for %s\n", filename);
-                            char command[128];
-                            sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
-                            FILE *fp = popen(command, "r");
-                            if (fp == NULL) {
-                                printf("Error opening pipe for MD5 calculation.\n");
-                                return 1;
-                            }
-                            fgets(md5_str, 64, fp);
-                            pclose(fp);
-
-                            // Remove the trailing newline character
-                            md5_str[strcspn(md5_str, "\n")] = 0;
-                            printf("Calculated MD5: %s\n", md5_str);
-
-                            return 0;
-                        }
-
-                        void delete_file(const char *filename) {
-                            if (remove(filename) != 0) {
-                                perror("Error deleting file");
-                            } else {
-                                printf("File %s successfully deleted\n", filename);
-                            }
-                        }
-
-                        void set_file_executable(const char *filename) {
-                            if (chmod(filename, S_IRWXU) != 0) {
-                                perror("Error setting file executable");
-                            } else {
-                                printf("File %s is now executable\n", filename);
-                            }
-                        }
-
-                        // Download file
-                        if (download_file(url, filename) == 0) {
-                            // Verify MD5
-                            char downloaded_md5[64];
-                            if (calculate_md5(filename, downloaded_md5) == 0 && strcmp(downloaded_md5, md5) == 0) {
-                                printf("MD5 verification succeeded.\n");
-
-                                // Set the file executable
-                                set_file_executable(filename);
-
-                                retCode = 0; // Success
-                                cJSON *root = cJSON_CreateObject();
-                                cJSON_AddStringToObject(root, "cmd", "ota");
-                                cJSON_AddNumberToObject(root, "retCode", retCode);
-                                char *json_str = cJSON_PrintUnformatted(root);
-
-                                // Send response
-                                printf("Sending openDoor response: %s\n", json_str);
-                                send_tcp_packet(json_str, strlen(json_str));
-                                free(json_str);
-                                cJSON_Delete(root);
-
-                                // Exit the program
-                                exit(0);
-                            } else {
-                                printf("MD5 verification failed.\n");
-                                // Delete the file if MD5 check fails
-                                delete_file(filename);
-                            }
-                        } else {
-                            printf("File download failed.\n");
-                        }
                     } else {
-                        printf("Current version is up to date.\n");
+                        printf("File download failed: %s\n", curl_easy_strerror(res));
+                        return 1;
                     }
+                }
+                printf("Error initializing CURL.\n");
+                return 1;
+            }
 
-                    // Send response for failure cases
+            int calculate_md5(const char *filename, char *md5_str) {
+                printf("Calculating MD5 for %s\n", filename);
+                char command[128];
+                sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
+                FILE *fp = popen(command, "r");
+                if (fp == NULL) {
+                    printf("Error opening pipe for MD5 calculation.\n");
+                    return 1;
+                }
+                fgets(md5_str, 64, fp);
+                pclose(fp);
+
+                // Remove the trailing newline character
+                md5_str[strcspn(md5_str, "\n")] = 0;
+                printf("Calculated MD5: %s\n", md5_str);
+
+                return 0;
+            }
+
+            void delete_file(const char *filename) {
+                if (remove(filename) != 0) {
+                    perror("Error deleting file");
+                } else {
+                    printf("File %s successfully deleted\n", filename);
+                }
+            }
+
+            void set_file_executable(const char *filename) {
+                if (chmod(filename, S_IRWXU) != 0) {
+                    perror("Error setting file executable");
+                } else {
+                    printf("File %s is now executable\n", filename);
+                }
+            }
+
+            // 下载文件
+            if (download_file(url, filename) == 0) {
+                // 校验 MD5
+                char downloaded_md5[64];
+                if (calculate_md5(filename, downloaded_md5) == 0 && strcmp(downloaded_md5, md5) == 0) {
+                    printf("MD5 verification succeeded.\n");
+
+                    // 设置文件可执行
+                    set_file_executable(filename);
+
+                    retCode = 0; // 成功
                     cJSON *root = cJSON_CreateObject();
                     cJSON_AddStringToObject(root, "cmd", "ota");
                     cJSON_AddNumberToObject(root, "retCode", retCode);
                     char *json_str = cJSON_PrintUnformatted(root);
 
-                    // Send response
-                    printf("Sending openDoor response: %s\n", json_str);
+                    // 发送响应
+                    printf("Sending ota response: %s\n", json_str);
                     send_tcp_packet(json_str, strlen(json_str));
                     free(json_str);
                     cJSON_Delete(root);
+
+                    // 退出程序
+                    exit(0);
                 } else {
-                    printf("Failed to parse JSON.\n");
+                    printf("MD5 verification failed.\n");
+                    // 如果 MD5 校验失败，删除文件
+                    delete_file(filename);
                 }
             } else {
-                if(strcmp(str,"closeDoor")==0){
-                    msg.type=TYPE_CLOSEDOOR;
-                }else if(strcmp(str,"heartBeat")==0){
-                    msg.type=TYPE_HEARTBEAT;
-                }else if(strcmp(str,"overweight")==0){
-                    msg.type=TYPE_OVERWEIGHT;
-                }else if(strcmp(str,"overflow")==0){
-                    msg.type=TYPE_OVERFLOWER;
-                }
-                cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
-                if (retCode == NULL || !cJSON_IsNumber(retCode)) {
-                    printf("Invalid retCode\n");
-                    cJSON_Delete(response_json);
-                }
+                printf("File download failed.\n");
+            }
+        } else {
+            printf("Current version is up to date.\n");
+        }
 
-                msg.retcode  = retCode->valueint;
-                cJSON_Delete(response_json);
+        // 发送失败的响应
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "cmd", "ota");
+        cJSON_AddNumberToObject(root, "retCode", retCode);
+        char *json_str = cJSON_PrintUnformatted(root);
 
-                if (msgsnd(msgid, &msg, sizeof(msg), 0) == -1) {
-                    perror("msgsnd failed");
-                    exit(EXIT_FAILURE);
+        // 发送响应
+        printf("Sending ota response: %s\n", json_str);
+        send_tcp_packet(json_str, strlen(json_str));
+        free(json_str);
+        cJSON_Delete(root);
+    } else {
+        printf("Failed to parse JSON.\n");
+    }
+}
+
+
+void message_receiver_handler(const char *recv_buf) {
+    // 解析 JSON 响应
+    cJSON *response_json = cJSON_Parse(recv_buf);
+    if (response_json == NULL) {
+        printf("JSON parse error\n");
+        return;
+    }
+
+    cJSON *cmd = cJSON_GetObjectItem(response_json, "cmd");
+    if (cmd == NULL) {
+        printf("Invalid command\n");
+        cJSON_Delete(response_json);
+        return;
+    }
+
+    char str[20];
+    strncpy(str, cmd->valuestring, sizeof(str) - 1);
+    str[sizeof(str) - 1] = '\0';
+
+    if (strcmp(str, "openDoor") == 0) {
+        handle_open_door(response_json);
+    } else if (strcmp(str, "ota") == 0) {
+        handle_ota(response_json);
+    } else {
+        cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
+        if (retCode == NULL || !cJSON_IsNumber(retCode)) {
+            printf("Invalid retCode\n");
+            return;
+        }        
+    }
+
+    cJSON_Delete(response_json);
+}
+
+void *tcp_receiver(void *arg) 
+{
+    char recv_buf[MAX_BUF_SIZE];
+    int recv_len;
+
+    printf("tcp_receiver\n");
+	
+    while (1) 
+	{
+        if (server_connect)
+		{
+            struct pollfd fds[1];
+
+            // 设置监视的事件
+            fds[0].fd = sock;
+            fds[0].events = POLLIN;
+
+            // 调用 poll() 等待数据
+            int ret = poll(fds, 1, 20*1000);
+            if (ret == -1) 
+			{
+                printf("------------socket poll failed--------------\n");
+				
+                close(sock);
+                sock = -1;
+				
+                server_connect = 0;
+
+				sleep(30);
+				
+                continue;
+            }
+
+            if (fds[0].revents & POLLIN)
+			{
+                printf("Data is available to read\n");
+
+                recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+                printf("sock = %d, recv_len = %d\n", sock, recv_len);
+                if (recv_len > 0) 
+				{
+                    recv_buf[recv_len] = '\0';
+                    printf("Server response: %s\n", recv_buf);
+
+                    // 调用消息处理函数
+                    message_receiver_handler(recv_buf);
                 }
             }
         }
+		else
+		{
+			sleep(30);
+		}
     }
 }
 
 // 心跳线程函数
-void *heartbeat_thread(void *arg) {
+void *heartbeat_thread(void *arg) 
+{
+    int nRet = 0;
+    
+    while (1) 
+	{
+        if (server_connect) 
+		{
+            heartBeat.curWeight = get_current_weight();
 
-    while (1) {
-        // heartBeat.signal = module_signal();
-        heartBeat.curWeight = get_current_weight();
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddStringToObject(root, "cmd", "heartBeat");
+            cJSON_AddNumberToObject(root, "signal", heartBeat.signal);
+            cJSON_AddNumberToObject(root, "curWeight", heartBeat.curWeight);
+			
+            char *json_str = cJSON_PrintUnformatted(root);
 
-        // 发送心跳包
-        // ret_heartbeat = upload_heartbeat();
+            // 发送心跳上传请求
+            printf("Sending heartBeat request: %s\n", json_str);
+            nRet = send_tcp_packet(json_str, strlen(json_str));
+            free(json_str);
+			
+            cJSON_Delete(root);
 
-        cJSON *root = cJSON_CreateObject();
-        cJSON_AddStringToObject(root, "cmd", "heartBeat");
-        cJSON_AddNumberToObject(root, "signal", heartBeat.signal);
-        cJSON_AddNumberToObject(root, "curWeight", heartBeat.curWeight);
-        char *json_str = cJSON_PrintUnformatted(root);
-
-        // 发送心跳上传请求
-        printf("Sending heartBeat request: %s\n", json_str);
-        send_tcp_packet(json_str, strlen(json_str));
-        free(json_str);
-        cJSON_Delete(root);
-
-        // while(1);
-        message_queue_t msg;
-        if (msgrcv(msgid, &msg, sizeof(msg), 1, 0) == -1) {
-            perror("msgrcv failed");
-            exit(EXIT_FAILURE);
+            if (1 != nRet) 
+			{
+                perror("---------sock send heartbeat failed---------------");
+                close(sock);
+                sock = -1;
+                server_connect = 0;
+            }
         }
-        if (msg.retcode == 0) {
-            printf("Heartbeat sent successfully.\n");
-        } else {
-            printf("Failed to send heartbeat.\n");
-        }
-        printf("\n");
 
         // 休眠
-        sleep(loginRes.heartBeatInterval);
+        // sleep(loginRes.heartBeatInterval);
+        sleep(300);
     }
 
     return NULL;
@@ -1022,12 +1056,6 @@ int open_door() {
     quit_flag=0;
     open_clean_door_flag=0;
     hand_close_door_flag=0;
-    message_queue_t msg;
-
-    if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OPENDOOR, 0) == -1) {
-        perror("msgrcv failed");
-        exit(EXIT_FAILURE);
-    }
 
     // 关闭登录页面元素更新
     screen_login_flag=0;
@@ -1326,7 +1354,8 @@ int open_door() {
     return 0;
 }
 
-int close_door(double cur_weight, double diff_weight) {
+int close_door(double cur_weight, double diff_weight) 
+{
     char recv_buf[MAX_BUF_SIZE];
 
     // 创建 JSON 请求
@@ -1365,12 +1394,7 @@ int upload_overweight(double curWeight) {
     free(json_str);
     cJSON_Delete(root);
 
-    message_queue_t msg;
-    if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OVERWEIGHT, 0) == -1) {
-        perror("msgrcv failed");
-        exit(EXIT_FAILURE);
-    }
-    return msg.retcode;
+    return 0;
 }
 
 // 上传满载
@@ -1390,12 +1414,7 @@ int upload_overflow(int curCapacity) {
     free(json_str);
     cJSON_Delete(root);
 
-    message_queue_t msg;
-    if (msgrcv(msgid, &msg, sizeof(msg), TYPE_OVERFLOWER, 0) == -1) {
-        perror("msgrcv failed");
-        exit(EXIT_FAILURE);
-    }
-    return msg.retcode;
+    return 0;
 }
 
 // 回调函数来捕获返回的数据
@@ -1521,7 +1540,7 @@ int upload_video(const char *url, const char *file_path) {
     return upload_file(url, file_path, "video", 0);
 }
 
-int server_start() {
+int read_info() {
     int ret;
     // 默认参数
     strcpy(sn, "00016000000001");
@@ -1556,104 +1575,107 @@ int server_start() {
 
     // 打印读取的清运时间
     printf("读取的清运时间: %s\n", cleantime_str);
+}
 
-    // 初始化引脚
-    recycle_gpio_init();
+void* socket_task_thread(void* arg) 
+{
+    int ret;
 
     // 获取登录配置
-    while (1) {
+    while (1) 
+	{
         // 获取登录配置
         ret = get_login_config(&loginConfig);
-        if (ret == 0) {
+        if (ret == 0) 
+		{
             printf("Login configuration:\n");
             printf("IP: %s\n", loginConfig.ip);
             printf("TCP Port: %d\n", loginConfig.tcpPort);
             printf("\n");
             break; // 成功获取配置后退出循环
-        } else {
+        } 
+		else 
+		{
             printf("Failed to get login configuration. Retrying in 60 seconds...\n");
             sleep(60); // 获取失败时，等待60秒后重试
         }
     }
 
-    struct sockaddr_in server_addr;
+    while (1) 
+	{
+        if (0 == server_connect) 
+		{
+            struct sockaddr_in server_addr;
 
-    // 创建套接字
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("Socket creation failed");
-        return -1;
-    }
+            // 创建套接字
+            if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+            {
+                perror("Socket creation failed");
+                return NULL;
+            }
+                
+            // 设置服务器地址
+            server_addr.sin_family = AF_INET;
+            server_addr.sin_port = htons(loginConfig.tcpPort);
+            server_addr.sin_addr.s_addr = inet_addr(loginConfig.ip);
 
-    // 设置服务器地址
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(loginConfig.tcpPort);
-    server_addr.sin_addr.s_addr = inet_addr(loginConfig.ip);
+            // 连接到服务器
+            if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
+            {
+                perror("Connection to server failed");
+                close(sock);
+                sleep(60);
+                continue;
+            }
 
-    // 连接到服务器
-    if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Connection to server failed");
-        close(sock);
-        return -1;
-    }
+            server_connect = 1;
 
-    // 登录服务器
-    while (1) {
-        ret = server_login();
-        if (ret == 0) {
-            printf("Login successful:\n");
-            printf("QR Code: %s\n", loginRes.qrCode);
-            printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
-            printf("Heartbeat Interval: %d seconds\n", loginRes.heartBeatInterval);
-            printf("\n");
-            break;
-        } else {
-            printf("Failed to get login configuration. Retrying in 60 seconds...\n");
-            sleep(60); // 获取失败时，等待60秒后重试
+            // 登录服务器
+            while (1) 
+			{
+                ret = server_login();
+                if (ret == 0) 
+				{
+                    printf("Login successful:\n");
+                    printf("QR Code: %s\n", loginRes.qrCode);
+                    printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
+                    printf("Heartbeat Interval: %d seconds\n", loginRes.heartBeatInterval);
+                    printf("\n");
+                    break;
+                }
+				else 
+				{
+                    printf("Failed to get login configuration. Retrying in 60 seconds...\n");
+                    sleep(60); // 获取失败时，等待60秒后重试
+                }
+            }
         }
-    }
-    server_connect=1;
-    if(heartbeat_thread_id == NULL){
-        // 创建心跳线程
-        if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) {
-            perror("Failed to create heartbeat thread");
-            return -1;
-        }
-    }
 
-    if(tcp_receiver_thread_id == NULL){
-        // 创建接收线程
-        if (pthread_create(&tcp_receiver_thread_id, NULL, tcp_receiver, NULL) != 0) {
-            perror("Failed to create heartbeat thread");
-            return -1;
+        if (heartbeat_thread_id == NULL) 
+		{
+            // 创建心跳线程
+            if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) 
+			{
+                perror("Failed to create heartbeat thread");
+
+				return NULL;
+            }
         }
+
+        if (tcp_receiver_thread_id == NULL) 
+		{
+            // 创建接收线程
+            if (pthread_create(&tcp_receiver_thread_id, NULL, tcp_receiver, NULL) != 0) 
+			{
+                perror("Failed to create heartbeat thread");
+
+				return NULL;
+            }
+        }
+
+        sleep(60);
     }
-    return 0;
+    
+    return NULL;
 }
 
-int get_msgid(){
-    msgid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    if (msgid == -1) {
-        perror("msgget failed");
-        exit(EXIT_FAILURE);
-    }
-}
-
-int test() {
-    int ret;
-    // 上传照片
-    ret = upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, photo_file);
-    if (ret != 0) {
-        printf("Failed to upload photo.\n");
-        return 1;
-    }
-
-    // 上传视频
-    // ret = upload_video("http://serverIp:port/api/device/upload/video", video_file, &videoUploadResponse);
-    ret = upload_video("http://api.recycling.maizucity.com/api/device/upload/video", video_file);
-    if (ret != 0) {
-        printf("Failed to upload video.\n");
-        return 1;
-    }
-
-    return 0;
-}

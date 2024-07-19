@@ -163,6 +163,7 @@ void* aux_task_thread(void* arg) {
 int main(void) {
     pthread_t lv_task_thread_id;
     pthread_t aux_task_thread_id;
+    pthread_t socket_task_thread_id;
     int ret;
 
     signal(SIGINT, sig_proc);
@@ -220,8 +221,23 @@ int main(void) {
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
-    get_msgid();
-    server_start();
+
+    // 读本地配置文件
+    read_info();
+     // 初始化引脚
+    recycle_gpio_init();   
+
+    //server_start();
+    ret = pthread_create(&socket_task_thread_id, NULL, socket_task_thread, NULL);
+    if (ret != 0)
+        {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+
+    while(!server_connect){
+        sleep(1);
+    }
 
     ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);
     if (ret != 0) {
@@ -245,8 +261,6 @@ int main(void) {
     }
 
     while (g_main_run_) {
-        // 主要程序逻辑
-        open_door();
         // 在循环中处理消息队列，避免被信号中断导致的错误
         message_buf rbuf;
         if (msgrcv(msqid, &rbuf, MSGSZ, 1, IPC_NOWAIT) < 0) {
