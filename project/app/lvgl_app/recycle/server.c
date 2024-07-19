@@ -38,7 +38,6 @@ char cleantime_str[100];
 pthread_t capture_test_thread_id;
 video_frame_t *video_test_frame;
 pthread_t heartbeat_thread_id = NULL;
-pthread_t tcp_receiver_thread_id = NULL;
 extern int server_connect;
 
 extern pthread_mutex_t lv_task_mutex;
@@ -237,29 +236,33 @@ HeartBeat heartBeat;
 
 int send_tcp_packet(char *buf, int size)
 {
+    
+    int nRet = 1;
+
     pthread_mutex_lock(&mutex);
-	
+    
     // 发送数据
     int bytes_sent = send(sock, buf, size, 0);
-	
-    if (bytes_sent < 0) 
-	{
-        // 发送失败，打印错误信息
-        perror("send");
-        pthread_mutex_unlock(&mutex);
-        return -1;
-    }
-	else if (bytes_sent != size) 
-	{
-        // 发送的数据量不匹配，可能是网络问题
-        fprintf(stderr, "Warning: Only %d bytes sent out of %d\n", bytes_sent, size);
-        pthread_mutex_unlock(&mutex);
-        return -1;
-    }
 
     pthread_mutex_unlock(&mutex);
-	
-    return 1;
+    
+    if (bytes_sent != size) 
+    {
+        // 发送的数据量不匹配，可能是网络问题
+        fprintf(stderr, "Warning: Only %d bytes sent out of %d\n", bytes_sent, size);
+        nRet = -1;
+    }
+
+    if (-1 == nRet)
+    {
+        perror("--------- send data failed---------------");
+        
+        close(sock);
+        sock = -1;
+        server_connect = 0;
+    }
+    
+    return nRet;
 }
 
 int read_device_info() {
@@ -951,99 +954,32 @@ void message_receiver_handler(const char *recv_buf) {
     cJSON_Delete(response_json);
 }
 
-void *tcp_receiver(void *arg) 
-{
-    char recv_buf[MAX_BUF_SIZE];
-    int recv_len;
-
-    printf("tcp_receiver\n");
-	
-    while (1) 
-	{
-        if (server_connect)
-		{
-            struct pollfd fds[1];
-
-            // 设置监视的事件
-            fds[0].fd = sock;
-            fds[0].events = POLLIN;
-
-            // 调用 poll() 等待数据
-            int ret = poll(fds, 1, 20*1000);
-            if (ret == -1) 
-			{
-                printf("------------socket poll failed--------------\n");
-				
-                close(sock);
-                sock = -1;
-				
-                server_connect = 0;
-
-				sleep(30);
-				
-                continue;
-            }
-
-            if (fds[0].revents & POLLIN)
-			{
-                printf("Data is available to read\n");
-
-                recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
-                printf("sock = %d, recv_len = %d\n", sock, recv_len);
-                if (recv_len > 0) 
-				{
-                    recv_buf[recv_len] = '\0';
-                    printf("Server response: %s\n", recv_buf);
-
-                    // 调用消息处理函数
-                    message_receiver_handler(recv_buf);
-                }
-            }
-        }
-		else
-		{
-			sleep(30);
-		}
-    }
-}
-
 // 心跳线程函数
 void *heartbeat_thread(void *arg) 
 {
-    int nRet = 0;
-    
     while (1) 
-	{
+    {
         if (server_connect) 
-		{
+        {
             heartBeat.curWeight = get_current_weight();
 
             cJSON *root = cJSON_CreateObject();
             cJSON_AddStringToObject(root, "cmd", "heartBeat");
             cJSON_AddNumberToObject(root, "signal", heartBeat.signal);
             cJSON_AddNumberToObject(root, "curWeight", heartBeat.curWeight);
-			
+            
             char *json_str = cJSON_PrintUnformatted(root);
 
             // 发送心跳上传请求
             printf("Sending heartBeat request: %s\n", json_str);
-            nRet = send_tcp_packet(json_str, strlen(json_str));
+            send_tcp_packet(json_str, strlen(json_str));
             free(json_str);
-			
+            
             cJSON_Delete(root);
-
-            if (1 != nRet) 
-			{
-                perror("---------sock send heartbeat failed---------------");
-                close(sock);
-                sock = -1;
-                server_connect = 0;
-            }
         }
 
         // 休眠
-        // sleep(loginRes.heartBeatInterval);
-        sleep(300);
+        sleep(loginRes.heartBeatInterval);
     }
 
     return NULL;
@@ -1085,8 +1021,12 @@ int open_door() {
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
 
+            // 投递界面
+            set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
+            inside_light(1);
+
             get_cam_video(0,in_video);
-            get_cam_video(1,in_video);
+            get_cam_video(1,out_video);
 
             //获取当前时间
             char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
@@ -1130,7 +1070,6 @@ int open_door() {
                 printf("no in video\n");
             }
 
-            
             //柜外拍照
             char out_video_open_path[64];
             if(out_video != NULL){
@@ -1141,9 +1080,6 @@ int open_door() {
                 printf("no out video\n");
             }
 
-
-            // 投递界面
-            set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
             if(out_video != NULL){
                 video_frame = malloc(sizeof(video_frame_t));
@@ -1153,7 +1089,6 @@ int open_door() {
                 }
             }
 
-            inside_light(1);
             set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
             for (; i >= 0; i--) {
@@ -1201,8 +1136,7 @@ int open_door() {
                     lv_obj_clear_flag(guider_ui.screen_submit_close_door, LV_OBJ_FLAG_HIDDEN);
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
-                // usleep(1000000 / REFRESH_RATE);
-                usleep(600000 / REFRESH_RATE);
+                usleep(1000000 / REFRESH_RATE);
             }
             set_post_door_close();
             close_door(cur_weight, diff_weight);
@@ -1583,28 +1517,28 @@ void* socket_task_thread(void* arg)
 
     // 获取登录配置
     while (1) 
-	{
+    {
         // 获取登录配置
         ret = get_login_config(&loginConfig);
         if (ret == 0) 
-		{
+        {
             printf("Login configuration:\n");
             printf("IP: %s\n", loginConfig.ip);
             printf("TCP Port: %d\n", loginConfig.tcpPort);
-            printf("\n");
+            
             break; // 成功获取配置后退出循环
         } 
-		else 
-		{
+        else 
+        {
             printf("Failed to get login configuration. Retrying in 60 seconds...\n");
             sleep(60); // 获取失败时，等待60秒后重试
         }
     }
 
     while (1) 
-	{
+    {
         if (0 == server_connect) 
-		{
+        {
             struct sockaddr_in server_addr;
 
             // 创建套接字
@@ -1623,8 +1557,10 @@ void* socket_task_thread(void* arg)
             if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
             {
                 perror("Connection to server failed");
+                
                 close(sock);
                 sleep(60);
+                
                 continue;
             }
 
@@ -1632,48 +1568,118 @@ void* socket_task_thread(void* arg)
 
             // 登录服务器
             while (1) 
-			{
+            {
                 ret = server_login();
                 if (ret == 0) 
-				{
+                {
                     printf("Login successful:\n");
                     printf("QR Code: %s\n", loginRes.qrCode);
                     printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
                     printf("Heartbeat Interval: %d seconds\n", loginRes.heartBeatInterval);
-                    printf("\n");
+                                        
                     break;
                 }
-				else 
-				{
+                else 
+                {
                     printf("Failed to get login configuration. Retrying in 60 seconds...\n");
                     sleep(60); // 获取失败时，等待60秒后重试
                 }
             }
         }
 
-        if (heartbeat_thread_id == NULL) 
-		{
+        if (NULL == heartbeat_thread_id) 
+        {
             // 创建心跳线程
             if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) 
-			{
+            {
                 perror("Failed to create heartbeat thread");
 
-				return NULL;
+                return NULL;
             }
         }
 
-        if (tcp_receiver_thread_id == NULL) 
-		{
-            // 创建接收线程
-            if (pthread_create(&tcp_receiver_thread_id, NULL, tcp_receiver, NULL) != 0) 
-			{
-                perror("Failed to create heartbeat thread");
+#if 0
+        while (server_connect) 
+        {
+            struct pollfd fds[1];
 
-				return NULL;
+            // 设置监视的事件
+            fds[0].fd = sock;
+            fds[0].events = POLLIN;
+
+            // 调用 poll() 等待数据
+            int ret = poll(fds, 1, 20*1000);
+            if (ret == -1) 
+            {
+                printf("------------socket poll failed--------------\n");
+                
+                close(sock);
+                sock = -1;
+                
+                server_connect = 0;
+
+                sleep(30);
+                
+                break;
+            }
+
+            if (fds[0].revents & POLLIN)
+            {
+                char recv_buf[MAX_BUF_SIZE] = {0};
+                int recv_len;
+
+                printf("Data is available to read\n");
+
+                recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
+                
+                printf("sock = %d, recv_len = %d\n", sock, recv_len);
+                
+                if (recv_len > 0) 
+                {
+                    recv_buf[recv_len] = '\0';
+                    printf("Server response: %s\n", recv_buf);
+
+                    // 调用消息处理函数
+                    message_receiver_handler(recv_buf);
+                }
+                else
+                {
+                    // To do ...
+                    printf("----------recv_len = %d ----------\n", recv_len);
+
+                    sleep(4);
+                }
             }
         }
+#endif
 
-        sleep(60);
+        while (server_connect) 
+        {
+            char recv_buf[MAX_BUF_SIZE+1] = {0};
+            int recv_len;
+    
+            recv_len = recv(sock, recv_buf, MAX_BUF_SIZE, 0);
+            
+            printf("sock = %d, recv_len = %d\n", sock, recv_len);
+            
+            if (recv_len > 0) 
+            {
+                printf("Server response: %s\n", recv_buf);
+    
+                // 调用消息处理函数
+                message_receiver_handler(recv_buf);
+            }
+            else if (recv_len == 0)
+            {
+                // To do ...
+                printf("----------close socket, reconnect--- \n");
+                
+                close(sock);
+                sock = -1;
+                server_connect = 0;
+            }
+        }
+        
     }
     
     return NULL;
