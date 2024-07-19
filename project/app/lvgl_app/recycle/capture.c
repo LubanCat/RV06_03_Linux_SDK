@@ -10,6 +10,7 @@
 #include <time.h> 
 #include <jpeglib.h>
 #include "capture.h"
+#include <dirent.h>
 
 #include "rk_debug.h"
 #include "rk_mpi_sys.h"
@@ -382,4 +383,39 @@ int get_video_in_out(int ch){
         return 1;
     else
         return 0;
+}
+
+int get_cam_video(int ch,char *video_path){
+    DIR *d;
+    struct dirent *dir;
+    char path[64];
+    if(ch)
+        //外摄像头
+        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.4/1-1.4:1.0/video4linux");
+    else
+        //内摄像头
+        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.2/1-1.2:1.0/video4linux");
+
+    d = opendir(path); // 请替换为你要列出的目录路径
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            if(strcmp(dir->d_name,"video0")==0){
+                strcpy(video_path,"/dev/video0");
+                closedir(d);
+                return 0;
+            }else if(strcmp(dir->d_name,"video2")==0){
+                strcpy(video_path,"/dev/video2");
+                closedir(d);
+                return 0;
+            }
+        }
+        video_path=NULL;
+        closedir(d);
+    } else {
+        perror("无法打开目录");
+        video_path=NULL;
+        return -2;
+    }
+    video_path=NULL;
+    return -1;
 }

@@ -192,32 +192,15 @@ void camara_test_start(int num){
     video_test_frame = malloc(sizeof(video_frame_t));
     video_test_frame->width=640;
     video_test_frame->height=480;
-    
-    //判断/dev/video0是什么类型
-    int ch = get_video_in_out(0);
-    if(ch == 2){
-        if(num==1)
-            sprintf(video_test_frame->device,"%s","/dev/video2");
-        else if(num==2)
-            sprintf(video_test_frame->device,"%s","/dev/video0");
-        else
-            return -1;
-    }else if(ch == 1){
-        if(num==1)
-            sprintf(video_test_frame->device,"%s","/dev/video0");
-        else if(num==2)
-            sprintf(video_test_frame->device,"%s","/dev/video2");
-        else
-            return -1;
-    }
-    else{
-        printf("skip\n");
-        return -1;
-    }
-
-    int ret = pthread_create(&capture_test_thread_id, NULL, capture_test_thread, (void *)video_test_frame);
-    if (ret != 0) {
-        perror("pthread_create");
+    get_cam_video(num,video_test_frame->device);
+    printf("%d:%s\n",num,video_test_frame->device);
+    if(video_test_frame->device != NULL){
+        int ret = pthread_create(&capture_test_thread_id, NULL, capture_test_thread, (void *)video_test_frame);
+        if (ret != 0) {
+            perror("pthread_create");
+        }
+    }else{
+        printf("no video\n");
     }
 }
 
@@ -233,10 +216,12 @@ void camara_test_stop(){
 int msgid=0;
 typedef enum {
     TYPE_HEARTBEAT  = 1,
-    TYPE_OPENDOOR  = 2,
+    TYPE_OPENDOOR   = 2,
     TYPE_CLOSEDOOR  = 3,
-    TYPE_OVERWEIGHT  = 4,
-    TYPE_OVERFLOWER  = 5,
+    TYPE_OVERWEIGHT = 4,
+    TYPE_OVERFLOWER = 5,
+    TYPE_RESTART    = 6,
+    TYPE_DEBUG      = 7,
 } receive_type;
 
 typedef struct {
@@ -1072,18 +1057,9 @@ int open_door() {
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
 
-            //判断/dev/video0是什么类型
-            int ch = get_video_in_out(0);
-            if(ch == 2){
-                strcpy(out_video,"/dev/video2");
-                strcpy(in_video,"/dev/video0");
-            }else if(ch == 1){
-                strcpy(out_video,"/dev/video0");
-                strcpy(in_video,"/dev/video2");
-            }
-            else{
-                printf("skip\n");
-            }
+            get_cam_video(0,in_video);
+            get_cam_video(1,in_video);
+
             //获取当前时间
             char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
             time_t now;
@@ -1118,19 +1094,35 @@ int open_door() {
             }
             //柜内拍照
             char in_video_open_path[64];
-            sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
-            capture_jpg_compass(in_video,1920,1080,in_video_open_path);
+            if(in_video != NULL){
+                sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
+                capture_jpg_compass(in_video,1920,1080,in_video_open_path);
+                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
+            }else{
+                printf("no in video\n");
+            }
+
+            
             //柜外拍照
             char out_video_open_path[64];
-            sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
-            capture_jpg_compass(out_video,1920,1080,out_video_open_path);
+            if(out_video != NULL){
+                sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
+                capture_jpg_compass(out_video,1920,1080,out_video_open_path);
+                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
+            }else{
+                printf("no out video\n");
+            }
+
+
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             video_frame_t *video_frame;
-            video_frame = malloc(sizeof(video_frame_t));
-            int ret = pthread_create(&capture_thread_id, NULL, capture_thread, (void *)video_frame);
-            if (ret != 0) {
-                perror("pthread_create");
+            if(out_video != NULL){
+                video_frame = malloc(sizeof(video_frame_t));
+                int ret = pthread_create(&capture_thread_id, NULL, capture_thread, (void *)video_frame);
+                if (ret != 0) {
+                    perror("pthread_create");
+                }
             }
 
             inside_light(1);
@@ -1187,28 +1179,34 @@ int open_door() {
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             inside_light(0);
-            pthread_cancel(capture_thread_id);
-            capture_stop(video_frame);
-            free(video_frame);
-            if(preview_data != NULL)
-                free(preview_data);
-
+            if(out_video != NULL){
+                pthread_cancel(capture_thread_id);
+                capture_stop(video_frame);
+                free(video_frame);
+                if(preview_data != NULL)
+                    free(preview_data);
+            }
             //柜内拍照
             char in_video_close_path[64];
-            sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
-            capture_jpg_compass(in_video,1920,1080,in_video_close_path);
+            if(in_video != NULL){
+                sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
+                capture_jpg_compass(in_video,1920,1080,in_video_close_path);
+                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
+            }else{
+                printf("no in_video\n");
+            }
+
             //柜外拍照
             char out_video_close_path[64];
-            sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
-            capture_jpg_compass(out_video,1920,1080,out_video_close_path);
-
+            if(out_video != NULL){
+                sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
+                capture_jpg_compass(out_video,1920,1080,out_video_close_path);
+                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
+            }else{
+                printf("no out_video\n");
+            }
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
-
-            // 上传照片
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
-            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
+            
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {

@@ -215,7 +215,7 @@ static void screen_test_inside_cam_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		camara_test_start(1);
+		camara_test_start(0);
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
 		break;
 	}
@@ -231,7 +231,7 @@ static void screen_test_outside_cam_key_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
-		camara_test_start(2);
+		camara_test_start(1);
 		break;
 	}
 	default:
