@@ -37,6 +37,17 @@ typedef struct {
     double changeWeight; // 改变重量，单位千克
 } CloseDoor;
 
+typedef enum {
+    FAULT_DOOR_OPEN = 1,       // 投递门开门异常
+    FAULT_DOOR_CLOSE,          // 投递门关门异常
+    FAULT_CLEAN_DOOR_OPEN,     // 清运门开门异常
+    FAULT_CLEAN_DOOR_CLOSE,    // 清运门关门异常
+    FAULT_CAMERA,              // 摄像头异常
+    FAULT_ELECTROMAGNETIC_LOCK,// 电磁锁异常
+    FAULT_INNER_LIGHT,         // 内灯异常
+    FAULT_OUTER_LIGHT,         // 外灯异常
+    FAULT_PUSH_ROD             // 推杆异常
+} FaultType;
 
 extern LoginConfig loginConfig;
 extern LoginRes loginRes;
@@ -64,6 +75,9 @@ int upload_overweight(double curWeight);
 
 // 上传满载
 int upload_overflow(int curCapacity);
+
+// 上传异常
+int upload_fault(FaultType type);
 
 // 上传文件通用函数
 int upload_file(const char *url, const char *file_path, const char *file_type, int photoType);

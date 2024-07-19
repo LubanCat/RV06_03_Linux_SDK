@@ -304,6 +304,7 @@ void set_post_door_close()
             {
                 rod_stop();
                 // 向服务器发送维修信息
+                upload_fault(FAULT_DOOR_CLOSE);
                 break;
             }
             

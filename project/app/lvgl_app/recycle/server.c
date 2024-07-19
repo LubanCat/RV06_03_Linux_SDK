@@ -1351,6 +1351,39 @@ int upload_overflow(int curCapacity) {
     return 0;
 }
 
+// 上传异常
+int upload_fault(FaultType type) {
+    char recv_buf[MAX_BUF_SIZE];
+    time_t rawtime;
+    struct tm *timeinfo;
+    char time_str[15];  // yyyyMMddhhmmss
+
+    // 获取当前时间并格式化为字符串
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", timeinfo);
+
+    // 创建 JSON 请求
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "cmd", "fault");
+    cJSON_AddStringToObject(root, "time", time_str);
+
+    // 将type参数转化为字符串
+    char type_str[2];
+    snprintf(type_str, sizeof(type_str), "%d", type);
+    cJSON_AddStringToObject(root, "type", type_str);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+
+    // 发送满载上传请求
+    printf("Sending fault request: %s\n", json_str);
+    send_tcp_packet(json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
+
+    return 0;
+}
+
 // 回调函数来捕获返回的数据
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
