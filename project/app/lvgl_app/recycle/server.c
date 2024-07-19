@@ -118,11 +118,11 @@ int check_dir_num(int num){
 
 
 void* capture_thread(void* arg) {
-    sleep(1);
     video_frame_t *video_frame = (video_frame_t *)arg;
     video_frame->width=640;
     video_frame->height=480;
     sprintf(video_frame->device,"%s",out_video);
+    preview_data=malloc(video_frame->width * video_frame->height * 3);
     int ret = capture_start(video_frame);
     if(ret != -1){
         lv_color_t *color_p;
@@ -137,7 +137,7 @@ void* capture_thread(void* arg) {
         area.y2=539;
 
         while(1){
-            video_linux_get_frame_rgb(video_frame,&preview_data,&length);
+            video_linux_get_frame_rgb(video_frame,preview_data,&length);
             memset(color_p,0x00,size*sizeof(lv_color_t));
 
             for(int j=0;j<320;j++){
@@ -149,7 +149,6 @@ void* capture_thread(void* arg) {
                 }
             }
             drm_flush(&disp_drv,&area,color_p);
-            free(preview_data);
         }
     }
 }
@@ -162,7 +161,7 @@ void* capture_test_thread(void* arg) {
         lv_color_t color_p[640*480];
         int size=640*480;
         int length;
-
+        preview_data=malloc(video_frame->width * video_frame->height * 3);
         lv_area_t area;
         area.x1=140;
         area.x2=779;
@@ -170,7 +169,7 @@ void* capture_test_thread(void* arg) {
         area.y2=539;
 
         while(1){
-            video_linux_get_frame_rgb(video_frame,&preview_data,&length);
+            video_linux_get_frame_rgb(video_frame,preview_data,&length);
             memset(color_p,0x00,size*sizeof(lv_color_t));
 
             for(int j=0;j<480;j++){
@@ -182,7 +181,6 @@ void* capture_test_thread(void* arg) {
                 }
             }
             drm_flush(&disp_drv,&area,color_p);
-            free(preview_data);
         }
     }
 }
@@ -1062,20 +1060,23 @@ int open_door() {
             }
             //柜内拍照
             char in_video_open_path[64];
+            char out_video_open_path[64];
+            char in_video_close_path[64];
+            char out_video_close_path[64];
+            sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
+            sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
+            sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
+            sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
+
             if(in_video != NULL){
-                sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
                 capture_jpg_compass(in_video,1920,1080,in_video_open_path);
-                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
             }else{
                 printf("no in video\n");
             }
 
             //柜外拍照
-            char out_video_open_path[64];
             if(out_video != NULL){
-                sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
                 capture_jpg_compass(out_video,1920,1080,out_video_open_path);
-                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
             }else{
                 printf("no out video\n");
             }
@@ -1138,37 +1139,43 @@ int open_door() {
                 }
                 usleep(1000000 / REFRESH_RATE);
             }
+
+            if(out_video != NULL){
+                if(capture_thread_id!=NULL){
+                    pthread_cancel(capture_thread_id);
+                    capture_thread_id = NULL;
+                    capture_stop(video_frame);
+                    free(video_frame);
+                    if(preview_data != NULL)
+                        free(preview_data);
+                }
+            }
+
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             inside_light(0);
-            if(out_video != NULL){
-                pthread_cancel(capture_thread_id);
-                capture_stop(video_frame);
-                free(video_frame);
-                if(preview_data != NULL)
-                    free(preview_data);
-            }
+
             //柜内拍照
-            char in_video_close_path[64];
+            get_cam_video(0,in_video);
             if(in_video != NULL){
-                sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
                 capture_jpg_compass(in_video,1920,1080,in_video_close_path);
-                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
             }else{
                 printf("no in_video\n");
             }
 
+            get_cam_video(1,out_video);
             //柜外拍照
-            char out_video_close_path[64];
             if(out_video != NULL){
-                sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
                 capture_jpg_compass(out_video,1920,1080,out_video_close_path);
-                upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
             }else{
                 printf("no out_video\n");
             }
+
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
-            
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
+            upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
@@ -1344,6 +1351,39 @@ int upload_overflow(int curCapacity) {
 
     // 发送满载上传请求
     printf("Sending overflow request: %s\n", json_str);
+    send_tcp_packet(json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
+
+    return 0;
+}
+
+// 上传异常
+int upload_fault(FaultType type) {
+    char recv_buf[MAX_BUF_SIZE];
+    time_t rawtime;
+    struct tm *timeinfo;
+    char time_str[15];  // yyyyMMddhhmmss
+
+    // 获取当前时间并格式化为字符串
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", timeinfo);
+
+    // 创建 JSON 请求
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "cmd", "fault");
+    cJSON_AddStringToObject(root, "time", time_str);
+
+    // 将type参数转化为字符串
+    char type_str[2];
+    snprintf(type_str, sizeof(type_str), "%d", type);
+    cJSON_AddStringToObject(root, "type", type_str);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+
+    // 发送满载上传请求
+    printf("Sending fault request: %s\n", json_str);
     send_tcp_packet(json_str, strlen(json_str));
     free(json_str);
     cJSON_Delete(root);
