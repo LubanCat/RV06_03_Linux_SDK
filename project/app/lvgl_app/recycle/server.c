@@ -26,7 +26,9 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.3";
+char *local_version = "1.4";
+const char *userdata_path = "/userdata/device_info.json";
+const char *root_path = "/root/device_info.json";
 
 #define CONFIG_SERVER "api.recycling.maizucity.com"
 #define CONFIG_SERVER_PORT 9096
@@ -263,9 +265,41 @@ int send_tcp_packet(char *buf, int size)
     return nRet;
 }
 
+// 检查并移动配置文件
+int check_and_move_file(const char *src, const char *dst) {
+    struct stat buffer;
+
+ // 检查目标文件是否存在
+    if (stat(dst, &buffer) != 0) {
+        if (errno == ENOENT) {
+            // 目标文件不存在，检查源文件是否存在
+            if (stat(src, &buffer) == 0) {
+                // 源文件存在，使用shell命令移动到目标路径
+                char command[256];
+                snprintf(command, sizeof(command), "mv %s %s", src, dst);
+                int ret = system(command);
+                if (ret != 0) {
+                    perror("移动文件时出错");
+                    return -1;
+                }
+            } else {
+                perror("找不到设备配置文件");
+                return -1;
+            }
+        } else {
+            perror("检查目标文件时出错");
+            return -1;
+        }
+    }
+    return 0;
+}
+
 int read_device_info() {
+
+    check_and_move_file(root_path, userdata_path);
+
     // 打开文件
-    FILE *file = fopen("/root/device_info.json", "r");
+    FILE *file = fopen("/userdata/device_info.json", "r");
     if (file == NULL) {
         perror("无法打开设备配置文件");
         return -1;
@@ -341,7 +375,7 @@ int write_device_info(const char *key_name, const char *value) {
     cJSON *root = NULL;
 
     // 尝试打开现有配置文件
-    FILE *file = fopen("/root/device_info.json", "r");
+    FILE *file = fopen("/userdata/device_info.json", "r");
     if (file == NULL) {
         // 如果文件不存在，创建一个空的 JSON 对象
         root = cJSON_CreateObject();
@@ -408,7 +442,7 @@ int write_device_info(const char *key_name, const char *value) {
     }
 
     // 将字符串写入配置文件
-    int fd = open("/root/device_info.json", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int fd = open("/userdata/device_info.json", O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1) {
         perror("无法打开设备配置文件");
         cJSON_Delete(root);
@@ -1268,7 +1302,7 @@ int open_door() {
                 sleep(1);
             }
 
-            int fd = open("/root/cleantime.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            int fd = open("/userdata/cleantime.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (fd == -1) {
                 perror("无法打开文件");
                 return;
@@ -1536,7 +1570,7 @@ int read_info() {
         // LVGL提示 未设置SN和Key
     }
 
-    FILE *file = fopen("/root/cleantime.txt", "r");
+    FILE *file = fopen("/userdata/cleantime.txt", "r");
 
     if (file == NULL) {
         // 文件不存在
