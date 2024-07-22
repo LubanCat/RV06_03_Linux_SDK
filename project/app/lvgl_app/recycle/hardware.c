@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include "module.h"
 #include "hardware.h"
+#include "server.h"
 #include "rk_gpio.h"
 #include <math.h>
 

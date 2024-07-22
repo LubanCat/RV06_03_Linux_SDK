@@ -1026,6 +1026,9 @@ int open_door() {
             get_cam_video(0,in_video);
             get_cam_video(1,out_video);
 
+            if(out_video != NULL || in_video != NULL)
+                upload_fault(FAULT_CAMERA);
+
             //获取当前时间
             char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
             time_t now;
@@ -1157,13 +1160,17 @@ int open_door() {
 
             //柜内拍照
             get_cam_video(0,in_video);
+            get_cam_video(1,out_video);
+
+            if(out_video != NULL || in_video != NULL)
+                upload_fault(FAULT_CAMERA);
+
             if(in_video != NULL){
                 capture_jpg_compass(in_video,1920,1080,in_video_close_path);
             }else{
                 printf("no in_video\n");
             }
 
-            get_cam_video(1,out_video);
             //柜外拍照
             if(out_video != NULL){
                 capture_jpg_compass(out_video,1920,1080,out_video_close_path);
