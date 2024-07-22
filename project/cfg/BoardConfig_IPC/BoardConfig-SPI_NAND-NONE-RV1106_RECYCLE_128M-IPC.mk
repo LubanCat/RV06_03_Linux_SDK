@@ -52,7 +52,8 @@ export RK_BOOTARGS_CMA_SIZE="24M"
 # Note:
 #   If the first partition offset is not 0x0, it must be added. Otherwise, it needn't adding.
 # export RK_PARTITION_CMD_IN_ENV="256K(env),1M@256K(idblock),1M(uboot),5M(boot),160M(rootfs),48M(oem),32M(userdata)"
-export RK_PARTITION_CMD_IN_ENV="256K(env),1M@256K(idblock),1M(uboot),5M(boot),120M(rootfs)"
+export RK_PARTITION_CMD_IN_ENV="256K(env),1M@256K(idblock),1M(uboot),5M(boot),110M(rootfs),10M(userdata)"
+# export RK_PARTITION_CMD_IN_ENV="256K(env),1M@256K(idblock),1M(uboot),5M(boot),120M(rootfs)"
 
 # config partition's filesystem type (squashfs is readonly)
 # emmc:    squashfs/ext4
@@ -64,7 +65,8 @@ export RK_PARTITION_CMD_IN_ENV="256K(env),1M@256K(idblock),1M(uboot),5M(boot),12
 #         /BBBB/CCCC ----> partition mount point
 #         ext4 ----------> partition filesystem type
 # export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs,oem@/oem@ubifs,userdata@/userdata@ubifs
-export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs
+export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs,userdata@/userdata@ubifs
+# export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs
 
 # config filesystem compress (Just for squashfs or ubifs)
 # squashfs: lz4/lzo/lzma/xz/gzip, default xz
