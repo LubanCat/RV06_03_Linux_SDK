@@ -22,7 +22,6 @@
 
 #define DISP_BUF_SIZE (600 * 1024 * 4)
 #define MAX_WEIGHT 200
-#define LIGHT_CHECK_TIME 60
 #define MSGSZ 128
 
 lv_ui guider_ui;
@@ -62,8 +61,9 @@ void* lv_task_thread(void* arg) {
 // 辅助线程
 void* aux_task_thread(void* arg) {
     int signal_count = 0;
-    int light_count = LIGHT_CHECK_TIME;
+    int light_count = 0;
     int overflow_count = 0;
+    int current_light_state = 0;
     int curCapacity,curCapacityBefore;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
@@ -72,7 +72,7 @@ void* aux_task_thread(void* arg) {
 
     while (g_main_run_) {
         // LVGL 更新4G信号强度
-        if (signal_count == 5) {
+        if (signal_count == 10) {
             heartBeat.signal = module_signal();
             if(screen_login_flag == 1){
                 // 在登录页面才更新
@@ -84,7 +84,7 @@ void* aux_task_thread(void* arg) {
         }
 
         // 灯光更新
-        if (light_count == LIGHT_CHECK_TIME) {
+        if (light_count == 5) {
             time_t t = time(NULL);
             struct tm* now = localtime(&t);
 
@@ -92,21 +92,27 @@ void* aux_task_thread(void* arg) {
             int start_minutes = loginRes.turnOnLight.tm_hour * 60 + loginRes.turnOnLight.tm_min;
             int end_minutes = loginRes.turnOffLight.tm_hour * 60 + loginRes.turnOffLight.tm_min;
 
+            int new_light_state = 0;
+
             if (start_minutes < end_minutes) {
                 // 不跨午夜
                 if (now_minutes >= start_minutes && now_minutes < end_minutes) {
-                    outside_light(1);
-                } else {
-                    outside_light(0);
+                    new_light_state = 1;
                 }
             } else {
                 // 跨午夜
                 if (now_minutes >= start_minutes || now_minutes < end_minutes) {
-                    outside_light(1);
-                } else {
-                    outside_light(0);
+                    new_light_state = 1;
                 }
             }
+
+            // 只有当灯光状态发生变化时才更新灯光
+            if (current_light_state != new_light_state) {
+                outside_light(new_light_state);
+                current_light_state = new_light_state;
+            }
+
+            // 重置灯光计数
             light_count = 0;
         }
 
@@ -143,14 +149,14 @@ void* aux_task_thread(void* arg) {
 
         sleep(1);
 
-        // 进入配置模式
-        if (password_1 && password_2 && password_3){
-            screen_login_flag=0;
-            set_screen_test(&guider_ui.screen_login_del);
-            password_1 = 0;
-            password_2 = 0;
-            password_3 = 0;
-        }
+        // 触屏 进入配置模式
+        // if (password_1 && password_2 && password_3){
+        //     screen_login_flag=0;
+        //     set_screen_test(&guider_ui.screen_login_del);
+        //     password_1 = 0;
+        //     password_2 = 0;
+        //     password_3 = 0;
+        // }
 
         overflow_count++;
         signal_count++;

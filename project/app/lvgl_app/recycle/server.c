@@ -794,6 +794,134 @@ void handle_open_door(cJSON *response_json) {
     open_door();
 }
 
+void handle_initconfig(cJSON *response_json) {
+    int retCode;
+
+    cJSON *recyclePrice = cJSON_GetObjectItem(response_json, "recyclePrice");
+    cJSON *heartBeatInterval = cJSON_GetObjectItem(response_json, "heartBeatInterval");
+    cJSON *turnOnLight = cJSON_GetObjectItem(response_json, "turnOnLight");
+    cJSON *turnOffLight = cJSON_GetObjectItem(response_json, "turnOffLight");
+
+    if (recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
+        loginRes.recyclePrice = atof(recyclePrice->valuestring);
+        loginRes.heartBeatInterval = atoi(heartBeatInterval->valuestring);
+
+        // 解析 turnOnLight 和 turnOffLight 时间字符串
+        memset(&loginRes.turnOnLight, 0, sizeof(struct tm));
+        memset(&loginRes.turnOffLight, 0, sizeof(struct tm));
+
+        if (sscanf(turnOnLight->valuestring, "%2d%2d", &loginRes.turnOnLight.tm_hour, &loginRes.turnOnLight.tm_min) != 2) {
+            printf("Failed to parse turnOnLight time\n");
+            return -1;
+        }
+
+        if (sscanf(turnOffLight->valuestring, "%2d%2d", &loginRes.turnOffLight.tm_hour, &loginRes.turnOffLight.tm_min) != 2) {
+            printf("Failed to parse turnOffLight time\n");
+            return -1;
+        }
+
+        // 打印获取的时间
+        char turnOnLightBuf[6], turnOffLightBuf[6];
+        strftime(turnOnLightBuf, sizeof(turnOnLightBuf), "%H:%M", &loginRes.turnOnLight);
+        strftime(turnOffLightBuf, sizeof(turnOffLightBuf), "%H:%M", &loginRes.turnOffLight);
+
+        printf("Turn On Light Time: %s\n", turnOnLightBuf);
+        printf("Turn Off Light Time: %s\n", turnOffLightBuf);
+
+        pthread_mutex_lock(&lv_task_mutex);
+        set_screen_login_price(loginRes.recyclePrice);
+        pthread_mutex_unlock(&lv_task_mutex);
+
+        int retCode = 0;
+    } else {
+        printf("Invalid response: missing expected fields\n");
+        int retCode = 1;
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "cmd", "initConfig");
+    cJSON_AddNumberToObject(root, "retCode", retCode);
+    char *json_str = cJSON_PrintUnformatted(root);
+
+    // 发送响应
+    printf("Sending ota response: %s\n", json_str);
+    send_tcp_packet(json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
+}
+
+void handle_debug() {
+    int retCode = 0;
+
+    screen_login_flag=0;
+    set_screen_test(&guider_ui.screen_login_del);
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "cmd", "debug");
+    cJSON_AddNumberToObject(root, "retCode", retCode);
+    char *json_str = cJSON_PrintUnformatted(root);
+
+    // 发送响应
+    printf("Sending ota response: %s\n", json_str);
+    send_tcp_packet(json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
+}
+
+// 线程函数，用于执行定时重启
+void *scheduled_reboot(void *arg) {
+    time_t target_time = *(time_t *)arg;
+    free(arg);
+
+    while (difftime(target_time, time(NULL)) > 0) {
+        sleep(1);
+    }
+    system("reboot");
+    return NULL;
+}
+
+void handle_restart(cJSON *response_json) {
+    int retCode = 0;
+    cJSON *type = cJSON_GetObjectItem(response_json, "type");
+
+    if (type->valueint == 1) {
+        system("reboot");
+    } else if (type->valueint == 2) {
+        cJSON *time = cJSON_GetObjectItem(response_json, "time");
+        struct tm scheduled_time;
+        memset(&scheduled_time, 0, sizeof(struct tm));
+
+        // 解析时间字符串 "yyyyMMddHHmmss"
+        printf("time:%s\n", time->valuestring);
+        if (strptime(time->valuestring, "%Y-%m-%d %H:%M:%S", &scheduled_time)) {
+            time_t *target_time = malloc(sizeof(time_t));
+            *target_time = mktime(&scheduled_time);
+
+            pthread_t reboot_thread;
+            if (pthread_create(&reboot_thread, NULL, scheduled_reboot, target_time) == 0) {
+                pthread_detach(reboot_thread);
+            } else {
+                retCode = 1;
+                free(target_time);
+            }
+        } else {
+            fprintf(stderr, "Error: Failed to parse time string.\n");
+            retCode = 1; // 时间格式错误
+        }
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "cmd", "restart");
+    cJSON_AddNumberToObject(root, "retCode", retCode);
+    char *json_str = cJSON_PrintUnformatted(root);
+
+     // 发送响应
+    printf("Sending restart response: %s\n", json_str);
+    send_tcp_packet(json_str, strlen(json_str));
+    free(json_str);
+    cJSON_Delete(root);
+}
+
 void handle_ota(cJSON *response_json) {
     char version[16], url[64], md5[64];
     cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
@@ -975,6 +1103,12 @@ void message_receiver_handler(const char *recv_buf) {
         handle_open_door(response_json);
     } else if (strcmp(str, "ota") == 0) {
         handle_ota(response_json);
+    } else if (strcmp(str, "initConfig") == 0) {
+        handle_initconfig(response_json);
+    } else if (strcmp(str, "debug") == 0) {
+        handle_debug();
+    } else if (strcmp(str, "restart") == 0) {
+        handle_restart(response_json);
     } else {
         cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
         if (retCode == NULL || !cJSON_IsNumber(retCode)) {
