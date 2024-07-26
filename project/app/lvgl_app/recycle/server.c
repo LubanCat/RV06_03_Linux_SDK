@@ -1500,19 +1500,20 @@ int open_door() {
             close_door(cur_weight, diff_weight);
             inside_light(0);
 
-            in_video_device.photo_flag=1;
-            in_video_device.photo_opendoor=0;
-            usleep(500000);
             out_video_device.photo_flag=1;
             out_video_device.photo_opendoor=0;
             usleep(500000);
+            in_video_device.photo_flag=1;
+            in_video_device.photo_opendoor=0;
+            usleep(500000);
 
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+            openDoor.openType = 0;
+            sleep(1);
             upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_open_path);
             upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_close_path);
             upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, in_video_close_path);
-            openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
         int i = COUNT_DOWN99 * REFRESH_RATE;
