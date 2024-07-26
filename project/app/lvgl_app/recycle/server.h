@@ -3,6 +3,12 @@
 
 #include <time.h>
 
+#include "rk_debug.h"
+#include "rk_mpi_sys.h"
+#include "rk_mpi_mb.h"
+#include "rk_mpi_venc.h"
+#include "rkmuxer.h"
+
 
 // 登录配置服务器响应
 typedef struct {

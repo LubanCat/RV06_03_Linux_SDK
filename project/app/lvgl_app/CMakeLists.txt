@@ -86,6 +86,8 @@ target_link_libraries(lvgl_app
     pthread
     librockit.so
     librga.so
+    librkmuxer.so
+    librkdemuxer.so
     librockchip_mpp.so
     m
 )

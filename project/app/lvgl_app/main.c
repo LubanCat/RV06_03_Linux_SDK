@@ -245,6 +245,8 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
 
+    cam_init();
+
     set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
 
     int curCapacity = get_overflow_status();

@@ -21,7 +21,23 @@ typedef struct {
     int fd;
 } video_frame_t;
 
+typedef struct {
+    video_frame_t video_frame;
+    int live;
+    int err;
+    int avc_init_flag;
+    int record_flag;
+    int rtmp_flag;
+    int test_flag;
+    int photo_flag;
+    int preview_flag;
+    int photo_opendoor;
+} video_device_t;
 
+int capture_h264_compass(char *device,int width,int height,char *output_path);
+int capture_rtmp_init(video_frame_t *video_frame,char *rtmp_url);
+int capture_rtmp_deinit();
+int capture_rtmp_write_video_frame(char *buffer,int buffer_size,int64_t present_time, int key_frame);
 int capture_start(video_frame_t *video_frame);
 int video_linux_get_frame_rgb(video_frame_t *video_frame,char *data,int *length);
 int capture_stop(video_frame_t *video_frame);

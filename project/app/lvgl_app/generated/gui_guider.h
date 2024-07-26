@@ -75,6 +75,7 @@ typedef struct
 	lv_obj_t *screen_submit_close_door_label;
 	lv_obj_t *screen_submit_label_6;
 	lv_obj_t *screen_submit_label_7;
+	lv_obj_t *screen_submit_cam_wrong;
 	lv_obj_t *screen_clean;
 	bool screen_clean_del;
 	lv_obj_t *screen_clean_img_2;
@@ -153,6 +154,7 @@ typedef struct
 	bool screen_test_cam_del;
 	lv_obj_t *screen_test_cam_btn_1;
 	lv_obj_t *screen_test_cam_btn_1_label;
+	lv_obj_t *screen_test_cam_cam_wrong;
 }lv_ui;
 
 typedef void (*ui_setup_scr_t)(lv_ui * ui);
@@ -210,10 +212,12 @@ LV_IMG_DECLARE(_9_alpha_555x350);
 LV_IMG_DECLARE(_main_600x1024_600x1024);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
+LV_IMG_DECLARE(_cam_wrong_2_alpha_480x320);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
 LV_IMG_DECLARE(_re_alpha_222x216);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
 LV_IMG_DECLARE(_cycle_alpha_200x200);
+LV_IMG_DECLARE(_cam_wrong_1_alpha_480x640);
 
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_48)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_16)

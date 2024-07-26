@@ -330,6 +330,19 @@ void setup_scr_screen_submit(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_submit_label_7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_submit_label_7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+	//Write codes screen_submit_cam_wrong
+	ui->screen_submit_cam_wrong = lv_img_create(ui->screen_submit);
+	lv_obj_add_flag(ui->screen_submit_cam_wrong, LV_OBJ_FLAG_CLICKABLE);
+	lv_img_set_src(ui->screen_submit_cam_wrong, &_cam_wrong_2_alpha_480x320);
+	lv_img_set_pivot(ui->screen_submit_cam_wrong, 50,50);
+	lv_img_set_angle(ui->screen_submit_cam_wrong, 0);
+	lv_obj_set_pos(ui->screen_submit_cam_wrong, 60, 578);
+	lv_obj_set_size(ui->screen_submit_cam_wrong, 480, 320);
+	lv_obj_add_flag(ui->screen_submit_cam_wrong, LV_OBJ_FLAG_HIDDEN);
+
+	//Write style for screen_submit_cam_wrong, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_img_opa(ui->screen_submit_cam_wrong, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+
 	//The custom code of screen_submit.
 	
 

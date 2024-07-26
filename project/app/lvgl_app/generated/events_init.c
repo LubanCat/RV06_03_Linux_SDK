@@ -17,10 +17,12 @@
 
 
 #include "hardware.h"
+#include "capture.h"
 #include "custom.h"
 
 extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect,full;
-
+extern video_device_t out_video_device;
+extern video_device_t in_video_device;
 #include "server.h"
 static void screen_login_password_1_event_handler (lv_event_t *e)
 {
@@ -216,7 +218,7 @@ static void screen_test_inside_cam_key_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		inside_light(1);
-		camara_test_start(0);
+		in_video_device.test_flag=1;
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
 		break;
 	}
@@ -232,7 +234,7 @@ static void screen_test_outside_cam_key_event_handler (lv_event_t *e)
 	case LV_EVENT_CLICKED:
 	{
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
-		camara_test_start(1);
+		out_video_device.test_flag=1;
 		break;
 	}
 	default:
@@ -485,8 +487,8 @@ static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		camara_test_stop();
-		inside_light(0);
+		out_video_device.test_flag=0;
+		in_video_device.test_flag=0;
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
 		set_screen_test_rod_hinder_value(rod_hinder_value);
 		break;

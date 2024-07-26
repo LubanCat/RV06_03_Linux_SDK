@@ -30,6 +30,11 @@ char *local_version = "1.4";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
+char in_video_open_path[64];
+char out_video_open_path[64];
+char in_video_close_path[64];
+char out_video_close_path[64];
+
 #define CONFIG_SERVER "api.recycling.maizucity.com"
 #define CONFIG_SERVER_PORT 9096
 extern lv_disp_drv_t disp_drv;
@@ -37,13 +42,19 @@ char *preview_data;
 char in_video[12];
 char out_video[12];
 char cleantime_str[100];
-pthread_t capture_test_thread_id;
-video_frame_t *video_test_frame;
+
+video_device_t out_video_device;
+video_device_t in_video_device;
+
 pthread_t heartbeat_thread_id = NULL;
 extern int server_connect;
 
 extern pthread_mutex_t lv_task_mutex;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_t capture_in_thread_id = NULL;
+pthread_t capture_out_thread_id = NULL;
+pthread_t venc_rsv_thread_id = NULL;
 
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
     if (stat1->st_ctime < stat2->st_ctime) {
@@ -118,99 +129,291 @@ int check_dir_num(int num){
     return 0;    
 }
 
+#define RTMP_URL "rtmp://10.255.200.135/live/"
 
-void* capture_thread(void* arg) {
+void venc_rsv_thread(void* arg) {
     video_frame_t *video_frame = (video_frame_t *)arg;
-    video_frame->width=640;
-    video_frame->height=480;
-    sprintf(video_frame->device,"%s",out_video);
-    preview_data=malloc(video_frame->width * video_frame->height * 3);
-    int ret = capture_start(video_frame);
-    if(ret != -1){
-        lv_color_t *color_p;
-        int size=480*320;
-        color_p=malloc(size*sizeof(lv_color_t));
-        int length;
+    VENC_STREAM_S rcv;
+    RK_S32 ret = RK_SUCCESS;
+    capture_rtmp_init(video_frame,RTMP_URL);
+    capture_storage_init(video_frame);
+    rcv.pstPack = (VENC_PACK_S *)malloc(sizeof(VENC_PACK_S));
+    while(1){
+        ret = RK_MPI_VENC_GetStream(0, &rcv, -1);
+        if (ret == RK_SUCCESS) {
+            void *result = RK_MPI_MB_Handle2VirAddr(rcv.pstPack->pMbBlk);
+            if(out_video_device.record_flag){
+                if ((rcv.pstPack->DataType.enH264EType == H264E_NALU_IDRSLICE) ||
+                (rcv.pstPack->DataType.enH264EType == H264E_NALU_ISLICE))
+                    capture_storage_write_video_frame((char *)result,rcv.pstPack->u32Len,rcv.pstPack->u64PTS,1);
+                else 
+                    capture_storage_write_video_frame((char *)result,rcv.pstPack->u32Len,rcv.pstPack->u64PTS,0);
+            }
+            if(out_video_device.rtmp_flag){
+                if ((rcv.pstPack->DataType.enH264EType == H264E_NALU_IDRSLICE) ||
+                (rcv.pstPack->DataType.enH264EType == H264E_NALU_ISLICE))
+                    capture_rtmp_write_video_frame((char *)result,rcv.pstPack->u32Len,rcv.pstPack->u64PTS,1);
+                else 
+                    capture_rtmp_write_video_frame((char *)result,rcv.pstPack->u32Len,rcv.pstPack->u64PTS,0);
+            }
+            RK_MPI_VENC_ReleaseStream(0, &rcv);
+        }else{
+            printf("ret = 0x%x\n",ret);
+        }
+    }
+}
 
-        lv_area_t area;
-        area.x1=578;
-        area.x2=897;
-        area.y1=60;
-        area.y2=539;
+//外摄像头捕捉线程
+void* capture_out_thread(void* arg) {
+    out_video_device.video_frame.width=640;
+    out_video_device.video_frame.height=480;
+    sprintf(out_video_device.video_frame.device,"%s",out_video);
+    char *data=malloc(out_video_device.video_frame.width * out_video_device.video_frame.height * 3);
+    int length;
+    while(1){
+        //判断是不是在测试，拍照，录像，推流,预览
+        if(out_video_device.test_flag || out_video_device.photo_flag || out_video_device.preview_flag ||
+            out_video_device.record_flag ||out_video_device.rtmp_flag){
+            if(out_video_device.live==0){
+                if(capture_start(&out_video_device.video_frame) != -1){
+                    //设置摄像头正常工作的flag
+                    out_video_device.err=0;
+                    out_video_device.live=1;
+                }
+                else
+                    out_video_device.err=1;
+            }
 
-        while(1){
-            video_linux_get_frame_rgb(video_frame,preview_data,&length);
-            memset(color_p,0x00,size*sizeof(lv_color_t));
+            if(out_video_device.err){
+                //测试
+                if(out_video_device.test_flag){
+                    upload_fault(FAULT_CAMERA);
+                    lv_obj_clear_flag(guider_ui.screen_test_cam_cam_wrong, LV_OBJ_FLAG_HIDDEN);
+                    out_video_device.test_flag=0;
+                }
+                //预览
+                if(out_video_device.preview_flag){      
+                    upload_fault(FAULT_CAMERA);
+                    lv_obj_clear_flag(guider_ui.screen_submit_cam_wrong, LV_OBJ_FLAG_HIDDEN);
+                    out_video_device.preview_flag=0;
+                }
+                //拍照
+                if(out_video_device.photo_flag){
+                    upload_fault(FAULT_CAMERA);
+                    out_video_device.photo_flag=0;
+                }
+                //录像+推流
+                if(out_video_device.record_flag || out_video_device.rtmp_flag){
+                    upload_fault(FAULT_CAMERA);
+                    out_video_device.record_flag=0;
+                    out_video_device.rtmp_flag=0;
+                }
+                //跳过后面操作
+                continue;
+            }
 
-            for(int j=0;j<320;j++){
-                for(int i=0;i<480;i++){
-                    color_p[j+(479-i)*320].full |= 0xff<<24;
-                    color_p[j+(479-i)*320].full |= preview_data[(j*640+i)*3+0]<<16;
-                    color_p[j+(479-i)*320].full |= preview_data[(j*640+i)*3+1]<<8;
-                    color_p[j+(479-i)*320].full |= preview_data[(j*640+i)*3+2];
+            //获取rgb数据
+            video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
+
+            //测试
+            if(out_video_device.test_flag){
+                lv_color_t color_p[640*480];
+                int size=640*480;
+                int length;
+            
+                lv_area_t area;
+                area.x1=140;
+                area.x2=779;
+                area.y1=60;
+                area.y2=539;
+
+                memset(color_p,0x00,size*sizeof(lv_color_t));
+
+                for(int j=0;j<480;j++){
+                    for(int i=0;i<640;i++){
+                        color_p[j*640+i].full |= 0xff<<24;
+                        color_p[j*640+i].full |= data[(j*640+i)*3+0]<<16;
+                        color_p[j*640+i].full |= data[(j*640+i)*3+1]<<8;
+                        color_p[j*640+i].full |= data[(j*640+i)*3+2];
+                    }
+                }
+                drm_flush(&disp_drv,&area,color_p);
+            }
+            //预览
+            if(out_video_device.preview_flag){
+                int size=480*320;
+                lv_color_t color_p[size];
+
+                lv_area_t area;
+                area.x1=578;
+                area.x2=897;
+                area.y1=60;
+                area.y2=539;
+
+                memset(color_p,0x00,size*sizeof(lv_color_t));
+                for(int j=0;j<320;j++){
+                    for(int i=0;i<480;i++){
+                        color_p[j+(479-i)*320].full |= 0xff<<24;
+                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+0]<<16;
+                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+1]<<8;
+                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+2];
+                    }
+                }
+                drm_flush(&disp_drv,&area,color_p);    
+            }
+            //拍照
+            if(out_video_device.photo_flag){
+                //判断是不是开门拍照
+                if(out_video_device.photo_opendoor)
+                    //开门拍照
+                    capture_rgb_to_jpg(&out_video_device.video_frame,data,out_video_open_path);
+                else
+                    //关门拍照
+                    capture_rgb_to_jpg(&out_video_device.video_frame,data,out_video_close_path);
+
+                out_video_device.photo_flag=0;
+            }
+            //录像+推流
+            if(out_video_device.record_flag || out_video_device.rtmp_flag){
+                if(out_video_device.avc_init_flag==0){
+                    printf("capture_venc_init\n");
+                    capture_venc_init(&out_video_device.video_frame);
+                    printf("pthread_create\n");
+                    int ret = pthread_create(&venc_rsv_thread_id, NULL, venc_rsv_thread, &out_video_device.video_frame);
+                    if (ret != 0) {
+                        perror("pthread_create");
+                    }
+                    out_video_device.avc_init_flag=1;
+                }
+                capture_rgb_to_avc(&out_video_device.video_frame,data);
+            }else{
+                if(out_video_device.avc_init_flag){
+                    capture_venc_deinit();
+                    out_video_device.avc_init_flag=0;
                 }
             }
-            drm_flush(&disp_drv,&area,color_p);
+        }else{
+            if(out_video_device.live==1){
+                out_video_device.live=0;
+                capture_stop(&out_video_device.video_frame);
+            }
         }
+        usleep(1000);
     }
 }
 
+//内摄像头捕捉线程
+void* capture_in_thread(void* arg) {
+    in_video_device.video_frame.width=640;
+    in_video_device.video_frame.height=480;
+    sprintf(in_video_device.video_frame.device,"%s",in_video);
+    char *data=malloc(in_video_device.video_frame.width * in_video_device.video_frame.height * 3);
+    int length;
+    while(1){
+        usleep(1000);
+        //判断是不是在测试，拍照，录像，推流,预览
+        if(in_video_device.test_flag || in_video_device.photo_flag){
+            if(in_video_device.live==0){
+                if(capture_start(&in_video_device.video_frame) != -1){
+                    //设置摄像头正常工作的flag
+                    in_video_device.err=0;
+                    in_video_device.live=1;
+                }
+                else
+                    in_video_device.err=1;
+            }
+            if(in_video_device.err==0){
+                //设置摄像头正常工作的flag
+                in_video_device.err=0;
+                 //测试
+                if(in_video_device.test_flag){
+                    //获取rgb数据
+                    video_linux_get_frame_rgb(&in_video_device.video_frame,data,&length);
+                    lv_color_t color_p[640*480];
+                    int size=640*480;
+                    int length;
+                
+                    lv_area_t area;
+                    area.x1=140;
+                    area.x2=779;
+                    area.y1=60;
+                    area.y2=539;
 
-void* capture_test_thread(void* arg) {
-    video_frame_t *video_frame = (video_frame_t *)arg;
-    int ret = capture_start(video_frame);
-    if(ret != -1){
-        lv_color_t color_p[640*480];
-        int size=640*480;
-        int length;
-        preview_data=malloc(video_frame->width * video_frame->height * 3);
-        lv_area_t area;
-        area.x1=140;
-        area.x2=779;
-        area.y1=60;
-        area.y2=539;
+                    memset(color_p,0x00,size*sizeof(lv_color_t));
 
-        while(1){
-            video_linux_get_frame_rgb(video_frame,preview_data,&length);
-            memset(color_p,0x00,size*sizeof(lv_color_t));
+                    for(int j=0;j<480;j++){
+                        for(int i=0;i<640;i++){
+                            color_p[j*640+i].full |= 0xff<<24;
+                            color_p[j*640+i].full |= data[(j*640+i)*3+0]<<16;
+                            color_p[j*640+i].full |= data[(j*640+i)*3+1]<<8;
+                            color_p[j*640+i].full |= data[(j*640+i)*3+2];
+                        }
+                    }
+                    drm_flush(&disp_drv,&area,color_p);
+                }
+                //拍照
+                if(in_video_device.photo_flag){
+                    video_linux_get_frame_rgb(&in_video_device.video_frame,data,&length);
+                    //判断是不是开门拍照
+                    if(in_video_device.photo_opendoor)
+                        //开门拍照
+                        capture_rgb_to_jpg(&in_video_device.video_frame,data,in_video_open_path);
+                    else
+                        //关门拍照
+                        capture_rgb_to_jpg(&in_video_device.video_frame,data,in_video_close_path);
 
-            for(int j=0;j<480;j++){
-                for(int i=0;i<640;i++){
-                    color_p[j*640+i].full |= 0xff<<24;
-                    color_p[j*640+i].full |= preview_data[(j*640+i)*3+0]<<16;
-                    color_p[j*640+i].full |= preview_data[(j*640+i)*3+1]<<8;
-                    color_p[j*640+i].full |= preview_data[(j*640+i)*3+2];
+                    in_video_device.photo_flag=0;
+                }
+            }else{
+                if(in_video_device.test_flag){
+                    upload_fault(FAULT_CAMERA);
+                    lv_obj_clear_flag(guider_ui.screen_test_cam_cam_wrong, LV_OBJ_FLAG_HIDDEN);
+                    in_video_device.test_flag=0;
+                }
+                //拍照
+                if(in_video_device.photo_flag){
+                    upload_fault(FAULT_CAMERA);
+                    in_video_device.photo_flag=0;
                 }
             }
-            drm_flush(&disp_drv,&area,color_p);
+        }else{
+            if(in_video_device.live==1){
+                in_video_device.live=0;
+                capture_stop(&in_video_device.video_frame);
+            }
         }
     }
 }
 
+int cam_init(){
+    get_cam_video(0,in_video);
+    get_cam_video(1,out_video);
 
-void camara_test_start(int num){
-    video_test_frame = malloc(sizeof(video_frame_t));
-    video_test_frame->width=640;
-    video_test_frame->height=480;
-    get_cam_video(num,video_test_frame->device);
-    printf("%d:%s\n",num,video_test_frame->device);
-    if(video_test_frame->device != NULL){
-        int ret = pthread_create(&capture_test_thread_id, NULL, capture_test_thread, (void *)video_test_frame);
-        if (ret != 0) {
-            perror("pthread_create");
-        }
-    }else{
-        printf("no video\n");
+    out_video_device.photo_flag=0;
+    out_video_device.record_flag=0;
+    out_video_device.test_flag=0;
+    out_video_device.rtmp_flag=0;
+    out_video_device.avc_init_flag=0;
+    out_video_device.preview_flag=0;
+
+    in_video_device.photo_flag=0;
+    in_video_device.record_flag=0;
+    in_video_device.test_flag=0;
+    in_video_device.rtmp_flag=0;
+    in_video_device.avc_init_flag=0;
+    in_video_device.preview_flag=0;
+
+    int ret = pthread_create(&capture_in_thread_id, NULL, capture_in_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
     }
-}
 
-void camara_test_stop(){
-    if(capture_test_thread_id != NULL)
-        pthread_cancel(capture_test_thread_id);
-    capture_stop(video_test_frame);
-    free(video_test_frame);
-    if(preview_data != NULL)
-        free(preview_data);
+    ret = pthread_create(&capture_out_thread_id, NULL, capture_out_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
+    }
+
+    
 }
 
 // 设备信息
@@ -1057,12 +1260,6 @@ int open_door() {
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             inside_light(1);
 
-            get_cam_video(0,in_video);
-            get_cam_video(1,out_video);
-
-            if(out_video != NULL || in_video != NULL)
-                upload_fault(FAULT_CAMERA);
-
             //获取当前时间
             char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
             time_t now;
@@ -1096,36 +1293,20 @@ int open_door() {
                 perror("mkdir failed"); // 打印错误信息
             }
             //柜内拍照
-            char in_video_open_path[64];
-            char out_video_open_path[64];
-            char in_video_close_path[64];
-            char out_video_close_path[64];
             sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
             sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
             sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
 
-            if(in_video != NULL){
-                capture_jpg_compass(in_video,1920,1080,in_video_open_path);
-            }else{
-                printf("no in video\n");
-            }
-
-            //柜外拍照
-            if(out_video != NULL){
-                capture_jpg_compass(out_video,1920,1080,out_video_open_path);
-            }else{
-                printf("no out video\n");
-            }
-
-            video_frame_t *video_frame;
-            if(out_video != NULL){
-                video_frame = malloc(sizeof(video_frame_t));
-                int ret = pthread_create(&capture_thread_id, NULL, capture_thread, (void *)video_frame);
-                if (ret != 0) {
-                    perror("pthread_create");
-                }
-            }
+            in_video_device.photo_flag=1;
+            in_video_device.photo_opendoor=1;
+            usleep(500000);
+            out_video_device.photo_flag=1;
+            out_video_device.photo_opendoor=1;
+            usleep(500000);
+            out_video_device.preview_flag=1;
+            out_video_device.record_flag=1;
+            out_video_device.rtmp_flag=1;
 
             set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
@@ -1177,40 +1358,20 @@ int open_door() {
                 usleep(1000000 / REFRESH_RATE);
             }
 
-            if(out_video != NULL){
-                if(capture_thread_id!=NULL){
-                    pthread_cancel(capture_thread_id);
-                    capture_thread_id = NULL;
-                    capture_stop(video_frame);
-                    free(video_frame);
-                    if(preview_data != NULL)
-                        free(preview_data);
-                }
-            }
+            out_video_device.preview_flag=0;
+            out_video_device.record_flag=0;
+            out_video_device.rtmp_flag=0;
 
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             inside_light(0);
 
-            //柜内拍照
-            get_cam_video(0,in_video);
-            get_cam_video(1,out_video);
-
-            if(out_video != NULL || in_video != NULL)
-                upload_fault(FAULT_CAMERA);
-
-            if(in_video != NULL){
-                capture_jpg_compass(in_video,1920,1080,in_video_close_path);
-            }else{
-                printf("no in_video\n");
-            }
-
-            //柜外拍照
-            if(out_video != NULL){
-                capture_jpg_compass(out_video,1920,1080,out_video_close_path);
-            }else{
-                printf("no out_video\n");
-            }
+            in_video_device.photo_flag=1;
+            in_video_device.photo_opendoor=0;
+            usleep(500000);
+            out_video_device.photo_flag=1;
+            out_video_device.photo_opendoor=0;
+            usleep(500000);
 
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             upload_photo("http://api.recycling.maizucity.com/api/device/upload/photo", 1, out_video_open_path);

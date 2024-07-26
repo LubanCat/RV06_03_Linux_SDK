@@ -51,6 +51,19 @@ void setup_scr_screen_test_cam(lv_ui *ui)
 	lv_obj_set_style_text_opa(ui->screen_test_cam_btn_1, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_align(ui->screen_test_cam_btn_1, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+	//Write codes screen_test_cam_cam_wrong
+	ui->screen_test_cam_cam_wrong = lv_img_create(ui->screen_test_cam);
+	lv_obj_add_flag(ui->screen_test_cam_cam_wrong, LV_OBJ_FLAG_CLICKABLE);
+	lv_img_set_src(ui->screen_test_cam_cam_wrong, &_cam_wrong_1_alpha_480x640);
+	lv_img_set_pivot(ui->screen_test_cam_cam_wrong, 50,50);
+	lv_img_set_angle(ui->screen_test_cam_cam_wrong, 0);
+	lv_obj_set_pos(ui->screen_test_cam_cam_wrong, 60, 140);
+	lv_obj_set_size(ui->screen_test_cam_cam_wrong, 480, 640);
+	lv_obj_add_flag(ui->screen_test_cam_cam_wrong, LV_OBJ_FLAG_HIDDEN);
+
+	//Write style for screen_test_cam_cam_wrong, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_img_opa(ui->screen_test_cam_cam_wrong, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+
 	//The custom code of screen_test_cam.
 	
 
