@@ -180,7 +180,7 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, 
                         guider_ui.screen_login_del, screen_del, 
                         setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
 
     set_screen_login_price(price);
     set_screen_login_weigth(weigth);
@@ -196,7 +196,7 @@ void set_screen_full(bool *screen_del,double price,int time){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_full, 
                         guider_ui.screen_full_del, screen_del, 
                         setup_scr_screen_full, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
 
     set_screen_full_price(price);
     set_screen_full_time(time);
@@ -206,7 +206,7 @@ void set_screen_submit(bool *screen_del,double money,int time,double weigth){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_submit, 
                         guider_ui.screen_submit_del, screen_del, 
                         setup_scr_screen_submit, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
 
     set_screen_submit_money(money);
     set_screen_submit_time(time);
@@ -217,7 +217,7 @@ void set_screen_clean(bool *screen_del,int time,double weigth){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_clean, 
                         guider_ui.screen_clean_del, screen_del, 
                         setup_scr_screen_clean, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
 
     set_screen_clean_time(time);
     set_screen_clean_weigth(weigth);
@@ -227,7 +227,7 @@ void set_screen_cleaning(bool *screen_del,double weigth){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_cleaning, 
                         guider_ui.screen_cleaning_del, screen_del, 
                         setup_scr_screen_cleaning, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
 
     set_screen_cleaning_weigth(weigth);
 }
@@ -236,7 +236,7 @@ void set_screen_cleaned(bool *screen_del,int time,double before_clean_weigth,dou
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_cleaned, 
                         guider_ui.screen_cleaned_del, screen_del, 
                         setup_scr_screen_cleaned, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
 
     set_screen_cleaned_weigth(before_clean_weigth,after_clean_weigth,clean_weigth);
     set_screen_cleaned_time(time);
@@ -246,7 +246,7 @@ void set_screen_test(bool *screen_del){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, 
                         guider_ui.screen_test_del, screen_del, 
                         setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 
-                        200, 200, true, true);
+                        0, 0, false, true);
     char str[20];
     sprintf(str,"%d",rod_hinder_value);
     lv_label_set_text(guider_ui.screen_test_rod_hinder_value,str);

@@ -219,7 +219,7 @@ static void screen_test_inside_cam_key_event_handler (lv_event_t *e)
 	{
 		inside_light(1);
 		in_video_device.test_flag=1;
-		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
 		break;
 	}
 	default:
@@ -233,7 +233,7 @@ static void screen_test_outside_cam_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
 		out_video_device.test_flag=1;
 		break;
 	}
@@ -489,8 +489,8 @@ static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
 	{
 		out_video_device.test_flag=0;
 	in_video_device.test_flag=0;
-	
-		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+		inside_light(0);
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
 		set_screen_test_rod_hinder_value(rod_hinder_value);
 		break;
 	}
