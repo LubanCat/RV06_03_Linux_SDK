@@ -139,7 +139,7 @@ void venc_rsv_thread(void* arg) {
     capture_storage_init(video_frame);
     rcv.pstPack = (VENC_PACK_S *)malloc(sizeof(VENC_PACK_S));
     while(1){
-        ret = RK_MPI_VENC_GetStream(0, &rcv, -1);
+        ret = RK_MPI_VENC_GetStream(0, &rcv, 1000);
         if (ret == RK_SUCCESS) {
             void *result = RK_MPI_MB_Handle2VirAddr(rcv.pstPack->pMbBlk);
             if(out_video_device.record_flag){
@@ -159,6 +159,9 @@ void venc_rsv_thread(void* arg) {
             RK_MPI_VENC_ReleaseStream(0, &rcv);
         }else{
             printf("ret = 0x%x\n",ret);
+            while(1){
+                usleep(10000);
+            }
         }
     }
 }
@@ -179,15 +182,16 @@ void* capture_out_thread(void* arg) {
                     //设置摄像头正常工作的flag
                     out_video_device.err=0;
                     out_video_device.live=1;
+                    printf("capture_start\n");
                 }
-                else
+                else{
                     out_video_device.err=1;
+                }
             }
 
             if(out_video_device.err){
                 //测试
                 if(out_video_device.test_flag){
-                    upload_fault(FAULT_CAMERA);
                     lv_obj_clear_flag(guider_ui.screen_test_cam_cam_wrong, LV_OBJ_FLAG_HIDDEN);
                     out_video_device.test_flag=0;
                 }
@@ -204,7 +208,6 @@ void* capture_out_thread(void* arg) {
                 }
                 //录像+推流
                 if(out_video_device.record_flag || out_video_device.rtmp_flag){
-                    upload_fault(FAULT_CAMERA);
                     out_video_device.record_flag=0;
                     out_video_device.rtmp_flag=0;
                 }
@@ -263,6 +266,7 @@ void* capture_out_thread(void* arg) {
             }
             //拍照
             if(out_video_device.photo_flag){
+                printf("capture\n");
                 //判断是不是开门拍照
                 if(out_video_device.photo_opendoor)
                     //开门拍照
@@ -276,7 +280,6 @@ void* capture_out_thread(void* arg) {
             //录像+推流
             if(out_video_device.record_flag || out_video_device.rtmp_flag){
                 if(out_video_device.avc_init_flag==0){
-                    printf("capture_venc_init\n");
                     capture_venc_init(&out_video_device.video_frame);
                     printf("pthread_create\n");
                     int ret = pthread_create(&venc_rsv_thread_id, NULL, venc_rsv_thread, &out_video_device.video_frame);
@@ -288,14 +291,18 @@ void* capture_out_thread(void* arg) {
                 capture_rgb_to_avc(&out_video_device.video_frame,data);
             }else{
                 if(out_video_device.avc_init_flag){
+                    sleep(1);
+                    pthread_cancel(venc_rsv_thread_id);
+                    usleep(25000);
                     capture_venc_deinit();
                     out_video_device.avc_init_flag=0;
                 }
             }
         }else{
-            if(out_video_device.live==1){
-                out_video_device.live=0;
+            if(out_video_device.live){
                 capture_stop(&out_video_device.video_frame);
+                printf("capture_stop\n");
+                out_video_device.live=0;
             }
         }
         usleep(1000);
@@ -315,16 +322,17 @@ void* capture_in_thread(void* arg) {
         if(in_video_device.test_flag || in_video_device.photo_flag){
             if(in_video_device.live==0){
                 if(capture_start(&in_video_device.video_frame) != -1){
+                    printf("start\n");
                     //设置摄像头正常工作的flag
                     in_video_device.err=0;
                     in_video_device.live=1;
                 }
-                else
+                else{
+                    printf("in_video_device.err\n");
                     in_video_device.err=1;
+                }
             }
             if(in_video_device.err==0){
-                //设置摄像头正常工作的flag
-                in_video_device.err=0;
                  //测试
                 if(in_video_device.test_flag){
                     //获取rgb数据
@@ -366,9 +374,11 @@ void* capture_in_thread(void* arg) {
                 }
             }else{
                 if(in_video_device.test_flag){
-                    upload_fault(FAULT_CAMERA);
+                    printf("test_flag -> err\n");
+                    usleep(250000);
                     lv_obj_clear_flag(guider_ui.screen_test_cam_cam_wrong, LV_OBJ_FLAG_HIDDEN);
                     in_video_device.test_flag=0;
+                    printf("test_flag == 0\n");
                 }
                 //拍照
                 if(in_video_device.photo_flag){
@@ -378,8 +388,9 @@ void* capture_in_thread(void* arg) {
             }
         }else{
             if(in_video_device.live==1){
-                in_video_device.live=0;
                 capture_stop(&in_video_device.video_frame);
+                in_video_device.live=0;
+                printf("release\n");
             }
         }
     }
@@ -1389,7 +1400,7 @@ int open_door() {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
-
+            printf("set_screen_submit\n");
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
             inside_light(1);
@@ -1401,7 +1412,7 @@ int open_door() {
             time(&now);
             localNow = localtime(&now);
             strftime(currentTime, sizeof(currentTime), "%Y%m%d_%H%M%S", localNow);
-
+            printf("check_dir_num\n");
             check_dir_num(DIR_NUM);
             struct stat statbuf;
             //创建文件夹
@@ -1440,7 +1451,6 @@ int open_door() {
             usleep(500000);
             out_video_device.preview_flag=1;
             out_video_device.record_flag=1;
-            out_video_device.rtmp_flag=1;
 
             set_post_door_open();
             printf("可回收物仓门已打开，请尽快投递\n");
@@ -1494,7 +1504,6 @@ int open_door() {
 
             out_video_device.preview_flag=0;
             out_video_device.record_flag=0;
-            out_video_device.rtmp_flag=0;
 
             set_post_door_close();
             close_door(cur_weight, diff_weight);
@@ -1503,10 +1512,11 @@ int open_door() {
             out_video_device.photo_flag=1;
             out_video_device.photo_opendoor=0;
             usleep(500000);
+
             in_video_device.photo_flag=1;
             in_video_device.photo_opendoor=0;
             usleep(500000);
-
+            
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             openDoor.openType = 0;
             sleep(1);
