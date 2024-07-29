@@ -217,7 +217,7 @@ void set_screen_clean(bool *screen_del,int time,double weigth){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_clean, 
                         guider_ui.screen_clean_del, screen_del, 
                         setup_scr_screen_clean, LV_SCR_LOAD_ANIM_NONE, 
-                        0, 0, false, true);
+                        0, 200, false, true);
 
     set_screen_clean_time(time);
     set_screen_clean_weigth(weigth);
@@ -227,7 +227,7 @@ void set_screen_cleaning(bool *screen_del,double weigth){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_cleaning, 
                         guider_ui.screen_cleaning_del, screen_del, 
                         setup_scr_screen_cleaning, LV_SCR_LOAD_ANIM_NONE, 
-                        0, 0, false, true);
+                        0, 200, false, true);
 
     set_screen_cleaning_weigth(weigth);
 }
@@ -236,7 +236,7 @@ void set_screen_cleaned(bool *screen_del,int time,double before_clean_weigth,dou
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_cleaned, 
                         guider_ui.screen_cleaned_del, screen_del, 
                         setup_scr_screen_cleaned, LV_SCR_LOAD_ANIM_NONE, 
-                        0, 0, false, true);
+                        200, 0, false, true);
 
     set_screen_cleaned_weigth(before_clean_weigth,after_clean_weigth,clean_weigth);
     set_screen_cleaned_time(time);
