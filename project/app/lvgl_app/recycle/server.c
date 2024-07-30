@@ -1951,8 +1951,6 @@ void* socket_task_thread(void* arg)
                 continue;
             }
 
-            server_connect = 1;
-
             // 登录服务器
             while (1) 
             {
@@ -1963,7 +1961,7 @@ void* socket_task_thread(void* arg)
                     printf("QR Code: %s\n", loginRes.qrCode);
                     printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
                     printf("Heartbeat Interval: %d seconds\n", loginRes.heartBeatInterval);
-                                        
+                    server_connect = 1;           
                     break;
                 }
                 else 
