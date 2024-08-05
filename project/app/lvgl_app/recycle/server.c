@@ -301,6 +301,7 @@ void* capture_out_thread(void* arg) {
                 if(out_video_device.avc_init_flag){
                     sleep(1);
                     pthread_cancel(venc_rsv_thread_id);
+                    capture_storage_deinit();
                     usleep(25000);
                     capture_venc_deinit();
                     out_video_device.avc_init_flag=0;

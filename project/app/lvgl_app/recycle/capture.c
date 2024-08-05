@@ -30,9 +30,9 @@ int capture_rtmp_init(video_frame_t *video_frame,char *rtmp_url){
     g_video_param.level = 52;
     g_video_param.width=video_frame->width;
     g_video_param.height=video_frame->height;
-    g_video_param.bit_rate=24*1024;
+    g_video_param.bit_rate=1024;
     g_video_param.frame_rate_den=1;
-    g_video_param.frame_rate_num = 14;
+    g_video_param.frame_rate_num = 7;
     g_video_param.profile=77;
     memcpy(g_video_param.codec, "H.264", strlen("H.264"));
     memcpy(g_video_param.format, "NV12", strlen("NV12"));
@@ -63,7 +63,7 @@ int capture_storage_init(video_frame_t *video_frame){
     g_video_param.height=video_frame->height;
     g_video_param.bit_rate=24*1024;
     g_video_param.frame_rate_den=1;
-    g_video_param.frame_rate_num = 14;
+    g_video_param.frame_rate_num = 7;
     g_video_param.profile=77;
     memcpy(g_video_param.codec, "H.264", strlen("H.264"));
     memcpy(g_video_param.format, "NV12", strlen("NV12"));
@@ -363,12 +363,12 @@ int capture_venc_init(video_frame_t *video_frame){
     stAttr.stVencAttr.enMirror = MIRROR_NONE;
 
     stAttr.stRcAttr.enRcMode = VENC_RC_MODE_H264CBR;
-    stAttr.stRcAttr.stH264Cbr.u32Gop = 14;
+    stAttr.stRcAttr.stH264Cbr.u32Gop = 7;
     stAttr.stRcAttr.stH264Cbr.u32SrcFrameRateDen=1;
-    stAttr.stRcAttr.stH264Cbr.u32SrcFrameRateNum = 14;
+    stAttr.stRcAttr.stH264Cbr.u32SrcFrameRateNum = 7;
     stAttr.stRcAttr.stH264Cbr.fr32DstFrameRateDen=1;
-    stAttr.stRcAttr.stH264Cbr.fr32DstFrameRateNum = 14;    
-    stAttr.stRcAttr.stH264Cbr.u32BitRate = 24*1024;
+    stAttr.stRcAttr.stH264Cbr.fr32DstFrameRateNum = 7;    
+    stAttr.stRcAttr.stH264Cbr.u32BitRate = 1024;
     stAttr.stGopAttr.enGopMode = VENC_GOPMODE_NORMALP;
 
     //初始化通道
