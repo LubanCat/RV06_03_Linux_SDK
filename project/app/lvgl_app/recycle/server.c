@@ -35,7 +35,7 @@ char out_video_open_path[64];
 char in_video_close_path[64];
 char out_video_close_path[64];
 
-#define CONFIG_SERVER "api.recycling.maizucity.com"
+#define CONFIG_SERVER "api.nwrecycle.com"
 #define CONFIG_SERVER_PORT 9096
 extern lv_disp_drv_t disp_drv;
 char *preview_data;
