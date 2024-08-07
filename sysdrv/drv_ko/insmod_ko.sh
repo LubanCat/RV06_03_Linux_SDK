@@ -82,6 +82,8 @@ __insmod rockit.ko mcu_fw_path="./hpmcu_wrap.bin" mcu_fw_addr=0xff6ff000 isp_max
 
 __insmod rve.ko
 
+__insmod goodix.ko
+
 udevadm control --start-exec-queue
 
 # insmod wifi driver background

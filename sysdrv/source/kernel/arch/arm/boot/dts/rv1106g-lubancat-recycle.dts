@@ -114,25 +114,25 @@
 		enable-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
         enable-delay-ms = <20>;
 		reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
-		reset-delay-ms = <10>;
+		reset-delay-ms = <20>;
 
 		display-timings {
 			native-mode = <&timing0>;
 
 			timing0: timing0 {
-				clock-frequency = <50000000>;
+				clock-frequency = <53040000>;
 				hactive = <1024>;
 				vactive = <600>;
 				hback-porch = <160>;
 				hfront-porch = <160>;
-				vback-porch = <23>;
-				vfront-porch = <12>;
-				hsync-len = <20>;
-				vsync-len = <2>; //value range <2~22>
+				vback-porch = <25>;
+				vfront-porch = <20>;
+				hsync-len = <16>;
+				vsync-len = <5>; //value range <2~22>
 				hsync-active = <0>;
-				vsync-active = <0>;
+				vsync-active = <1>;
 				de-active = <0>;
-				pixelclk-active = <1>;
+				pixelclk-active = <0>;
 			};
 		};
 
@@ -260,8 +260,8 @@
 		interrupts = <RK_PA4 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&gpio1 RK_PA3 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
-		touchscreen-inverted-x = <1>;
-		touchscreen-inverted-y = <1>;
+		// touchscreen-inverted-x = <1>;
+		// touchscreen-inverted-y = <1>;
 	};
 
     hynitron@5a {
