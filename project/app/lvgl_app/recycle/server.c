@@ -57,6 +57,8 @@ pthread_t capture_in_thread_id = NULL;
 pthread_t capture_out_thread_id = NULL;
 pthread_t venc_rsv_thread_id = NULL;
 
+int heartbeat_num=0;
+
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
     if (stat1->st_ctime < stat2->st_ctime) {
         return path1;
@@ -1347,6 +1349,9 @@ void message_receiver_handler(const char *recv_buf) {
         handle_debug();
     } else if (strcmp(str, "restart") == 0) {
         handle_restart(response_json);
+    } else if (strcmp(str, "heartBeat") == 0) {
+        printf("get heartBeat ret\n");
+        heartbeat_num=0;
     } else {
         cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
         if (retCode == NULL || !cJSON_IsNumber(retCode)) {
@@ -1365,8 +1370,8 @@ void *heartbeat_thread(void *arg)
     {
         if (server_connect) 
         {
+            heartbeat_num=1;
             heartBeat.curWeight = get_current_weight();
-
             cJSON *root = cJSON_CreateObject();
             cJSON_AddStringToObject(root, "cmd", "heartBeat");
             cJSON_AddNumberToObject(root, "signal", heartBeat.signal);
@@ -1382,8 +1387,14 @@ void *heartbeat_thread(void *arg)
             cJSON_Delete(root);
         }
 
-        // 休眠
-        sleep(loginRes.heartBeatInterval);
+        sleep(10);
+
+        if(heartbeat_num == 1){
+            heartbeat_num=0;
+            server_connect=0;
+        }
+        // 休眠0
+        sleep(loginRes.heartBeatInterval-10);
     }
 
     return NULL;
