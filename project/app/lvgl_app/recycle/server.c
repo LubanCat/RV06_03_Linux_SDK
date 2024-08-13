@@ -173,7 +173,6 @@ void venc_rsv_thread(void* arg) {
 void* capture_out_thread(void* arg) {
     out_video_device.video_frame.width=640;
     out_video_device.video_frame.height=480;
-    sprintf(out_video_device.video_frame.device,"%s",out_video);
     char *data=malloc(out_video_device.video_frame.width * out_video_device.video_frame.height * 3);
     int length;
     while(1){
@@ -185,7 +184,9 @@ void* capture_out_thread(void* arg) {
 
                 printf("out_video mutex_lock\n");
                 pthread_mutex_lock(&camara_mutex);
-
+                
+                get_cam_video(1,out_video);
+                sprintf(out_video_device.video_frame.device,"%s",out_video);
                 if(capture_start(&out_video_device.video_frame) != -1){
                     //设置摄像头正常工作的flag
                     out_video_device.err=0;
@@ -326,7 +327,6 @@ void* capture_out_thread(void* arg) {
 void* capture_in_thread(void* arg) {
     in_video_device.video_frame.width=640;
     in_video_device.video_frame.height=480;
-    sprintf(in_video_device.video_frame.device,"%s",in_video);
     char *data=malloc(in_video_device.video_frame.width * in_video_device.video_frame.height * 3);
     int length;
     while(1){
@@ -338,6 +338,9 @@ void* capture_in_thread(void* arg) {
                 printf("in_video mutex_lock\n");
                 pthread_mutex_lock(&camara_mutex);
                 
+                get_cam_video(0,in_video);
+                sprintf(in_video_device.video_frame.device,"%s",in_video);
+
                 if(capture_start(&in_video_device.video_frame) != -1){
                     //设置摄像头正常工作的flag
                     in_video_device.err=0;
@@ -1436,9 +1439,9 @@ int open_door() {
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
             printf("set_screen_submit\n");
+            inside_light(1);
             // 投递界面
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
-            inside_light(1);
 
             //获取当前时间
             char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
@@ -1556,11 +1559,10 @@ int open_door() {
             set_post_door_close();
             close_door(cur_weight, diff_weight);
             
-            inside_light(0);
-            
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             openDoor.openType = 0;
             sleep(1);
+            inside_light(0);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);

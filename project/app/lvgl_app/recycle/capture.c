@@ -551,19 +551,54 @@ int get_cam_video(int ch,char *video_path){
         sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.4/1-1.4:1.0/video4linux");
     else
         //内摄像头
-        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.2/1-1.2:1.0/video4linux");
+        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
 
     d = opendir(path); // 请替换为你要列出的目录路径
     if (d) {
         while ((dir = readdir(d)) != NULL) {
-            if(strcmp(dir->d_name,"video0")==0){
-                strcpy(video_path,"/dev/video0");
-                closedir(d);
-                return 0;
-            }else if(strcmp(dir->d_name,"video2")==0){
-                strcpy(video_path,"/dev/video2");
-                closedir(d);
-                return 0;
+            int fd;
+            struct v4l2_capability cap;
+            struct v4l2_fmtdesc fmt_desc;
+            char video_name[12];
+            if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) {
+                continue;
+            }
+            sprintf(video_name,"/dev/%s",dir->d_name);
+            fd = open(video_name, O_RDWR);
+            if (fd < 0) {
+                perror("打开视频设备失败");
+                break;
+            }
+
+            // 查询设备属性
+            if (ioctl(fd, VIDIOC_QUERYCAP, &cap) < 0) {
+                perror("查询设备属性失败");
+                close(fd);
+                break;
+            }
+
+            // 检查设备是否支持视频捕获
+            if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
+                printf("设备不支持视频捕获\n");
+                close(fd);
+                break;
+            }
+
+            // 清零格式描述结构体
+            memset(&fmt_desc, 0, sizeof(fmt_desc));
+            fmt_desc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    
+            // 遍历所有支持的格式
+            while (ioctl(fd, VIDIOC_ENUM_FMT, &fmt_desc) == 0) {
+                if (fmt_desc.pixelformat == V4L2_PIX_FMT_MJPEG) {
+                    printf("capture device : %s\n",video_name);
+                    strcpy(video_path,video_name);
+                    close(fd);
+                    closedir(d);
+                    return 0;
+                    break;
+                }
+                fmt_desc.index++;
             }
         }
         video_path=NULL;
