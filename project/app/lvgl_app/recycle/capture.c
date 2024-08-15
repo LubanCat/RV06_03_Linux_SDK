@@ -549,9 +549,16 @@ int get_cam_video(int ch,char *video_path){
     if(ch)
         //外摄像头
         sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.4/1-1.4:1.0/video4linux");
-    else
-        //内摄像头
-        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
+    else{
+        d=opendir("/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
+        if(d){
+            sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
+            closedir(d);
+        }
+        else
+            //内摄像头
+            sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.2/1-1.2:1.0/video4linux");
+    }
 
     d = opendir(path); // 请替换为你要列出的目录路径
     if (d) {
