@@ -105,7 +105,7 @@ void set_screen_login_server_status(int server_status){
     if(server_status){
         lv_label_set_text(guider_ui.screen_login_server_status, "已连接");
     }else{
-        lv_label_set_text(guider_ui.screen_login_server_status, "未连接");
+        lv_label_set_text(guider_ui.screen_login_server_status, "无连接");
     }
 }
 

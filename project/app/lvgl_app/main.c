@@ -24,6 +24,15 @@
 #define MAX_WEIGHT 200
 #define MSGSZ 128
 
+// 登录界面的4G信号更新时间 单位：s
+#define SIGNAL_UPDATE_TIME 10
+// 登录界面的服务器连接更新时间 单位：s
+#define SERVER_UPDATE_TIME 5
+// 灯光更新时间 单位：s
+#define LIGHT_UPDATE_TIME 5
+// 超更新时间 单位：s
+#define OVERFLOW_UPDATE_TIME 1
+
 lv_ui guider_ui;
 extern int sock;
 lv_disp_drv_t disp_drv;
@@ -62,6 +71,7 @@ void* lv_task_thread(void* arg) {
 void* aux_task_thread(void* arg) {
     int signal_count = 0;
     int light_count = 0;
+    int server_count = 0;
     int overflow_count = 0;
     int current_light_state = 0;
     int curCapacity,curCapacityBefore;
@@ -72,9 +82,9 @@ void* aux_task_thread(void* arg) {
 
     while (g_main_run_) {
         // LVGL 更新4G信号强度
-        if (signal_count == 10) {
+        if (signal_count >= SIGNAL_UPDATE_TIME) {
             heartBeat.signal = module_signal();
-            if(screen_login_flag == 1){
+            if(screen_login_flag){
                 // 在登录页面才更新
                 pthread_mutex_lock(&lv_task_mutex);
                 set_screen_login_net_status(heartBeat.signal);
@@ -82,9 +92,19 @@ void* aux_task_thread(void* arg) {
             }
             signal_count = 0;
         }
+        // LVGL 更新服务器连接状态
+        if (server_count >= SERVER_UPDATE_TIME) {
+            if(screen_login_flag){
+                // 在登录页面才更新
+                pthread_mutex_lock(&lv_task_mutex);
+                set_screen_login_server_status(server_connect);
+                pthread_mutex_unlock(&lv_task_mutex);
+            }
+            server_count=0;
+        }
 
         // 灯光更新
-        if (light_count == 5) {
+        if (light_count >= LIGHT_UPDATE_TIME) {
             time_t t = time(NULL);
             struct tm* now = localtime(&t);
 
@@ -116,7 +136,7 @@ void* aux_task_thread(void* arg) {
             light_count = 0;
         }
 
-        if (overflow_count == 1) {
+        if (overflow_count >= OVERFLOW_UPDATE_TIME) {
             // 获取超重、满溢
             int curCapacity = get_overflow_status();
             if (curCapacity == 3){
@@ -161,6 +181,7 @@ void* aux_task_thread(void* arg) {
         overflow_count++;
         signal_count++;
         light_count++;
+        server_count++;
     }
     printf("exit aux_task_thread");
     return NULL;
