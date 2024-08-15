@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <errno.h>
 #include "module.h"
+#include <stdlib.h>
 
 ModuleInfo moduleInfo;
 
@@ -30,7 +31,7 @@ int module_signal() {
     char buf[256];
     int rssi = 99, ber;
 
-    int fd = open("/dev/ttyUSB2", O_RDWR | O_NOCTTY | O_NDELAY);
+    int fd = open("/dev/ttyUSB2", O_RDWR | O_NOCTTY);
     if (fd < 0) {
         perror("Cannot open serial port device /dev/ttyUSB2");
         return -1;
@@ -49,23 +50,25 @@ int module_signal() {
         return 99;
     }
 
-    usleep(100000); // 等待响应
+    for (int i=0;i<5;i++){
+        // 初始化读取缓冲区
+        memset(buf, 0, sizeof(buf));
 
-    // 初始化读取缓冲区
-    memset(buf, 0, sizeof(buf));
-
-    // 读取AT+CSQ命令的响应，非阻塞读取一次
-    ret = read(fd, buf, sizeof(buf));
-    if (ret < 0) {
-        if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            printf("No data available to read\n");
-        } else {
-            perror("Failed to read AT+CSQ response");
+        // 读取AT+CSQ命令的响应
+        ret = read(fd, buf, sizeof(buf));
+        if (ret < 0) {
+            if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                printf("No data available to read\n");
+            } else {
+                perror("Failed to read AT+CSQ response");
+            }
+            close(fd);
+            return 99;
         }
-        close(fd);
-        return 99;
+        // 读到换行符就跳过继续读
+        if(ret > 1)
+            break;
     }
-
     // 提取信号质量数据
     char *start = strstr(buf, "+CSQ: ");
     if (start) {
@@ -169,6 +172,30 @@ int module_imei(int fd) {
         printf("No valid IMEI response found\n");
     }
 
+    return 0;
+}
+
+int module_restart() {
+    int ret;
+    int fd = open("/dev/ttyUSB2", O_RDWR | O_NOCTTY);
+    if (fd < 0) {
+        perror("Cannot open serial port device /dev/ttyUSB2");
+        return -1;
+    }
+
+    // 发送重置网卡命令
+    ret = write(fd, "AT+MREBOOT=0\r\n", 8);
+    if (ret < 0) {
+        perror("Failed to send AT+CSQ command");
+        close(fd);
+        return -1;
+    }
+    close(fd);
+
+    sleep(5);
+
+    system("ifconfig eth1 up");
+    system("udhcpc -i eth1");
     return 0;
 }
 

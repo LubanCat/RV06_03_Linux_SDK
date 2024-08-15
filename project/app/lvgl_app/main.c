@@ -30,8 +30,10 @@
 #define SERVER_UPDATE_TIME 5
 // 灯光更新时间 单位：s
 #define LIGHT_UPDATE_TIME 5
-// 超更新时间 单位：s
+// 溢出更新时间 单位：s
 #define OVERFLOW_UPDATE_TIME 1
+// 读4G信号错误的时间 单位：次数 时间=SIGNAL_UPDATE_TIME * 次数
+#define SIGNAL_ERR_COUNT 5
 
 lv_ui guider_ui;
 extern int sock;
@@ -69,12 +71,15 @@ void* lv_task_thread(void* arg) {
 
 // 辅助线程
 void* aux_task_thread(void* arg) {
+
+    int signal_err_count = 0;
     int signal_count = 0;
     int light_count = 0;
     int server_count = 0;
     int overflow_count = 0;
     int current_light_state = 0;
     int curCapacity,curCapacityBefore;
+    pthread_t module_restart_thread_id;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
     loginRes.turnOffLight.tm_hour = 7;
@@ -84,6 +89,19 @@ void* aux_task_thread(void* arg) {
         // LVGL 更新4G信号强度
         if (signal_count >= SIGNAL_UPDATE_TIME) {
             heartBeat.signal = module_signal();
+            if (heartBeat.signal == 99){
+                signal_err_count++;
+                // 连续读到SIGNAL_ERR_COUNT次后
+                if(signal_err_count > SIGNAL_ERR_COUNT){
+                    // 重启4G网卡
+                    printf("need to reboot net card\n");
+                    module_restart();
+                    signal_err_count = 0;
+                }
+            }else{
+                signal_err_count = 0;
+            }
+
             if(screen_login_flag){
                 // 在登录页面才更新
                 pthread_mutex_lock(&lv_task_mutex);

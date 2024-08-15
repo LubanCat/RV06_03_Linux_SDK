@@ -1371,8 +1371,7 @@ void *heartbeat_thread(void *arg)
 {
     while (1) 
     {
-        if (server_connect) 
-        {
+        if (server_connect) {
             heartbeat_num=1;
             heartBeat.curWeight = get_current_weight();
             cJSON *root = cJSON_CreateObject();
@@ -1971,7 +1970,6 @@ void* socket_task_thread(void* arg)
         if (0 == server_connect) 
         {
             struct sockaddr_in server_addr;
-
             // 创建套接字
             if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
             {
@@ -1984,7 +1982,7 @@ void* socket_task_thread(void* arg)
             server_addr.sin_port = htons(loginConfig.tcpPort);
             server_addr.sin_addr.s_addr = inet_addr(loginConfig.ip);
 
-            // 连接到服务器
+            // 连接到服务器 
             if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
             {
                 perror("Connection to server failed");
@@ -1995,6 +1993,16 @@ void* socket_task_thread(void* arg)
                 continue;
             }
 
+            struct timeval tv;
+            // 设置接收超时时间为5秒
+            tv.tv_sec = 5;  // 秒
+            tv.tv_usec = 0; // 微秒
+
+            if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
+                perror("setsockopt failed");
+                exit(EXIT_FAILURE);
+            }
+            
             // 登录服务器
             while (1) 
             {
@@ -2088,18 +2096,17 @@ void* socket_task_thread(void* arg)
             int recv_len;
     
             recv_len = recv(sock, recv_buf, MAX_BUF_SIZE, 0);
-            
+            if (recv_len < 0)
+                continue;
+
             printf("sock = %d, recv_len = %d\n", sock, recv_len);
-            
-            if (recv_len > 0) 
-            {
+            if (recv_len > 0){
                 printf("Server response: %s\n", recv_buf);
     
                 // 调用消息处理函数
                 message_receiver_handler(recv_buf);
             }
-            else if (recv_len == 0)
-            {
+            else if (recv_len == 0){
                 // To do ...
                 printf("----------close socket, reconnect--- \n");
                 

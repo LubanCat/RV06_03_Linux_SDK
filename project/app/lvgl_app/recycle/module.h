@@ -30,6 +30,8 @@ int module_imsi(int fd);
 // 获取IMEI
 int module_imei(int fd);
 
+int module_restart();
+
 // 获取模块所有信息
 int module_info(void);
 
