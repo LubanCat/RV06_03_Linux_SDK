@@ -49,14 +49,6 @@ network_init()
 
 lvgl_init()
 {
-	while [ ! -e /dev/ttyUSB2 ]; do
-		echo "等待 /dev/ttyUSB2 设备..."
-		sleep 1
-	done
-
-	echo "/dev/ttyUSB2 设备已连接，进行下一步操作。"
-	ifconfig eth1 up && udhcpc -i eth1
-
 	/oem/usr/bin/network.sh &
 
 	/oem/usr/bin/lvgl_app.sh &

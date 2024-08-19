@@ -142,20 +142,12 @@ void ui_img_rotate_animation(void * var, int32_t duration, int32_t delay, lv_coo
 void init_scr_del_flag(lv_ui *ui)
 {
   
-	ui->blank_del = true;
-	ui->screen_login_del = true;
-	ui->screen_full_del = true;
-	ui->screen_submit_del = true;
-	ui->screen_clean_del = true;
-	ui->screen_cleaning_del = true;
-	ui->screen_cleaned_del = true;
-	ui->screen_test_del = true;
-	ui->screen_test_cam_del = true;
+	ui->screen_del = true;
 }
 
 void setup_ui(lv_ui *ui)
 {
 	init_scr_del_flag(ui);
-	setup_scr_blank(ui);
-	lv_scr_load(ui->blank);
+	setup_scr_screen(ui);
+	lv_scr_load(ui->screen);
 }
