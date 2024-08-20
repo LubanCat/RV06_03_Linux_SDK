@@ -453,6 +453,19 @@ void setup_scr_screen_login(lv_ui *ui)
 	//Write style for screen_login_full, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
 	lv_obj_set_style_img_opa(ui->screen_login_full, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+	//Write codes screen_login_updating
+	ui->screen_login_updating = lv_img_create(ui->screen_login);
+	lv_obj_add_flag(ui->screen_login_updating, LV_OBJ_FLAG_CLICKABLE);
+	lv_img_set_src(ui->screen_login_updating, &_111_alpha_555x350);
+	lv_img_set_pivot(ui->screen_login_updating, 50,50);
+	lv_img_set_angle(ui->screen_login_updating, 0);
+	lv_obj_set_pos(ui->screen_login_updating, 23, 606);
+	lv_obj_set_size(ui->screen_login_updating, 555, 350);
+	lv_obj_add_flag(ui->screen_login_updating, LV_OBJ_FLAG_HIDDEN);
+
+	//Write style for screen_login_updating, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_img_opa(ui->screen_login_updating, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+
 	//The custom code of screen_login.
 	
 

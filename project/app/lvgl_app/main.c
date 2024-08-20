@@ -44,6 +44,7 @@ int password_1 = 0, password_2 = 0, password_3 = 0;
 pthread_mutex_t lv_task_mutex = PTHREAD_MUTEX_INITIALIZER;
 int server_connect;
 extern char cleantime_str[100];
+extern int updating_flag;
 
 typedef struct msgbuf {
     long mtype;
@@ -152,6 +153,14 @@ void* aux_task_thread(void* arg) {
 
             // 重置灯光计数
             light_count = 0;
+        }
+
+        if(updating_flag){
+            if(screen_login_flag){
+                pthread_mutex_lock(&lv_task_mutex);
+                lv_obj_clear_flag(guider_ui.screen_login_updating, LV_OBJ_FLAG_HIDDEN);
+                pthread_mutex_unlock(&lv_task_mutex);
+            }
         }
 
         if (overflow_count >= OVERFLOW_UPDATE_TIME) {

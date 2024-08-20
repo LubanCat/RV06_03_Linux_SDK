@@ -58,6 +58,7 @@ pthread_t capture_out_thread_id = NULL;
 pthread_t venc_rsv_thread_id = NULL;
 
 int heartbeat_num=0;
+int updating_flag=0;
 
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
     if (stat1->st_ctime < stat2->st_ctime) {
@@ -1203,6 +1204,8 @@ void handle_ota(cJSON *response_json) {
             printf("New version available: %s\n", version);
             const char *filename = "/root/lvgl_app";
 
+            updating_flag=1; 
+
             int download_file(const char *url, const char *filename) {
                 printf("Downloading file from %s to %s\n", url, filename);
                 CURL *curl;
@@ -1483,12 +1486,12 @@ int open_door() {
             in_video_device.photo_flag=1;
             in_video_device.photo_opendoor=1;
 
-            usleep(10000);
+            usleep(400000);
 
             out_video_device.photo_flag=1;
             out_video_device.photo_opendoor=1;
 
-            usleep(10000);
+            usleep(100000);
 
             out_video_device.preview_flag=1;
             out_video_device.record_flag=1;
@@ -1543,24 +1546,23 @@ int open_door() {
                 usleep(1000000 / REFRESH_RATE);
             }
 
+            set_post_door_close();
+            close_door(cur_weight, diff_weight);
 
             out_video_device.photo_opendoor=0;
             out_video_device.photo_flag=1;
+            usleep(100000);
 
             out_video_device.preview_flag=0;
             out_video_device.record_flag=0;
-            usleep(100000);
+            usleep(300000);
 
             in_video_device.photo_opendoor=0;
             in_video_device.photo_flag=1;
-
-
-            set_post_door_close();
-            close_door(cur_weight, diff_weight);
             
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             openDoor.openType = 0;
-            sleep(1);
+            sleep(2);
             inside_light(0);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);

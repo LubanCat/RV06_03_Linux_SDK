@@ -109,6 +109,14 @@ void set_screen_login_server_status(int server_status){
     }
 }
 
+void set_screen_login_updating(int updating){
+    if(updating){
+        lv_obj_clear_flag(guider_ui.screen_login_updating, LV_OBJ_FLAG_HIDDEN);
+    }else{
+        lv_obj_add_flag(guider_ui.screen_login_updating, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
 void set_screen_login_qrcode(char *qrcode){
     lv_qrcode_update(guider_ui.screen_login_qrcode, qrcode, strlen(qrcode));
 }
