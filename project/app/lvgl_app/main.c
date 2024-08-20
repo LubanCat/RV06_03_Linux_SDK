@@ -104,9 +104,10 @@ int main(void) {
     //用于demo
     // lv_demo_benchmark_set_max_speed(true);
     // lv_demo_benchmark();
-    lv_demo_widgets();
+    // lv_demo_widgets();
     // lv_demo_stress();
     // lv_demo_keypad_encoder();
+    lv_demo_music();
 
     ret = pthread_create(&lv_task_thread_id, NULL, lv_task_thread, NULL);
     if (ret != 0) {
