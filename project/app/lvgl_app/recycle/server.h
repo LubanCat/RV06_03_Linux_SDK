@@ -105,7 +105,7 @@ int write_device_info(const char *key_name, const char *value);
 
 // 系统读配置文件接口
 int read_info();
-
+int allow_phone_login(char *phone_number);
 int get_overflow_status();
 int send_tcp_packet(char *buf,int size);
 void *tcp_receiver(void *arg);

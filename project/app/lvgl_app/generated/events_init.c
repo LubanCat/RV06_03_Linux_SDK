@@ -24,6 +24,10 @@ extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,ser
 extern video_device_t out_video_device;
 extern video_device_t in_video_device;
 #include "server.h"
+extern int phone_login_flag;
+extern char key_input[5];
+extern int key_input_count;
+
 static void screen_login_password_1_event_handler (lv_event_t *e)
 {
 	lv_event_code_t code = lv_event_get_code(e);
@@ -66,11 +70,246 @@ static void screen_login_password_3_event_handler (lv_event_t *e)
 		break;
 	}
 }
+static void screen_login_img_1_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		phone_login_flag=1;
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_1_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='1';
+	  key_input_count++;
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_2_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		printf("boom\n");
+	key_input[key_input_count]='2';
+	key_input_count++;
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_7_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='7';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_4_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='4';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_exit_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]=0x12;
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_8_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='8';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_5_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='5';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_0_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='0';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_del_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]=0x13;
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_9_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='9';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_6_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='6';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_3_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]='3';
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_login_key_enter_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_input[key_input_count]=0x11;
+		key_input_count++;
+	
+		break;
+	}
+	default:
+		break;
+	}
+}
 void events_init_screen_login(lv_ui *ui)
 {
 	lv_obj_add_event_cb(ui->screen_login_password_1, screen_login_password_1_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_login_password_2, screen_login_password_2_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_login_password_3, screen_login_password_3_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_img_1, screen_login_img_1_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_1, screen_login_key_1_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_2, screen_login_key_2_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_7, screen_login_key_7_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_4, screen_login_key_4_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_exit, screen_login_key_exit_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_8, screen_login_key_8_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_5, screen_login_key_5_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_0, screen_login_key_0_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_del, screen_login_key_del_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_9, screen_login_key_9_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_6, screen_login_key_6_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_3, screen_login_key_3_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_login_key_enter, screen_login_key_enter_event_handler, LV_EVENT_ALL, ui);
 }
 static void screen_submit_post_event_handler (lv_event_t *e)
 {

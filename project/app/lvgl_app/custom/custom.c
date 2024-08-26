@@ -27,6 +27,7 @@ int hand_close_door_flag;
 int screen_login_flag;
 extern int rod_hinder_value;
 extern int local_version;
+extern char sn[32];
 
 int peels_en=0;
 int cal_en=0;
@@ -121,13 +122,23 @@ void set_screen_login_qrcode(char *qrcode){
     lv_qrcode_update(guider_ui.screen_login_qrcode, qrcode, strlen(qrcode));
 }
 
+void set_screen_login_phone_number(char *phone_number , int phone_number_count){
+    if(phone_number_count==0){
+        lv_label_set_text(guider_ui.screen_login_phone_number, "请输入手机号");
+    }else{
+        lv_label_set_text(guider_ui.screen_login_phone_number, phone_number);
+    }
+}
+
+void set_screen_login_sn_num(){
+    lv_label_set_text(guider_ui.screen_login_sn_num, sn);
+}
 
 void set_screen_login_full(int full){
     if(full)
         lv_obj_clear_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
     else
         lv_obj_add_flag(guider_ui.screen_login_full, LV_OBJ_FLAG_HIDDEN);
-        
 }
 
 //screen_full
@@ -196,6 +207,7 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
     set_screen_login_qrcode(qrcode);
     set_screen_login_server_status(server_status);
     lv_label_set_text(guider_ui.screen_login_version,local_version);
+    set_screen_login_sn_num();
     // 当在登录页面时，开启其他线程在登录页面的更新
     screen_login_flag = 1;
 }

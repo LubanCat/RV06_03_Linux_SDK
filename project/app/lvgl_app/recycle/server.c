@@ -57,6 +57,15 @@ pthread_t capture_in_thread_id = NULL;
 pthread_t capture_out_thread_id = NULL;
 pthread_t venc_rsv_thread_id = NULL;
 
+extern char key_input[5];
+extern int key_input_count;
+
+extern int phone_login_flag;
+extern int phone_login_update;
+
+extern char phone_number[12];
+extern int phone_number_count;
+
 int heartbeat_num=0;
 int updating_flag=0;
 
@@ -1038,6 +1047,44 @@ void handle_open_door(cJSON *response_json) {
     open_door();
 }
 
+void handle_phone(cJSON *response_json) {
+    cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
+    printf("retCode->valueint = %d\n",retCode->valueint);
+    if(retCode->valueint == 0){
+        printf("open the door\n");
+        phone_login_flag=0;
+        phone_login_update=0;
+        phone_number_count=0;
+        usleep(300000);
+        openDoor.openType=1;
+        open_door();
+    }else if(retCode->valueint == 1){
+
+        phone_login_flag=0;
+        phone_login_update=0;
+        phone_number_count=0;
+
+        usleep(300000);
+        pthread_mutex_lock(&lv_task_mutex);
+        lv_obj_clear_flag(guider_ui.screen_login_phone_notice, LV_OBJ_FLAG_HIDDEN);
+        pthread_mutex_unlock(&lv_task_mutex);
+
+        pthread_mutex_lock(&lv_task_mutex);
+        lv_obj_add_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+        pthread_mutex_unlock(&lv_task_mutex);
+
+        sleep(3);
+        openDoor.openType=1;
+        open_door();
+    }else{
+        usleep(300000);
+        printf("wrong input\n");
+        lv_obj_clear_flag(guider_ui.screen_login_phone_bad, LV_OBJ_FLAG_HIDDEN);
+        sleep(3);
+        lv_obj_add_flag(guider_ui.screen_login_phone_bad, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
 void handle_initconfig(cJSON *response_json) {
     int retCode;
 
@@ -1358,6 +1405,9 @@ void message_receiver_handler(const char *recv_buf) {
     } else if (strcmp(str, "heartBeat") == 0) {
         printf("get heartBeat ret\n");
         heartbeat_num=0;
+    } else if (strcmp(str, "phoneNumberLogin") == 0) {
+        printf("get phoneNumberLogin ret\n");
+        handle_phone(response_json);
     } else {
         cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
         if (retCode == NULL || !cJSON_IsNumber(retCode)) {
@@ -1403,6 +1453,27 @@ void *heartbeat_thread(void *arg)
     }
 
     return NULL;
+}
+
+
+// 心跳线程函数
+int allow_phone_login(char *phone_number) 
+{
+
+    if (server_connect) {
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "cmd", "phoneNumberLogin");
+        cJSON_AddStringToObject(root, "phoneNumber", phone_number);
+        
+        char *json_str = cJSON_PrintUnformatted(root);
+
+        // 发送心跳上传请求
+        printf("Sending heartBeat request: %s\n", json_str);
+        send_tcp_packet(json_str, strlen(json_str));
+        free(json_str);
+        
+        cJSON_Delete(root);
+    }
 }
 
 // 开门

@@ -46,6 +46,15 @@ int server_connect;
 extern char cleantime_str[100];
 extern int updating_flag;
 
+char key_input[5];
+int key_input_count;
+
+int phone_login_flag=0;
+int phone_login_update=0;
+
+char phone_number[12];
+int phone_number_count;
+
 typedef struct msgbuf {
     long mtype;
     char mtext[MSGSZ];
@@ -64,10 +73,87 @@ void* lv_task_thread(void* arg) {
         pthread_mutex_lock(&lv_task_mutex);
         lv_task_handler();
         pthread_mutex_unlock(&lv_task_mutex);
-        usleep(5000);
+        usleep(1000);
     }
     printf("exit lv_task_thread");
     return NULL;
+}
+
+
+void* keyboard_thread(void* arg) {
+    char input[5];
+    int input_count;
+    while(1){
+        // 进入登录界面
+        if(phone_login_flag){
+            // 判断有没有加载键盘
+            if(phone_login_update){
+                if(key_input_count > 0){
+                    memcpy(input,key_input,5);
+                    input_count=key_input_count;
+                    key_input_count=0;
+                    for(int i=0;i<input_count;i++){
+                        if(key_input[i] >= '0' && key_input[i] <= '9'){
+                            if(phone_number_count<11){
+                                phone_number[phone_number_count]=key_input[i];
+                                phone_number_count++;
+                                phone_number[phone_number_count]='\0';
+                            }else
+                                printf("phone number is full\n");
+                        }//enter
+                        else if(key_input[i] == 0x11){
+                            if(phone_number_count!=11){
+                                printf("phone_number_count is wrong:%d\n",phone_number_count);
+                            }//通过
+                            else{
+                                printf("allow to login %s\n",phone_number);
+                                allow_phone_login(phone_number);
+                            }
+                        }//del
+                        else if(key_input[i] == 0x13){
+                            if(phone_number_count>0){
+                                phone_number_count--;
+                                phone_number[phone_number_count]='\0';
+                            }
+                        }//exit
+                        else if(key_input[i] == 0x12){
+                            printf("press key_exit\n");
+                            phone_login_flag=0;
+                            phone_login_update=0;
+                            phone_number_count=0;
+                            memset(phone_number,0,sizeof(phone_number));
+                            key_input_count=0;
+                            memset(key_input,0,sizeof(key_input));
+                            usleep(500*1000);
+
+                            pthread_mutex_lock(&lv_task_mutex);
+                            lv_obj_add_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+                            pthread_mutex_unlock(&lv_task_mutex);
+                            break;
+                        }
+                    }
+                    // usleep(1000 * 1000);
+                    // printf("phone_number:%s\n",phone_number);
+                    pthread_mutex_lock(&lv_task_mutex);
+                    set_screen_login_phone_number(phone_number,phone_number_count);
+                    pthread_mutex_unlock(&lv_task_mutex);
+                }
+ 
+                
+                //更新显示数据
+                // printf("phone_number:%s\n",phone_number);
+            }else{
+                phone_login_update=1;
+                usleep(500*1000);
+                phone_number_count=0;
+                phone_number[0]='\0';
+                pthread_mutex_lock(&lv_task_mutex);
+                lv_obj_clear_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+                pthread_mutex_unlock(&lv_task_mutex);
+            }
+        }
+        usleep(100 * 1000);
+    }
 }
 
 // 辅助线程
@@ -294,6 +380,12 @@ int main(void) {
     }
 
     ret = pthread_create(&aux_task_thread_id, NULL, aux_task_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+    pthread_t keyboard_thread_id;
+    ret = pthread_create(&keyboard_thread_id, NULL, keyboard_thread, NULL);
     if (ret != 0) {
         perror("pthread_create");
         exit(EXIT_FAILURE);

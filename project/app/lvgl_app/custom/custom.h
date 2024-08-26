@@ -40,6 +40,7 @@ void set_screen_login_net_status(int singal);
 void set_screen_login_qrcode(char *qrcode);
 void set_screen_login_server_status(int server_status);
 void set_screen_login_updating(int updating);
+void set_screen_login_phone_number(char *phone_number , int phone_number_count);
 void set_screen_full_price(double price);
 void set_screen_full_time(int time);
 void set_screen_submit_money(double money);
