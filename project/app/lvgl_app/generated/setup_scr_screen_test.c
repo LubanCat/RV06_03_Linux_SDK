@@ -385,28 +385,28 @@ void setup_scr_screen_test(lv_ui *ui)
 	lv_obj_set_size(ui->screen_test_canvas_1, 500, 378);
 	lv_obj_set_scrollbar_mode(ui->screen_test_canvas_1, LV_SCROLLBAR_MODE_OFF);
 
-	//Write codes screen_test_cal_100_key
-	ui->screen_test_cal_100_key = lv_btn_create(ui->screen_test);
-	ui->screen_test_cal_100_key_label = lv_label_create(ui->screen_test_cal_100_key);
-	lv_label_set_text(ui->screen_test_cal_100_key_label, "25kg校准");
-	lv_label_set_long_mode(ui->screen_test_cal_100_key_label, LV_LABEL_LONG_WRAP);
-	lv_obj_align(ui->screen_test_cal_100_key_label, LV_ALIGN_CENTER, 0, 0);
-	lv_obj_set_style_pad_all(ui->screen_test_cal_100_key, 0, LV_STATE_DEFAULT);
-	lv_obj_set_width(ui->screen_test_cal_100_key_label, LV_PCT(100));
-	lv_obj_set_pos(ui->screen_test_cal_100_key, 75, 621);
-	lv_obj_set_size(ui->screen_test_cal_100_key, 140, 80);
+	//Write codes screen_test_cal_2_key
+	ui->screen_test_cal_2_key = lv_btn_create(ui->screen_test);
+	ui->screen_test_cal_2_key_label = lv_label_create(ui->screen_test_cal_2_key);
+	lv_label_set_text(ui->screen_test_cal_2_key_label, "2kg校准");
+	lv_label_set_long_mode(ui->screen_test_cal_2_key_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_test_cal_2_key_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_test_cal_2_key, 0, LV_STATE_DEFAULT);
+	lv_obj_set_width(ui->screen_test_cal_2_key_label, LV_PCT(100));
+	lv_obj_set_pos(ui->screen_test_cal_2_key, 75, 621);
+	lv_obj_set_size(ui->screen_test_cal_2_key, 140, 80);
 
-	//Write style for screen_test_cal_100_key, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_bg_opa(ui->screen_test_cal_100_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_color(ui->screen_test_cal_100_key, lv_color_hex(0x969696), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_grad_dir(ui->screen_test_cal_100_key, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_border_width(ui->screen_test_cal_100_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_test_cal_100_key, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_test_cal_100_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_test_cal_100_key, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_test_cal_100_key, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_opa(ui->screen_test_cal_100_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_test_cal_100_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	//Write style for screen_test_cal_2_key, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_test_cal_2_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_test_cal_2_key, lv_color_hex(0x969696), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_test_cal_2_key, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_test_cal_2_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_test_cal_2_key, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_test_cal_2_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_test_cal_2_key, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_test_cal_2_key, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_test_cal_2_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_test_cal_2_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_test_get_weight_key
 	ui->screen_test_get_weight_key = lv_btn_create(ui->screen_test);
@@ -523,51 +523,51 @@ void setup_scr_screen_test(lv_ui *ui)
 	lv_obj_set_style_text_opa(ui->screen_test_peels_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_align(ui->screen_test_peels_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_test_cal_350_key
-	ui->screen_test_cal_350_key = lv_btn_create(ui->screen_test);
-	ui->screen_test_cal_350_key_label = lv_label_create(ui->screen_test_cal_350_key);
-	lv_label_set_text(ui->screen_test_cal_350_key_label, "200kg校准");
-	lv_label_set_long_mode(ui->screen_test_cal_350_key_label, LV_LABEL_LONG_WRAP);
-	lv_obj_align(ui->screen_test_cal_350_key_label, LV_ALIGN_CENTER, 0, 0);
-	lv_obj_set_style_pad_all(ui->screen_test_cal_350_key, 0, LV_STATE_DEFAULT);
-	lv_obj_set_width(ui->screen_test_cal_350_key_label, LV_PCT(100));
-	lv_obj_set_pos(ui->screen_test_cal_350_key, 385, 621);
-	lv_obj_set_size(ui->screen_test_cal_350_key, 140, 80);
+	//Write codes screen_test_cal_100_key
+	ui->screen_test_cal_100_key = lv_btn_create(ui->screen_test);
+	ui->screen_test_cal_100_key_label = lv_label_create(ui->screen_test_cal_100_key);
+	lv_label_set_text(ui->screen_test_cal_100_key_label, "100kg校准");
+	lv_label_set_long_mode(ui->screen_test_cal_100_key_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_test_cal_100_key_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_test_cal_100_key, 0, LV_STATE_DEFAULT);
+	lv_obj_set_width(ui->screen_test_cal_100_key_label, LV_PCT(100));
+	lv_obj_set_pos(ui->screen_test_cal_100_key, 385, 621);
+	lv_obj_set_size(ui->screen_test_cal_100_key, 140, 80);
 
-	//Write style for screen_test_cal_350_key, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_bg_opa(ui->screen_test_cal_350_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_color(ui->screen_test_cal_350_key, lv_color_hex(0x969696), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_grad_dir(ui->screen_test_cal_350_key, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_border_width(ui->screen_test_cal_350_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_test_cal_350_key, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_test_cal_350_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_test_cal_350_key, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_test_cal_350_key, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_opa(ui->screen_test_cal_350_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_test_cal_350_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	//Write style for screen_test_cal_100_key, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_test_cal_100_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_test_cal_100_key, lv_color_hex(0x969696), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_test_cal_100_key, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_test_cal_100_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_test_cal_100_key, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_test_cal_100_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_test_cal_100_key, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_test_cal_100_key, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_test_cal_100_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_test_cal_100_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_test_cal_200_key
-	ui->screen_test_cal_200_key = lv_btn_create(ui->screen_test);
-	ui->screen_test_cal_200_key_label = lv_label_create(ui->screen_test_cal_200_key);
-	lv_label_set_text(ui->screen_test_cal_200_key_label, "100kg校准");
-	lv_label_set_long_mode(ui->screen_test_cal_200_key_label, LV_LABEL_LONG_WRAP);
-	lv_obj_align(ui->screen_test_cal_200_key_label, LV_ALIGN_CENTER, 0, 0);
-	lv_obj_set_style_pad_all(ui->screen_test_cal_200_key, 0, LV_STATE_DEFAULT);
-	lv_obj_set_width(ui->screen_test_cal_200_key_label, LV_PCT(100));
-	lv_obj_set_pos(ui->screen_test_cal_200_key, 230, 621);
-	lv_obj_set_size(ui->screen_test_cal_200_key, 140, 80);
+	//Write codes screen_test_cal_25_key
+	ui->screen_test_cal_25_key = lv_btn_create(ui->screen_test);
+	ui->screen_test_cal_25_key_label = lv_label_create(ui->screen_test_cal_25_key);
+	lv_label_set_text(ui->screen_test_cal_25_key_label, "25kg校准");
+	lv_label_set_long_mode(ui->screen_test_cal_25_key_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_test_cal_25_key_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_test_cal_25_key, 0, LV_STATE_DEFAULT);
+	lv_obj_set_width(ui->screen_test_cal_25_key_label, LV_PCT(100));
+	lv_obj_set_pos(ui->screen_test_cal_25_key, 230, 621);
+	lv_obj_set_size(ui->screen_test_cal_25_key, 140, 80);
 
-	//Write style for screen_test_cal_200_key, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_bg_opa(ui->screen_test_cal_200_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_color(ui->screen_test_cal_200_key, lv_color_hex(0x969696), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_grad_dir(ui->screen_test_cal_200_key, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_border_width(ui->screen_test_cal_200_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_test_cal_200_key, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_test_cal_200_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_test_cal_200_key, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_test_cal_200_key, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_opa(ui->screen_test_cal_200_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_test_cal_200_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	//Write style for screen_test_cal_25_key, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_test_cal_25_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_test_cal_25_key, lv_color_hex(0x969696), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_test_cal_25_key, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_test_cal_25_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_test_cal_25_key, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_test_cal_25_key, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_test_cal_25_key, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_test_cal_25_key, &lv_font_SourceHanSerifCN2_24, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_test_cal_25_key, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_test_cal_25_key, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_test_weight
 	ui->screen_test_weight = lv_label_create(ui->screen_test);
