@@ -28,7 +28,6 @@ typedef struct
 	lv_obj_t *screen_login_label_1;
 	lv_obj_t *screen_login_weigth;
 	lv_obj_t *screen_login_canvas_1;
-	lv_obj_t *screen_login_qrcode;
 	lv_obj_t *screen_login_label_3;
 	lv_obj_t *screen_login_label_4;
 	lv_obj_t *screen_login_full_2;
@@ -41,6 +40,7 @@ typedef struct
 	lv_obj_t *screen_login_label_6;
 	lv_obj_t *screen_login_label_7;
 	lv_obj_t *screen_login_server_status;
+	lv_obj_t *screen_login_qrcode;
 	lv_obj_t *screen_login_version;
 	lv_obj_t *screen_login_net_0;
 	lv_obj_t *screen_login_net_1;
@@ -243,7 +243,7 @@ LV_IMG_DECLARE(_3_alpha_30x29);
 LV_IMG_DECLARE(_4_alpha_30x29);
 LV_IMG_DECLARE(_5_alpha_30x29);
 LV_IMG_DECLARE(_phone_login_alpha_118x167);
-LV_IMG_DECLARE(_9_alpha_555x350);
+LV_IMG_DECLARE(_91_alpha_300x240);
 LV_IMG_DECLARE(_111_alpha_555x350);
 LV_IMG_DECLARE(_key_1_alpha_120x60);
 LV_IMG_DECLARE(_key_1_alpha_120x60);
