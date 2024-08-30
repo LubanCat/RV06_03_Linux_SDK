@@ -22,7 +22,7 @@
 
 #define DISP_BUF_SIZE (600 * 1024 * 4)
 #define MAX_WEIGHT 200
-#define MSGSZ 128
+#define MAX_BUF_SIZE 512
 
 // 登录界面的4G信号更新时间 单位：s
 #define SIGNAL_UPDATE_TIME 10
@@ -39,7 +39,6 @@ lv_ui guider_ui;
 extern int sock;
 lv_disp_drv_t disp_drv;
 volatile sig_atomic_t g_main_run_ = 1; // 使用 volatile sig_atomic_t 类型，确保在信号处理程序中正确更新
-int msqid;  // 消息队列ID
 int password_1 = 0, password_2 = 0, password_3 = 0;
 pthread_mutex_t lv_task_mutex = PTHREAD_MUTEX_INITIALIZER;
 int server_connect;
@@ -54,11 +53,6 @@ int phone_login_update=0;
 
 char phone_number[12];
 int phone_number_count;
-
-typedef struct msgbuf {
-    long mtype;
-    char mtext[MSGSZ];
-} message_buf;
 
 void sig_proc(int signo) {
     if (signo == SIGINT || signo == SIGTERM) {
@@ -83,7 +77,7 @@ void* lv_task_thread(void* arg) {
 void* keyboard_thread(void* arg) {
     char input[5];
     int input_count;
-    while(1){
+    while(g_main_run_){
         // 进入登录界面
         if(phone_login_flag){
             // 判断有没有加载键盘
@@ -409,15 +403,30 @@ int main(void) {
     }
 
     while (g_main_run_) {
-        // 在循环中处理消息队列，避免被信号中断导致的错误
-        message_buf rbuf;
-        if (msgrcv(msqid, &rbuf, MSGSZ, 1, IPC_NOWAIT) < 0) {
-            if (errno != ENOMSG && errno != EINTR) {
-                perror("msgrcv");
-                break;
+        while (server_connect) 
+        {
+            char recv_buf[MAX_BUF_SIZE+1] = {0};
+            int recv_len;
+    
+            recv_len = recv(sock, recv_buf, MAX_BUF_SIZE, 0);
+            if (recv_len < 0)
+                continue;
+
+            printf("sock = %d, recv_len = %d\n", sock, recv_len);
+            if (recv_len > 0){
+                printf("Server response: %s\n", recv_buf);
+    
+                // 调用消息处理函数
+                message_receiver_handler(recv_buf);
             }
-        } else {
-            printf("Received message: %s\n", rbuf.mtext);
+            else if (recv_len == 0){
+                // To do ...
+                printf("----------close socket, reconnect--- \n");
+                
+                close(sock);
+                sock = -1;
+                server_connect = 0;
+            }
         }
     }
 

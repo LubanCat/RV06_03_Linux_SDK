@@ -71,7 +71,7 @@ int server_login();
 int upload_heartbeat();
 
 // 开门
-int open_door();
+void* opendoor_thread(void* arg);
 
 // 关门
 int close_door(double cur_weight, double diff_weight);

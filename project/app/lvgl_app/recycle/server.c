@@ -19,6 +19,7 @@
 #include <curl/curl.h>
 #include <math.h>
 #include <poll.h>
+#include <signal.h>
 
 #define MAX_BUF_SIZE 512
 #define COUNT_DOWN99 99
@@ -42,6 +43,7 @@ char *preview_data;
 char in_video[12];
 char out_video[12];
 char cleantime_str[100];
+extern sig_atomic_t g_main_run_;
 
 video_device_t out_video_device;
 video_device_t in_video_device;
@@ -1014,7 +1016,7 @@ int server_login() {
 }
 
 void handle_open_door(cJSON *response_json) {
-
+    pthread_t opendoor_thread_id;
     cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
     cJSON *openType = cJSON_GetObjectItem(response_json, "openType");
 
@@ -1044,10 +1046,15 @@ void handle_open_door(cJSON *response_json) {
     free(json_str);
     cJSON_Delete(root);
 
-    open_door();
+    int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void handle_phone(cJSON *response_json) {
+    pthread_t opendoor_thread_id;
     cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
     printf("retCode->valueint = %d\n",retCode->valueint);
     if(retCode->valueint == 0){
@@ -1057,7 +1064,11 @@ void handle_phone(cJSON *response_json) {
         phone_number_count=0;
         usleep(300000);
         openDoor.openType=1;
-        open_door();
+        int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
+        if (ret != 0) {
+            perror("pthread_create");
+            exit(EXIT_FAILURE);
+        }
     }else if(retCode->valueint == 1){
 
         phone_login_flag=0;
@@ -1075,7 +1086,11 @@ void handle_phone(cJSON *response_json) {
 
         sleep(3);
         openDoor.openType=1;
-        open_door();
+        int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
+        if (ret != 0) {
+            perror("pthread_create");
+            exit(EXIT_FAILURE);
+        }
     }else{
         usleep(300000);
         printf("wrong input\n");
@@ -1422,7 +1437,7 @@ void message_receiver_handler(const char *recv_buf) {
 // 心跳线程函数
 void *heartbeat_thread(void *arg) 
 {
-    while (1) 
+    while (g_main_run_) 
     {
         if (server_connect) {
             heartbeat_num=1;
@@ -1446,6 +1461,7 @@ void *heartbeat_thread(void *arg)
 
         if(heartbeat_num == 1){
             heartbeat_num=0;
+            printf("heartbeat cause server_connect\n");
             server_connect=0;
         }
         // 休眠0
@@ -1477,7 +1493,7 @@ int allow_phone_login(char *phone_number)
 }
 
 // 开门
-int open_door() {
+void* opendoor_thread(void* arg) {
     close_door_flag=0;
     post_flag=0;
     quit_flag=0;
@@ -1755,7 +1771,7 @@ int open_door() {
         // 关门,发关门消息
         openDoor.openType = 0;
     }
-    return 0;
+    return;
 }
 
 int close_door(double cur_weight, double diff_weight) 
@@ -2019,7 +2035,7 @@ void* socket_task_thread(void* arg)
     int ret;
 
     // 获取登录配置
-    while (1) 
+    while (g_main_run_) 
     {
         // 获取登录配置
         ret = get_login_config(&loginConfig);
@@ -2038,10 +2054,11 @@ void* socket_task_thread(void* arg)
         }
     }
 
-    while (1) 
+    while (g_main_run_) 
     {
         if (0 == server_connect) 
         {
+            printf("network disconnect,try to connect...\n");
             struct sockaddr_in server_addr;
             // 创建套接字
             if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -2066,18 +2083,18 @@ void* socket_task_thread(void* arg)
                 continue;
             }
 
-            struct timeval tv;
-            // 设置接收超时时间为5秒
-            tv.tv_sec = 5;  // 秒
-            tv.tv_usec = 0; // 微秒
+            // struct timeval tv;
+            // // 设置接收超时时间为5秒
+            // tv.tv_sec = 5;  // 秒
+            // tv.tv_usec = 0; // 微秒
 
-            if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
-                perror("setsockopt failed");
-                exit(EXIT_FAILURE);
-            }
+            // if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
+            //     perror("setsockopt failed");
+            //     exit(EXIT_FAILURE);
+            // }
             
             // 登录服务器
-            while (1) 
+            while (g_main_run_) 
             {
                 ret = server_login();
                 if (ret == 0) 
@@ -2107,88 +2124,7 @@ void* socket_task_thread(void* arg)
                 return NULL;
             }
         }
-
-#if 0
-        while (server_connect) 
-        {
-            struct pollfd fds[1];
-
-            // 设置监视的事件
-            fds[0].fd = sock;
-            fds[0].events = POLLIN;
-
-            // 调用 poll() 等待数据
-            int ret = poll(fds, 1, 20*1000);
-            if (ret == -1) 
-            {
-                printf("------------socket poll failed--------------\n");
-                
-                close(sock);
-                sock = -1;
-                
-                server_connect = 0;
-
-                sleep(30);
-                
-                break;
-            }
-
-            if (fds[0].revents & POLLIN)
-            {
-                char recv_buf[MAX_BUF_SIZE] = {0};
-                int recv_len;
-
-                printf("Data is available to read\n");
-
-                recv_len = recv(sock, recv_buf, sizeof(recv_buf) - 1, 0);
-                
-                printf("sock = %d, recv_len = %d\n", sock, recv_len);
-                
-                if (recv_len > 0) 
-                {
-                    recv_buf[recv_len] = '\0';
-                    printf("Server response: %s\n", recv_buf);
-
-                    // 调用消息处理函数
-                    message_receiver_handler(recv_buf);
-                }
-                else
-                {
-                    // To do ...
-                    printf("----------recv_len = %d ----------\n", recv_len);
-
-                    sleep(4);
-                }
-            }
-        }
-#endif
-
-        while (server_connect) 
-        {
-            char recv_buf[MAX_BUF_SIZE+1] = {0};
-            int recv_len;
-    
-            recv_len = recv(sock, recv_buf, MAX_BUF_SIZE, 0);
-            if (recv_len < 0)
-                continue;
-
-            printf("sock = %d, recv_len = %d\n", sock, recv_len);
-            if (recv_len > 0){
-                printf("Server response: %s\n", recv_buf);
-    
-                // 调用消息处理函数
-                message_receiver_handler(recv_buf);
-            }
-            else if (recv_len == 0){
-                // To do ...
-                printf("----------close socket, reconnect--- \n");
-                
-                close(sock);
-                sock = -1;
-                server_connect = 0;
-            }
-        }
-        
+        usleep(50*1000);
     }
     
     return NULL;
