@@ -1265,7 +1265,8 @@ void handle_ota(cJSON *response_json) {
 
         if (compare_versions(version, local_version) > 0) {
             printf("New version available: %s\n", version);
-            const char *filename = "/root/lvgl_app";
+            const char *filename = "/root/lvgl_app_temp";
+            const char *lvgl_filename = "/root/lvgl_app";
 
             updating_flag=1; 
 
@@ -1283,6 +1284,11 @@ void handle_ota(cJSON *response_json) {
                         curl_easy_cleanup(curl);
                         return 1;
                     }
+                    // 设置连接超时时间为 10 秒
+                    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
+
+                    // 设置传输超时时间为 30 秒
+                    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 40L);
                     curl_easy_setopt(curl, CURLOPT_URL, url);
                     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
                     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
@@ -1345,6 +1351,13 @@ void handle_ota(cJSON *response_json) {
 
                     // 设置文件可执行
                     set_file_executable(filename);
+
+                    // 尝试重命名文件
+                    if (rename(filename, lvgl_filename) == 0) {
+                        printf("File renamed successfully.\n");
+                    } else {
+                        perror("Error renaming file"); // 打印错误信息
+                    }
 
                     retCode = 0; // 成功
                     cJSON *root = cJSON_CreateObject();
