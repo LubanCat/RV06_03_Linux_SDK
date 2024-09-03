@@ -132,10 +132,35 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_cleaning_label_3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_cleaning_label_3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
+	//Write codes screen_cleaning_settlement
+	ui->screen_cleaning_settlement = lv_btn_create(ui->screen_cleaning);
+	ui->screen_cleaning_settlement_label = lv_label_create(ui->screen_cleaning_settlement);
+	lv_label_set_text(ui->screen_cleaning_settlement_label, "去结算并上传数据");
+	lv_label_set_long_mode(ui->screen_cleaning_settlement_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_cleaning_settlement_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_cleaning_settlement, 0, LV_STATE_DEFAULT);
+	lv_obj_set_width(ui->screen_cleaning_settlement_label, LV_PCT(100));
+	lv_obj_set_pos(ui->screen_cleaning_settlement, 145, 865);
+	lv_obj_set_size(ui->screen_cleaning_settlement, 310, 60);
+
+	//Write style for screen_cleaning_settlement, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_cleaning_settlement, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_cleaning_settlement, lv_color_hex(0x3ea500), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_cleaning_settlement, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_cleaning_settlement, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_cleaning_settlement, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_cleaning_settlement, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_cleaning_settlement, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_cleaning_settlement, &lv_font_SourceHanSerifCN2_32, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_cleaning_settlement, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_cleaning_settlement, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+
 	//The custom code of screen_cleaning.
 	
 
 	//Update current screen layout.
 	lv_obj_update_layout(ui->screen_cleaning);
 
+	//Init events for screen.
+	events_init_screen_cleaning(ui);
 }

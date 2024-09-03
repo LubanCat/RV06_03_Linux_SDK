@@ -70,6 +70,7 @@ extern int phone_number_count;
 
 int heartbeat_num=0;
 int updating_flag=0;
+int settlement=0;
 
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
     if (stat1->st_ctime < stat2->st_ctime) {
@@ -1511,18 +1512,19 @@ void* opendoor_thread(void* arg) {
         // 满溢时进入满溢界面，不开投递门
         int overflow_status = get_overflow_status();
         if (overflow_status == 3) {
-            upload_overflow(overflow_status);
-            printf("当前回收柜已满，请清运后再投递\n");
-            set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,COUNT_DOWN10);
-            for (int i = COUNT_DOWN10; i > 0; i--) {
-                printf("倒计时: %d秒 后返回登录界面\n", i);
-                pthread_mutex_lock(&lv_task_mutex);
-                set_screen_full_time(i);
-                pthread_mutex_unlock(&lv_task_mutex);
-                sleep(1);
-            }
-            // 返回到登录页面
-            set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+            printf("回收柜已满\n");
+            // upload_overflow(overflow_status);
+            // printf("当前回收柜已满，请清运后再投递\n");
+            // set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,COUNT_DOWN10);
+            // for (int i = COUNT_DOWN10; i > 0; i--) {
+            //     printf("倒计时: %d秒 后返回登录界面\n", i);
+            //     pthread_mutex_lock(&lv_task_mutex);
+            //     set_screen_full_time(i);
+            //     pthread_mutex_unlock(&lv_task_mutex);
+            //     sleep(1);
+            // }
+            // // 返回到登录页面
+            // set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         } else {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
@@ -1573,7 +1575,7 @@ void* opendoor_thread(void* arg) {
             in_video_device.photo_flag=1;
             in_video_device.photo_opendoor=1;
 
-            usleep(400000);
+            usleep(800000);
 
             out_video_device.photo_flag=1;
             out_video_device.photo_opendoor=1;
@@ -1642,7 +1644,7 @@ void* opendoor_thread(void* arg) {
 
             out_video_device.preview_flag=0;
             out_video_device.record_flag=0;
-            usleep(300000);
+            usleep(600000);
 
             in_video_device.photo_opendoor=0;
             in_video_device.photo_flag=1;
@@ -1715,12 +1717,14 @@ void* opendoor_thread(void* arg) {
 
                 // 检测清理门关闭状态
                 if (get_clear_door_status() == 0) {
-                    printf("电磁锁检测：手动关闭清理门\n");
-                    close_door(cur_weight, diff_weight); // 发送关门信息
-                    inside_light(0);
-                    hand_close_door_flag=0;
-                    clearing = 2;
-                    break;
+                    if(settlement){
+                        close_door(cur_weight, diff_weight); // 发送关门信息
+                        inside_light(0);
+                        hand_close_door_flag=0;
+                        clearing = 2;
+                        settlement=0;
+                        break;
+                    }
                 }
                 usleep(1000000 / REFRESH_RATE);
                 i++;
@@ -1740,32 +1744,32 @@ void* opendoor_thread(void* arg) {
                 sleep(1);
             }
 
-            int fd = open("/userdata/cleantime.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (fd == -1) {
-                perror("无法打开文件");
-                return;
-            }
+            // int fd = open("/userdata/cleantime.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            // if (fd == -1) {
+            //     perror("无法打开文件");
+            //     return;
+            // }
 
-            time_t now = time(NULL);
-            struct tm *t = localtime(&now);
+            // time_t now = time(NULL);
+            // struct tm *t = localtime(&now);
 
-            char cleantime_str[20];
-            strftime(cleantime_str, sizeof(cleantime_str), "%Y/%m/%d %H:%M:%S", t);
+            // char cleantime_str[20];
+            // strftime(cleantime_str, sizeof(cleantime_str), "%Y/%m/%d %H:%M:%S", t);
 
-            if (write(fd, cleantime_str, strlen(cleantime_str)) == -1) {
-                perror("写入失败");
-                close(fd);
-                return;
-            }
+            // if (write(fd, cleantime_str, strlen(cleantime_str)) == -1) {
+            //     perror("写入失败");
+            //     close(fd);
+            //     return;
+            // }
 
-            // 确保数据立即同步到磁盘
-            if (fsync(fd) == -1) {
-                perror("fsync 失败");
-                close(fd);
-                return;
-            }
+            // // 确保数据立即同步到磁盘
+            // if (fsync(fd) == -1) {
+            //     perror("fsync 失败");
+            //     close(fd);
+            //     return;
+            // }
 
-            close(fd);
+            // close(fd);
         }
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
@@ -1791,7 +1795,11 @@ int close_door(double cur_weight, double diff_weight)
 
     // 发送关门请求
     printf("Sending closeDoor request: %s\n", json_str);
-    send_tcp_packet(json_str, strlen(json_str));
+    while(send_tcp_packet(json_str, strlen(json_str)) < 0){
+        printf("resend close door!\n");
+        usleep(200 * 1000);
+    }
+    
     free(json_str);
     cJSON_Delete(root);
 
@@ -2083,15 +2091,15 @@ void* socket_task_thread(void* arg)
                 continue;
             }
 
-            // struct timeval tv;
-            // // 设置接收超时时间为5秒
-            // tv.tv_sec = 5;  // 秒
-            // tv.tv_usec = 0; // 微秒
+            struct timeval tv;
+            // 设置接收超时时间为5秒
+            tv.tv_sec = 5;  // 秒
+            tv.tv_usec = 0; // 微秒
 
-            // if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
-            //     perror("setsockopt failed");
-            //     exit(EXIT_FAILURE);
-            // }
+            if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
+                perror("setsockopt failed");
+                exit(EXIT_FAILURE);
+            }
             
             // 登录服务器
             while (g_main_run_) 

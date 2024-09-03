@@ -31,7 +31,7 @@
 // 灯光更新时间 单位：s
 #define LIGHT_UPDATE_TIME 5
 // 溢出更新时间 单位：s
-#define OVERFLOW_UPDATE_TIME 1
+#define OVERFLOW_UPDATE_TIME 5
 // 读4G信号错误的时间 单位：次数 时间=SIGNAL_UPDATE_TIME * 次数
 #define SIGNAL_ERR_COUNT 5
 

@@ -20,7 +20,7 @@
 #include "capture.h"
 #include "custom.h"
 
-extern int password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect,full;
+extern int settlement,password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect,full;
 extern video_device_t out_video_device;
 extern video_device_t in_video_device;
 #include "server.h"
@@ -376,6 +376,24 @@ void events_init_screen_clean(lv_ui *ui)
 {
 	lv_obj_add_event_cb(ui->screen_clean_open_clean, screen_clean_open_clean_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_clean_quit, screen_clean_quit_event_handler, LV_EVENT_ALL, ui);
+}
+static void screen_cleaning_settlement_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		settlement=1;
+		break;
+	}
+	default:
+		break;
+	}
+}
+void events_init_screen_cleaning(lv_ui *ui)
+{
+	lv_obj_add_event_cb(ui->screen_cleaning_settlement, screen_cleaning_settlement_event_handler, LV_EVENT_ALL, ui);
 }
 static void screen_test_rod_push_key_event_handler (lv_event_t *e)
 {
