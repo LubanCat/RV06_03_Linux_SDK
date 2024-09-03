@@ -132,23 +132,28 @@ int capture_start(video_frame_t *video_frame)
     video_frame->start = (char *)mmap(NULL, kbuf.length, PROT_READ | PROT_WRITE, MAP_SHARED, video_frame->fd, kbuf.m.offset);
     if(video_frame->start == MAP_FAILED){
         perror("mmap fail");
-        return -1;
+        goto err1;
     }
 
     //缓存入队
     if(ioctl(video_frame->fd, VIDIOC_QBUF, &kbuf) < 0){
         perror("qbuf fail");
-        return -1;
+        goto err2;
     }
 
     //启动摄像头数据采集
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if(ioctl(video_frame->fd, VIDIOC_STREAMON, &type)<0){
         perror("start fail");
-        return -1;
+        goto err2;
     }
-
     return 1;
+
+err2:
+    munmap(video_frame->start, video_frame->length);
+err1:
+    close(video_frame->fd);
+    return -1; 
 }
 
 int capture_stop(video_frame_t *video_frame)

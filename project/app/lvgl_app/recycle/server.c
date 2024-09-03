@@ -1588,7 +1588,7 @@ void* opendoor_thread(void* arg) {
             in_video_device.photo_flag=1;
             in_video_device.photo_opendoor=1;
 
-            usleep(800000);
+            usleep(400000);
 
             out_video_device.photo_flag=1;
             out_video_device.photo_opendoor=1;
@@ -1657,7 +1657,7 @@ void* opendoor_thread(void* arg) {
 
             out_video_device.preview_flag=0;
             out_video_device.record_flag=0;
-            usleep(600000);
+            usleep(300000);
 
             in_video_device.photo_opendoor=0;
             in_video_device.photo_flag=1;
