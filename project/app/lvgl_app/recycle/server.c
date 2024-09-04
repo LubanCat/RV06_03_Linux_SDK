@@ -72,6 +72,8 @@ int heartbeat_num=0;
 int updating_flag=0;
 int settlement=0;
 
+int ir_open_flag;
+
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
     if (stat1->st_ctime < stat2->st_ctime) {
         return path1;
@@ -960,6 +962,13 @@ int server_login() {
                 cJSON *heartBeatInterval = cJSON_GetObjectItem(response_json, "heartBeatInterval");
                 cJSON *turnOnLight = cJSON_GetObjectItem(response_json, "turnOnLight");
                 cJSON *turnOffLight = cJSON_GetObjectItem(response_json, "turnOffLight");
+                cJSON *ir_flag = cJSON_GetObjectItem(response_json, "ir");
+
+                if(ir_flag->valueint){
+                    ir_open_flag = 1;
+                }else{
+                    ir_open_flag = 0;
+                }
 
                 if (qrCode && recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
                     strncpy(loginRes.qrCode, qrCode->valuestring, sizeof(loginRes.qrCode) - 1);
@@ -1030,10 +1039,10 @@ void handle_open_door(cJSON *response_json) {
     openDoor.curWeight = current_weight;
 
     int retCode = 0;
-    if (get_overflow_status() == 3) {
-        retCode = 1;
-    }
-
+    // if (get_overflow_status() == 3) {
+    //     retCode = 1;
+    // }
+    
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", "openDoor");
     cJSON_AddNumberToObject(root, "retCode", retCode);
@@ -1056,8 +1065,11 @@ void handle_open_door(cJSON *response_json) {
 
 void handle_phone(cJSON *response_json) {
     pthread_t opendoor_thread_id;
+    cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
     cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
-    printf("retCode->valueint = %d\n",retCode->valueint);
+    strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
+    trans_Id[sizeof(trans_Id) - 1] = '\0';
+    printf("transId = %s ,retCode = %d\n",trans_Id,retCode->valueint);
     if(retCode->valueint == 0){
         printf("open the door\n");
         phone_login_flag=0;

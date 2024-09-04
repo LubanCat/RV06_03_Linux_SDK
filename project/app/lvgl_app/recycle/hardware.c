@@ -10,6 +10,7 @@
 Recycle_Box_Cnf g_sRecycle_Box_Cnf;
 int rod_hinder_value = 200;
 int stop_music = 0;
+extern int ir_open_flag;
 
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) 
@@ -134,15 +135,17 @@ int get_overflow_status()
 {
     int overflow_status = 1;
 
-    // 有阻挡，输入0
-    if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0)
-    {
-        overflow_status = 3;
-    }
+    if(ir_open_flag){
+        // 有阻挡，输入0
+        if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0)
+        {
+            overflow_status = 3;
+        }
 
-    if (rk_gpio_get_value(GPIO_IR2_STATUS) == 0)
-    {
-        overflow_status = 3;
+        if (rk_gpio_get_value(GPIO_IR2_STATUS) == 0)
+        {
+            overflow_status = 3;
+        }
     }
 
     return overflow_status; // 1-3
