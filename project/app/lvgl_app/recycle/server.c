@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.16";
+char *local_version = "1.17";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -1510,7 +1510,7 @@ int allow_phone_login(char *phone_number)
         char *json_str = cJSON_PrintUnformatted(root);
 
         // 发送心跳上传请求
-        printf("Sending heartBeat request: %s\n", json_str);
+        printf("Sending phone login request: %s\n", json_str);
         send_tcp_packet(json_str, strlen(json_str));
         free(json_str);
         
