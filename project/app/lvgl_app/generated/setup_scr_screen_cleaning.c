@@ -34,7 +34,7 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	lv_img_set_src(ui->screen_cleaning_img_2, &_cycle_alpha_200x200);
 	lv_img_set_pivot(ui->screen_cleaning_img_2, 50,50);
 	lv_img_set_angle(ui->screen_cleaning_img_2, 0);
-	lv_obj_set_pos(ui->screen_cleaning_img_2, 200, 358);
+	lv_obj_set_pos(ui->screen_cleaning_img_2, 200, 185);
 	lv_obj_set_size(ui->screen_cleaning_img_2, 200, 200);
 
 	//Write style for screen_cleaning_img_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -44,7 +44,7 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	ui->screen_cleaning_time = lv_label_create(ui->screen_cleaning);
 	lv_label_set_text(ui->screen_cleaning_time, "清运中");
 	lv_label_set_long_mode(ui->screen_cleaning_time, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaning_time, 210, 429);
+	lv_obj_set_pos(ui->screen_cleaning_time, 210, 256);
 	lv_obj_set_size(ui->screen_cleaning_time, 180, 59);
 
 	//Write style for screen_cleaning_time, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -67,7 +67,7 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	ui->screen_cleaning_label_2 = lv_label_create(ui->screen_cleaning);
 	lv_label_set_text(ui->screen_cleaning_label_2, "当前重量");
 	lv_label_set_long_mode(ui->screen_cleaning_label_2, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaning_label_2, 33, 599);
+	lv_obj_set_pos(ui->screen_cleaning_label_2, 38, 461);
 	lv_obj_set_size(ui->screen_cleaning_label_2, 243, 58);
 
 	//Write style for screen_cleaning_label_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -90,7 +90,7 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	ui->screen_cleaning_weigth = lv_label_create(ui->screen_cleaning);
 	lv_label_set_text(ui->screen_cleaning_weigth, "000.00KG");
 	lv_label_set_long_mode(ui->screen_cleaning_weigth, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaning_weigth, 258, 601);
+	lv_obj_set_pos(ui->screen_cleaning_weigth, 258, 461);
 	lv_obj_set_size(ui->screen_cleaning_weigth, 319, 49);
 
 	//Write style for screen_cleaning_weigth, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -154,6 +154,29 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	lv_obj_set_style_text_font(ui->screen_cleaning_settlement, &lv_font_SourceHanSerifCN2_32, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_opa(ui->screen_cleaning_settlement, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_align(ui->screen_cleaning_settlement, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+	//Write codes screen_cleaning_label_4
+	ui->screen_cleaning_label_4 = lv_label_create(ui->screen_cleaning);
+	lv_label_set_text(ui->screen_cleaning_label_4, "注意：请关闭清运门后再结算");
+	lv_label_set_long_mode(ui->screen_cleaning_label_4, LV_LABEL_LONG_WRAP);
+	lv_obj_set_pos(ui->screen_cleaning_label_4, 36, 773);
+	lv_obj_set_size(ui->screen_cleaning_label_4, 528, 81);
+
+	//Write style for screen_cleaning_label_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_border_width(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_cleaning_label_4, lv_color_hex(0xf00000), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_cleaning_label_4, &lv_font_SourceHanSerifCN2_30, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_cleaning_label_4, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_letter_space(ui->screen_cleaning_label_4, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_line_space(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_cleaning_label_4, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_opa(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_top(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_right(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_bottom(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_left(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//The custom code of screen_cleaning.
 	

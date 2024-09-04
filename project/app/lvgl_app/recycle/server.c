@@ -1173,7 +1173,9 @@ void handle_debug() {
     int retCode = 0;
 
     screen_login_flag=0;
+    pthread_mutex_lock(&lv_task_mutex);
     set_screen_test(&guider_ui.screen_login_del);
+    pthread_mutex_unlock(&lv_task_mutex);
 
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", "debug");
@@ -1529,6 +1531,8 @@ void* opendoor_thread(void* arg) {
     // 关闭登录页面元素更新
     screen_login_flag=0;
 
+    usleep(400 * 1000);
+
     double sub_weight =  openDoor.curWeight; //开门命令上传给服务器的重量
 
     printf("开门: openType=%d\n", openDoor.openType);
@@ -1557,7 +1561,9 @@ void* opendoor_thread(void* arg) {
             printf("set_screen_submit\n");
             inside_light(1);
             // 投递界面
+            pthread_mutex_lock(&lv_task_mutex);
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
+            pthread_mutex_unlock(&lv_task_mutex);
 
             //获取当前时间
             char currentTime[20]; // 足够存储 "YYYYMMDD_HHMMSS" 和结束符
@@ -1674,7 +1680,10 @@ void* opendoor_thread(void* arg) {
             in_video_device.photo_opendoor=0;
             in_video_device.photo_flag=1;
             
+            pthread_mutex_lock(&lv_task_mutex);
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+            pthread_mutex_unlock(&lv_task_mutex);
+
             openDoor.openType = 0;
             sleep(2);
             inside_light(0);
@@ -1689,8 +1698,11 @@ void* opendoor_thread(void* arg) {
         int clearing = 0;
         double cur_weight = 0;
         double diff_weight = 0;
+
         // 清运操作页面1
+        pthread_mutex_lock(&lv_task_mutex);
         set_screen_clean(&guider_ui.screen_login_del,COUNT_DOWN99,sub_weight);
+        pthread_mutex_unlock(&lv_task_mutex);
 
         for (; i > 0; i--) {
             if ((i % REFRESH_RATE) == 0) {
@@ -1722,8 +1734,12 @@ void* opendoor_thread(void* arg) {
         // 判断是否进入清运状态，显示正在清运
         if (clearing == 1) {
             i = 0;
+
             // 清运操作页面2
+            pthread_mutex_lock(&lv_task_mutex);
             set_screen_cleaning(&guider_ui.screen_login_del,sub_weight);
+            pthread_mutex_unlock(&lv_task_mutex);
+
             while (1) {
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight = get_current_weight();
@@ -1758,8 +1774,12 @@ void* opendoor_thread(void* arg) {
 
         // 判断进入清运完成状态
         if (clearing == 2) {
+
             // 更新清运完成页面
+            pthread_mutex_lock(&lv_task_mutex);
             set_screen_cleaned(&guider_ui.screen_login_del, COUNT_DOWN10, sub_weight, cur_weight, diff_weight);
+            pthread_mutex_unlock(&lv_task_mutex);
+            
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = COUNT_DOWN10; i > 0; i--) {
                 printf("清运完成: %d秒后返回登录界面\n", i);
@@ -1796,8 +1816,10 @@ void* opendoor_thread(void* arg) {
 
             // close(fd);
         }
+        pthread_mutex_lock(&lv_task_mutex);
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
+        pthread_mutex_unlock(&lv_task_mutex);
         openDoor.openType = 0;
     }
     return;

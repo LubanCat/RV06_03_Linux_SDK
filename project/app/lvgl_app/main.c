@@ -386,9 +386,10 @@ int main(void) {
     }
 
     cam_init();
-
+    pthread_mutex_lock(&lv_task_mutex);
     set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
-
+    pthread_mutex_unlock(&lv_task_mutex);
+    
     int curCapacity = get_overflow_status();
     upload_overflow(curCapacity);
     if (curCapacity == 3) {

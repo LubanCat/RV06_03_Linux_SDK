@@ -132,6 +132,7 @@ typedef struct
 	lv_obj_t *screen_cleaning_label_3;
 	lv_obj_t *screen_cleaning_settlement;
 	lv_obj_t *screen_cleaning_settlement_label;
+	lv_obj_t *screen_cleaning_label_4;
 	lv_obj_t *screen_cleaned;
 	bool screen_cleaned_del;
 	lv_obj_t *screen_cleaned_img_2;
@@ -288,6 +289,7 @@ LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_96)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_36)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_54)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_30)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_42)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_34)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_64)
