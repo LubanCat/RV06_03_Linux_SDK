@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.17";
+char *local_version = "1.18";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -1779,7 +1779,7 @@ void* opendoor_thread(void* arg) {
             pthread_mutex_lock(&lv_task_mutex);
             set_screen_cleaned(&guider_ui.screen_login_del, COUNT_DOWN10, sub_weight, cur_weight, diff_weight);
             pthread_mutex_unlock(&lv_task_mutex);
-            
+
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = COUNT_DOWN10; i > 0; i--) {
                 printf("清运完成: %d秒后返回登录界面\n", i);
