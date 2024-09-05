@@ -1065,12 +1065,13 @@ void handle_open_door(cJSON *response_json) {
 
 void handle_phone(cJSON *response_json) {
     pthread_t opendoor_thread_id;
-    cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
     cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
-    strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
-    trans_Id[sizeof(trans_Id) - 1] = '\0';
-    printf("transId = %s ,retCode = %d\n",trans_Id,retCode->valueint);
+    printf("retCode = %d\n",retCode->valueint);
     if(retCode->valueint == 0){
+        cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
+        strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
+        trans_Id[sizeof(trans_Id) - 1] = '\0';
+        printf("transId = %s ,retCode = %d\n",trans_Id,retCode->valueint);
         printf("open the door\n");
         phone_login_flag=0;
         phone_login_update=0;
@@ -1087,6 +1088,10 @@ void handle_phone(cJSON *response_json) {
             exit(EXIT_FAILURE);
         }
     }else if(retCode->valueint == 1){
+        cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
+        strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
+        trans_Id[sizeof(trans_Id) - 1] = '\0';
+        printf("transId = %s ,retCode = %d\n",trans_Id,retCode->valueint);
 
         phone_login_flag=0;
         phone_login_update=0;
@@ -1111,9 +1116,13 @@ void handle_phone(cJSON *response_json) {
     }else{
         usleep(300000);
         printf("wrong input\n");
+        pthread_mutex_lock(&lv_task_mutex);
         lv_obj_clear_flag(guider_ui.screen_login_phone_bad, LV_OBJ_FLAG_HIDDEN);
+        pthread_mutex_unlock(&lv_task_mutex);
         sleep(3);
+        pthread_mutex_lock(&lv_task_mutex);
         lv_obj_add_flag(guider_ui.screen_login_phone_bad, LV_OBJ_FLAG_HIDDEN);
+        pthread_mutex_unlock(&lv_task_mutex);
     }
 }
 

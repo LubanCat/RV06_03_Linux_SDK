@@ -31,7 +31,7 @@
 // 灯光更新时间 单位：s
 #define LIGHT_UPDATE_TIME 5
 // 溢出更新时间 单位：s
-#define OVERFLOW_UPDATE_TIME 5
+#define OVERFLOW_UPDATE_TIME 2
 // 读4G信号错误的时间 单位：次数 时间=SIGNAL_UPDATE_TIME * 次数
 #define SIGNAL_ERR_COUNT 5
 
@@ -47,6 +47,8 @@ extern int updating_flag;
 
 char key_input[5];
 int key_input_count;
+
+int overflow_flag=0;
 
 int phone_login_flag=0;
 int phone_login_update=0;
@@ -77,9 +79,10 @@ void* lv_task_thread(void* arg) {
 void* keyboard_thread(void* arg) {
     char input[5];
     int input_count;
+    int show=0;
     while(g_main_run_){
         // 进入登录界面
-        if(phone_login_flag){
+        if(phone_login_flag && screen_login_flag && !overflow_flag){
             // 判断有没有加载键盘
             if(phone_login_update){
                 if(key_input_count > 0){
@@ -118,9 +121,10 @@ void* keyboard_thread(void* arg) {
                             memset(phone_number,0,sizeof(phone_number));
                             key_input_count=0;
                             memset(key_input,0,sizeof(key_input));
-                            usleep(500*1000);
+                            usleep(100*1000);
 
                             pthread_mutex_lock(&lv_task_mutex);
+                            show=0;
                             lv_obj_add_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
                             pthread_mutex_unlock(&lv_task_mutex);
                             break;
@@ -138,11 +142,27 @@ void* keyboard_thread(void* arg) {
                 // printf("phone_number:%s\n",phone_number);
             }else{
                 phone_login_update=1;
-                usleep(500*1000);
+                usleep(300*1000);
                 phone_number_count=0;
                 phone_number[0]='\0';
+                printf("open key_board\n");
                 pthread_mutex_lock(&lv_task_mutex);
                 lv_obj_clear_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+                show=1;
+                pthread_mutex_unlock(&lv_task_mutex);
+            }
+        }
+        else{
+            phone_login_flag=0;
+            phone_login_update=0;
+            phone_number_count=0;
+
+            phone_number[0]='\0';
+            if(show){
+                printf("clear key_board\n");
+                pthread_mutex_lock(&lv_task_mutex);
+                lv_obj_add_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+                show=0;
                 pthread_mutex_unlock(&lv_task_mutex);
             }
         }
@@ -252,6 +272,7 @@ void* aux_task_thread(void* arg) {
                     // 在登录页面才更新
                     pthread_mutex_lock(&lv_task_mutex);
                     set_screen_login_full(1);
+                    overflow_flag=1;
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
             }else{
@@ -259,6 +280,7 @@ void* aux_task_thread(void* arg) {
                     // 在登录页面才更新
                     pthread_mutex_lock(&lv_task_mutex);
                     set_screen_login_full(0);
+                    overflow_flag=0;
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
             }
