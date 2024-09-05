@@ -208,6 +208,12 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
     set_screen_login_server_status(server_status);
     lv_label_set_text(guider_ui.screen_login_version,local_version);
     set_screen_login_sn_num();
+
+    if (get_overflow_status() == 3) 
+        set_screen_login_full(1); 
+    else
+        set_screen_login_full(0);
+
     // 当在登录页面时，开启其他线程在登录页面的更新
     screen_login_flag = 1;
 }

@@ -1076,6 +1076,10 @@ void handle_phone(cJSON *response_json) {
         phone_login_update=0;
         phone_number_count=0;
         usleep(300000);
+        double current_weight = get_current_weight(); // 获取当前重量的示例函数
+        if (current_weight < 0)
+            current_weight = 0.0;
+        openDoor.curWeight = current_weight;
         openDoor.openType=1;
         int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
         if (ret != 0) {
@@ -1696,8 +1700,10 @@ void* opendoor_thread(void* arg) {
     } else if (openDoor.openType == 2) {
         int i = COUNT_DOWN99 * REFRESH_RATE;
         int clearing = 0;
-        double cur_weight = 0;
         double diff_weight = 0;
+        double cur_weight = get_current_weight();
+        if(cur_weight < 0)
+            cur_weight=0.0;
 
         // 清运操作页面1
         pthread_mutex_lock(&lv_task_mutex);
