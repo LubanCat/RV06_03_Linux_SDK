@@ -58,6 +58,7 @@ pthread_mutex_t camara_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t capture_in_thread_id = NULL;
 pthread_t capture_out_thread_id = NULL;
 pthread_t venc_rsv_thread_id = NULL;
+pthread_t opendoor_thread_id = NULL;
 
 extern char key_input[5];
 extern int key_input_count;
@@ -245,25 +246,48 @@ void* capture_out_thread(void* arg) {
             video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
 
             //测试
+            // if(out_video_device.test_flag){
+            //     lv_color_t color_p[640*480];
+            //     int size=640*480;
+            //     int length;
+            
+            //     lv_area_t area;
+            //     area.x1=140;
+            //     area.x2=779;
+            //     area.y1=60;
+            //     area.y2=539;
+
+            //     memset(color_p,0x00,size*sizeof(lv_color_t));
+
+            //     for(int j=0;j<480;j++){
+            //         for(int i=0;i<640;i++){
+            //             color_p[j*640+i].full |= 0xff<<24;
+            //             color_p[j*640+i].full |= data[(j*640+i)*3+0]<<16;
+            //             color_p[j*640+i].full |= data[(j*640+i)*3+1]<<8;
+            //             color_p[j*640+i].full |= data[(j*640+i)*3+2];
+            //         }
+            //     }
+            //     drm_flush(&disp_drv,&area,color_p);
+            // }
             if(out_video_device.test_flag){
-                lv_color_t color_p[640*480];
-                int size=640*480;
+                lv_color_t color_p[480*320];
+                int size=480*320;
                 int length;
             
                 lv_area_t area;
-                area.x1=140;
-                area.x2=779;
+                area.x1=272;
+                area.x2=591;
                 area.y1=60;
                 area.y2=539;
 
                 memset(color_p,0x00,size*sizeof(lv_color_t));
 
-                for(int j=0;j<480;j++){
-                    for(int i=0;i<640;i++){
-                        color_p[j*640+i].full |= 0xff<<24;
-                        color_p[j*640+i].full |= data[(j*640+i)*3+0]<<16;
-                        color_p[j*640+i].full |= data[(j*640+i)*3+1]<<8;
-                        color_p[j*640+i].full |= data[(j*640+i)*3+2];
+                for(int j=0;j<320;j++){
+                    for(int i=0;i<480;i++){
+                        color_p[j+(479-i)*320].full |= 0xff<<24;
+                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+0]<<16;
+                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+1]<<8;
+                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+2];
                     }
                 }
                 drm_flush(&disp_drv,&area,color_p);
@@ -1026,29 +1050,41 @@ int server_login() {
 }
 
 void handle_open_door(cJSON *response_json) {
-    pthread_t opendoor_thread_id;
     cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
     cJSON *openType = cJSON_GetObjectItem(response_json, "openType");
-
-    strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
-    trans_Id[sizeof(trans_Id) - 1] = '\0';
-    openDoor.openType = openType->valueint;
-    double current_weight = get_current_weight(); // 获取当前重量的示例函数
-    if (current_weight < 0)
-        current_weight = 0.0;
-    openDoor.curWeight = current_weight;
-
+    double current_weight;
+    char *json_str;
+    cJSON *root;
     int retCode = 0;
-    // if (get_overflow_status() == 3) {
-    //     retCode = 1;
-    // }
     
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "cmd", "openDoor");
-    cJSON_AddNumberToObject(root, "retCode", retCode);
-    cJSON_AddStringToObject(root, "transId", trans_Id);
-    cJSON_AddNumberToObject(root, "curWeight", openDoor.curWeight);
-    char *json_str = cJSON_PrintUnformatted(root);
+    if(opendoor_thread_id != NULL){
+        retCode = 1;
+        current_weight = get_current_weight(); // 获取当前重量的示例函数
+        if (current_weight < 0)
+            current_weight = 0.0;
+
+        root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "cmd", "openDoor");
+        cJSON_AddNumberToObject(root, "retCode", 1);
+        cJSON_AddStringToObject(root, "transId", transId->valuestring);
+        cJSON_AddNumberToObject(root, "curWeight", current_weight);
+        json_str = cJSON_PrintUnformatted(root);
+    }else{
+        strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
+        trans_Id[sizeof(trans_Id) - 1] = '\0';
+        openDoor.openType = openType->valueint;
+        current_weight = get_current_weight(); // 获取当前重量的示例函数
+        if (current_weight < 0)
+            current_weight = 0.0;
+        openDoor.curWeight = current_weight;
+
+        root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "cmd", "openDoor");
+        cJSON_AddNumberToObject(root, "retCode", retCode);
+        cJSON_AddStringToObject(root, "transId", trans_Id);
+        cJSON_AddNumberToObject(root, "curWeight", openDoor.curWeight);
+        json_str = cJSON_PrintUnformatted(root);
+    }
 
     // 发送响应
     printf("Sending openDoor response: %s\n", json_str);
@@ -1056,58 +1092,65 @@ void handle_open_door(cJSON *response_json) {
     free(json_str);
     cJSON_Delete(root);
 
-    int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
-    if (ret != 0) {
-        perror("pthread_create");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void handle_phone(cJSON *response_json) {
-    pthread_t opendoor_thread_id;
-    cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
-    printf("retCode = %d\n",retCode->valueint);
-    if(retCode->valueint == 0){
-        cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
-        strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
-        trans_Id[sizeof(trans_Id) - 1] = '\0';
-        printf("transId = %s ,retCode = %d\n",trans_Id,retCode->valueint);
-        printf("open the door\n");
-        phone_login_flag=0;
-        phone_login_update=0;
-        phone_number_count=0;
-        usleep(300000);
-        double current_weight = get_current_weight(); // 获取当前重量的示例函数
-        if (current_weight < 0)
-            current_weight = 0.0;
-        openDoor.curWeight = current_weight;
-        openDoor.openType=1;
+    if(opendoor_thread_id == NULL){
         int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
         if (ret != 0) {
             perror("pthread_create");
             exit(EXIT_FAILURE);
         }
-    }else if(retCode->valueint == 1){
+    }else
+        printf("other program is running\n");
+}
+
+void handle_phone(cJSON *response_json) {
+    int opendoor_retCode = 0;
+    cJSON *retCode = cJSON_GetObjectItem(response_json, "retCode");
+    printf("retCode = %d\n",retCode->valueint);
+    if(retCode->valueint == 0  || retCode->valueint == 1){
         cJSON *transId = cJSON_GetObjectItem(response_json, "transId");
         strncpy(trans_Id, transId->valuestring, sizeof(trans_Id) - 1);
         trans_Id[sizeof(trans_Id) - 1] = '\0';
         printf("transId = %s ,retCode = %d\n",trans_Id,retCode->valueint);
-
+        printf("open the door\n");
+        
         phone_login_flag=0;
         phone_login_update=0;
         phone_number_count=0;
 
         usleep(300000);
-        pthread_mutex_lock(&lv_task_mutex);
-        lv_obj_clear_flag(guider_ui.screen_login_phone_notice, LV_OBJ_FLAG_HIDDEN);
-        pthread_mutex_unlock(&lv_task_mutex);
 
-        pthread_mutex_lock(&lv_task_mutex);
-        lv_obj_add_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
-        pthread_mutex_unlock(&lv_task_mutex);
+        if(retCode->valueint == 1){
+            pthread_mutex_lock(&lv_task_mutex);
+            lv_obj_clear_flag(guider_ui.screen_login_phone_notice, LV_OBJ_FLAG_HIDDEN);
+            pthread_mutex_unlock(&lv_task_mutex);
 
-        sleep(3);
+            pthread_mutex_lock(&lv_task_mutex);
+            lv_obj_add_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+            pthread_mutex_unlock(&lv_task_mutex);
+
+            sleep(3);
+        }
+
+        double current_weight = get_current_weight(); // 获取当前重量的示例函数
+        if (current_weight < 0)
+            current_weight = 0.0;
+
+        openDoor.curWeight = current_weight;
         openDoor.openType=1;
+
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "cmd", "openDoor");
+        cJSON_AddNumberToObject(root, "retCode", opendoor_retCode);
+        cJSON_AddStringToObject(root, "transId", trans_Id);
+        cJSON_AddNumberToObject(root, "curWeight", openDoor.curWeight);
+        char *json_str = cJSON_PrintUnformatted(root);
+
+        // 发送响应
+        printf("Sending openDoor response: %s\n", json_str);
+        send_tcp_packet(json_str, strlen(json_str));
+        free(json_str);
+        cJSON_Delete(root);
+
         int ret = pthread_create(&opendoor_thread_id, NULL, opendoor_thread, NULL);
         if (ret != 0) {
             perror("pthread_create");
@@ -1571,6 +1614,35 @@ void* opendoor_thread(void* arg) {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
             pthread_t capture_thread_id;
+            char line[20];
+            int transid_fd;
+            ssize_t bytes_written;
+
+            const char *filename = "opendoor.txt";
+
+            transid_fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+            if (transid_fd == -1) {
+                perror("Error opening file");
+            }
+            
+            sprintf(line,"%s\n",trans_Id);
+
+            bytes_written = write(transid_fd, line, strlen(line));
+            if (bytes_written == -1) {
+                perror("Error writing to file");
+                close(transid_fd);
+            }
+
+            sprintf(line,"%0.2f\n",sub_weight);
+
+            bytes_written = write(transid_fd, line, strlen(line));
+            if (bytes_written == -1) {
+                perror("Error writing to file");
+                close(transid_fd);
+            }
+            fsync(transid_fd);
+            close(transid_fd);
+
             printf("set_screen_submit\n");
             inside_light(1);
             // 投递界面
@@ -1700,6 +1772,10 @@ void* opendoor_thread(void* arg) {
             openDoor.openType = 0;
             sleep(2);
             inside_light(0);
+            if (unlink(filename) == -1) {
+                // 如果删除失败，打印错误信息
+                perror("Error deleting file");
+            }
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
@@ -1803,33 +1879,6 @@ void* opendoor_thread(void* arg) {
                 pthread_mutex_unlock(&lv_task_mutex);
                 sleep(1);
             }
-
-            // int fd = open("/userdata/cleantime.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            // if (fd == -1) {
-            //     perror("无法打开文件");
-            //     return;
-            // }
-
-            // time_t now = time(NULL);
-            // struct tm *t = localtime(&now);
-
-            // char cleantime_str[20];
-            // strftime(cleantime_str, sizeof(cleantime_str), "%Y/%m/%d %H:%M:%S", t);
-
-            // if (write(fd, cleantime_str, strlen(cleantime_str)) == -1) {
-            //     perror("写入失败");
-            //     close(fd);
-            //     return;
-            // }
-
-            // // 确保数据立即同步到磁盘
-            // if (fsync(fd) == -1) {
-            //     perror("fsync 失败");
-            //     close(fd);
-            //     return;
-            // }
-
-            // close(fd);
         }
         pthread_mutex_lock(&lv_task_mutex);
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
@@ -1837,6 +1886,7 @@ void* opendoor_thread(void* arg) {
         pthread_mutex_unlock(&lv_task_mutex);
         openDoor.openType = 0;
     }
+    opendoor_thread_id=NULL;
     return;
 }
 

@@ -24,6 +24,8 @@
 #define MAX_WEIGHT 200
 #define MAX_BUF_SIZE 512
 
+extern char trans_Id[64];
+
 // 登录界面的4G信号更新时间 单位：s
 #define SIGNAL_UPDATE_TIME 10
 // 登录界面的服务器连接更新时间 单位：s
@@ -425,6 +427,28 @@ int main(void) {
         pthread_mutex_unlock(&lv_task_mutex);
     }
 
+    char *filename = "opendoor.txt"; // 你要读取的文件名
+    FILE *file = fopen(filename, "r");
+    char buffer[20];
+    int size;
+    if (file != NULL) {
+        fgets(trans_Id, sizeof(trans_Id), file);
+        trans_Id[strlen(trans_Id)-1]='\0';
+        fgets(buffer, sizeof(buffer), file);
+        buffer[strlen(buffer)-1]='\0';
+        char *endptr;
+        double sub_weight = strtod(buffer, &endptr);
+        printf("trans_Id:%s,weight=%f\n",trans_Id,sub_weight);
+        
+        double cur_weight= get_current_weight();
+        if(cur_weight < 0)
+            cur_weight=0.0;
+        double diff_weight = round((cur_weight - sub_weight) * 100) / 100;
+
+        close_door(cur_weight, diff_weight);
+        
+        fclose(file);
+    }
     while (g_main_run_) {
         while (server_connect) 
         {
