@@ -75,6 +75,10 @@ int settlement=0;
 
 int ir_open_flag;
 
+int is_close_door=0;
+
+
+
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
     if (stat1->st_ctime < stat2->st_ctime) {
         return path1;
@@ -146,6 +150,13 @@ int check_dir_num(int num){
     }
 
     return 0;    
+}
+
+
+void* close_door_thread(void* arg) {
+    printf("enter close_door_thread\n");
+    set_post_door_close();
+    is_close_door=1;
 }
 
 #define RTMP_URL "rtmp://10.255.200.135/live/"
@@ -1751,7 +1762,26 @@ void* opendoor_thread(void* arg) {
                 usleep(1000000 / REFRESH_RATE);
             }
 
-            set_post_door_close();
+            pthread_t close_door_thread_id;
+            printf("close_door_thread\n");
+            pthread_create(&close_door_thread_id, NULL, close_door_thread, NULL);
+            printf("close_door\n");
+            while(!is_close_door){
+                cur_weight= get_current_weight();
+                if(cur_weight < 0)
+                    cur_weight=0.0;
+                diff_weight = round((cur_weight - sub_weight) * 100) / 100; //手动保留两位小数
+                if(diff_weight < 0)
+                    diff_weight=0.0;
+                money = round((diff_weight * loginRes.recyclePrice) * 100) / 100; //手动保留两位小数
+                pthread_mutex_lock(&lv_task_mutex);
+                set_screen_submit_time(i/REFRESH_RATE);
+                set_screen_submit_money(money);
+                set_screen_submit_weigth(diff_weight);
+                pthread_mutex_unlock(&lv_task_mutex);
+                usleep(1000000 / REFRESH_RATE);
+            }
+            is_close_door=0;
             close_door(cur_weight, diff_weight);
 
             out_video_device.photo_opendoor=0;
