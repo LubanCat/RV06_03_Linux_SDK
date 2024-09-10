@@ -280,9 +280,10 @@ void* capture_out_thread(void* arg) {
             //     }
             //     drm_flush(&disp_drv,&area,color_p);
             // }
+
             if(out_video_device.test_flag){
-                lv_color_t color_p[480*320];
                 int size=480*320;
+                lv_color_t color_p[size];
                 int length;
             
                 lv_area_t area;
@@ -296,9 +297,9 @@ void* capture_out_thread(void* arg) {
                 for(int j=0;j<320;j++){
                     for(int i=0;i<480;i++){
                         color_p[j+(479-i)*320].full |= 0xff<<24;
-                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+0]<<16;
-                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+1]<<8;
-                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+2];
+                        color_p[j+(479-i)*320].full |= data[((j+79)*640+i+79)*3+0]<<16;
+                        color_p[j+(479-i)*320].full |= data[((j+79)*640+i+79)*3+1]<<8;
+                        color_p[j+(479-i)*320].full |= data[((j+79)*640+i+79)*3+2];
                     }
                 }
                 drm_flush(&disp_drv,&area,color_p);
@@ -318,9 +319,9 @@ void* capture_out_thread(void* arg) {
                 for(int j=0;j<320;j++){
                     for(int i=0;i<480;i++){
                         color_p[j+(479-i)*320].full |= 0xff<<24;
-                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+0]<<16;
-                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+1]<<8;
-                        color_p[j+(479-i)*320].full |= data[(j*640+i)*3+2];
+                        color_p[j+(479-i)*320].full |= data[((j+79)*640+i+79)*3+0]<<16;
+                        color_p[j+(479-i)*320].full |= data[((j+79)*640+i+79)*3+1]<<8;
+                        color_p[j+(479-i)*320].full |= data[((j+79)*640+i+79)*3+2];
                     }
                 }
                 drm_flush(&disp_drv,&area,color_p);    
@@ -492,6 +493,26 @@ int cam_init(){
     in_video_device.rtmp_flag=0;
     in_video_device.avc_init_flag=0;
     in_video_device.preview_flag=0;
+
+
+    
+    // out_video_device.video_frame.width=640;
+    // out_video_device.video_frame.height=480;
+    // char *data=malloc(out_video_device.video_frame.width * out_video_device.video_frame.height * 3);
+    // int length;
+    // sprintf(out_video_device.video_frame.device,"%s",out_video);
+    // capture_start(&out_video_device.video_frame);
+    // video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
+    // capture_stop(&out_video_device.video_frame);
+
+    // in_video_device.video_frame.width=640;
+    // in_video_device.video_frame.height=480;
+    // sprintf(in_video_device.video_frame.device,"%s",in_video);
+    // capture_start(&in_video_device.video_frame);
+    // video_linux_get_frame_rgb(&in_video_device.video_frame,data,&length);
+    // capture_stop(&in_video_device.video_frame);
+
+    // free(data);
 
     int ret = pthread_create(&capture_in_thread_id, NULL, capture_in_thread, NULL);
     if (ret != 0) {
