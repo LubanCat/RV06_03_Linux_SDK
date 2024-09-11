@@ -37,6 +37,8 @@ extern char trans_Id[64];
 // 读4G信号错误的时间 单位：次数 时间=SIGNAL_UPDATE_TIME * 次数
 #define SIGNAL_ERR_COUNT 5
 
+#define NTP_UPDATE_COUNT 86400
+
 lv_ui guider_ui;
 extern int sock;
 lv_disp_drv_t disp_drv;
@@ -57,6 +59,33 @@ int phone_login_update=0;
 
 char phone_number[12];
 int phone_number_count;
+
+const char *urls[] = {
+    "114.118.7.161",
+    "114.67.103.73",
+    "202.118.1.130",
+    "120.25.115.20",
+    "116.13.10.10",
+    "cn.ntp.org.cn",
+    "ntp.ntsc.ac.cn",
+};
+
+
+int ntp_update(){
+    int ret;
+
+    char str[20];
+    for(int i=0;i<sizeof(urls) / sizeof(urls[0]);i++){
+        sprintf(str,"ntpdate %s",urls[i]);
+        ret = system(str);
+        if(ret >= 0){
+            printf("%d : %s\n",i,urls[i]);
+            return 1;
+        }
+    }
+    return -1;
+}
+
 
 void sig_proc(int signo) {
     if (signo == SIGINT || signo == SIGTERM) {
@@ -182,6 +211,7 @@ void* aux_task_thread(void* arg) {
     int overflow_count = 0;
     int current_light_state = 0;
     int curCapacity,curCapacityBefore;
+    long ntp_count=0;
     pthread_t module_restart_thread_id;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
@@ -298,6 +328,11 @@ void* aux_task_thread(void* arg) {
             overflow_count = 0;
         }
 
+        if(ntp_count > NTP_UPDATE_COUNT){
+            ntp_update();
+            ntp_count=0;
+        }
+        
         sleep(1);
 
         // 触屏 进入配置模式
@@ -313,6 +348,7 @@ void* aux_task_thread(void* arg) {
         signal_count++;
         light_count++;
         server_count++;
+        ntp_count++;
     }
     printf("exit aux_task_thread");
     return NULL;
@@ -326,9 +362,6 @@ int main(void) {
 
     signal(SIGINT, sig_proc);
     signal(SIGTERM, sig_proc);
-
-    // 同步时间
-    system("ntpdate ntp1.aliyun.com");
 
     /*LittlevGL init*/
     lv_init();
@@ -365,6 +398,8 @@ int main(void) {
     indev_drv.read_cb = evdev_read;
     lv_indev_drv_register(&indev_drv);
 
+    // 同步时间
+    ntp_update();
     // 获取4G模块信息
 
     module_info();

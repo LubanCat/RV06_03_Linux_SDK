@@ -550,33 +550,24 @@ HeartBeat heartBeat;
 
 int send_tcp_packet(char *buf, int size)
 {
-    
-    int nRet = 1;
-
     pthread_mutex_lock(&mutex);
-    
     // 发送数据
     int bytes_sent = send(sock, buf, size, 0);
-
     pthread_mutex_unlock(&mutex);
     
-    if (bytes_sent != size) 
-    {
+    if (bytes_sent != size) {
         // 发送的数据量不匹配，可能是网络问题
         fprintf(stderr, "Warning: Only %d bytes sent out of %d\n", bytes_sent, size);
-        nRet = -1;
-    }
-
-    if (-1 == nRet)
-    {
         perror("--------- send data failed---------------");
         
         close(sock);
         sock = -1;
         server_connect = 0;
+
+        return -1;
     }
     
-    return nRet;
+    return bytes_sent;
 }
 
 // 检查并移动配置文件
@@ -1208,7 +1199,14 @@ void handle_initconfig(cJSON *response_json) {
     cJSON *heartBeatInterval = cJSON_GetObjectItem(response_json, "heartBeatInterval");
     cJSON *turnOnLight = cJSON_GetObjectItem(response_json, "turnOnLight");
     cJSON *turnOffLight = cJSON_GetObjectItem(response_json, "turnOffLight");
+    cJSON *ir_flag = cJSON_GetObjectItem(response_json, "ir");
 
+    if(ir_flag->valueint){
+        ir_open_flag = 1;
+    }else{
+        ir_open_flag = 0;
+    }
+    
     if (recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
         loginRes.recyclePrice = atof(recyclePrice->valuestring);
         loginRes.heartBeatInterval = atoi(heartBeatInterval->valuestring);
@@ -1960,7 +1958,7 @@ int close_door(double cur_weight, double diff_weight)
     printf("Sending closeDoor request: %s\n", json_str);
     while(send_tcp_packet(json_str, strlen(json_str)) < 0){
         printf("resend close door!\n");
-        usleep(200 * 1000);
+        usleep(400 * 1000);
     }
     
     free(json_str);
