@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.22";
+char *local_version = "1.23";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -1206,7 +1206,7 @@ void handle_initconfig(cJSON *response_json) {
     }else{
         ir_open_flag = 0;
     }
-    
+
     if (recyclePrice && heartBeatInterval && turnOnLight && turnOffLight) {
         loginRes.recyclePrice = atof(recyclePrice->valuestring);
         loginRes.heartBeatInterval = atoi(heartBeatInterval->valuestring);
