@@ -1329,6 +1329,9 @@ void handle_restart(cJSON *response_json) {
     cJSON_Delete(root);
 }
 
+
+
+
 void handle_ota(cJSON *response_json) {
     char version[16], url[64], md5[64];
     cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
@@ -1814,11 +1817,6 @@ void* opendoor_thread(void* arg) {
             in_video_device.photo_opendoor=0;
             in_video_device.photo_flag=1;
             
-            pthread_mutex_lock(&lv_task_mutex);
-            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
-            pthread_mutex_unlock(&lv_task_mutex);
-
-            openDoor.openType = 0;
             sleep(2);
             inside_light(0);
             if (unlink(filename) == -1) {
@@ -1830,6 +1828,12 @@ void* opendoor_thread(void* arg) {
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_close_path);
             //upload_video("http://api.nwrecycle.com/api/device/upload/video", "/root/media/record.mp4");
+
+            pthread_mutex_lock(&lv_task_mutex);
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+            pthread_mutex_unlock(&lv_task_mutex);
+
+            openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {
         int i = COUNT_DOWN99 * REFRESH_RATE;
