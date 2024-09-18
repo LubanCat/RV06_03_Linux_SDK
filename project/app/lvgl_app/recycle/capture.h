@@ -43,5 +43,7 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char *data,int *length)
 int capture_stop(video_frame_t *video_frame);
 int capture_jpg_compass(char *device,int width,int height,char *output_path);
 int get_cam_video(int ch,char *video_path);
+int reset_usb(int bus_num,int dev_num);
+int reset_cam(int ch);
 
 #endif // HARDWARE_H

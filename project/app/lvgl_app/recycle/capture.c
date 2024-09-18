@@ -12,7 +12,7 @@
 #include "capture.h"
 #include <dirent.h>
 #include <pthread.h>
-
+#include <linux/usbdevice_fs.h>
 #include "rk_debug.h"
 #include "rk_mpi_sys.h"
 #include "rk_mpi_mb.h"
@@ -623,3 +623,98 @@ int get_cam_video(int ch,char *video_path){
     video_path=NULL;
     return -1;
 }
+
+int reset_usb(int bus_num,int dev_num){
+    char filename[32];
+    int fd;
+    int rc;
+    printf("bus:dev=%03d:%03d\n",bus_num,dev_num);
+    sprintf(filename,"/dev/bus/usb/%03d/%03d",bus_num,dev_num);
+
+    fd = open(filename, O_WRONLY);
+    if (fd < 0) {
+        perror("Error opening output file");
+        return 1;
+    }
+ 
+    printf("Resetting USB device %s\n", filename);
+    rc = ioctl(fd, USBDEVFS_RESET, 0);
+    if (rc < 0) {
+        perror("Error in ioctl");
+        return 1;
+    }
+    printf("Reset successful\n");
+    close(fd);
+}
+
+int reset_cam(int ch){
+    char path[64];
+    DIR *d;
+
+    if(ch){
+        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.4/");
+    }else{
+        d=opendir("/sys/bus/usb/devices/1-1/1-1.3/");
+        if(d){
+            sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.3");
+            closedir(d);
+        }else{
+            sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.2/");
+        }
+    }
+
+    FILE *file;
+    char path_name[64];
+    char buffer[10]; // 假设busnum不会超过10个字符
+    int dev_num;
+    int bus_num;
+    
+    sprintf(path_name,"%s/busnum",path);
+    // 打开文件
+    file = fopen(path_name, "r");
+    if (file == NULL) {
+        perror("无法打开文件");
+        return EXIT_FAILURE; 
+    }
+
+    // 读取内容
+    if (fgets(buffer, sizeof(buffer), file) != NULL) {
+        // 输出读取的内容
+        printf("busnum: %s", buffer);
+    } else {
+        perror("读取文件时出错");
+        fclose(file);
+        return EXIT_FAILURE;
+    }
+    bus_num = atoi(buffer);
+    // 关闭文件
+    fclose(file);
+
+
+    sprintf(path_name,"%s/devnum",path);
+    // 打开文件
+    file = fopen(path_name, "r");
+    if (file == NULL) {
+        perror("无法打开文件");
+        return EXIT_FAILURE; 
+    }
+
+    // 读取内容
+    if (fgets(buffer, sizeof(buffer), file) != NULL) {
+        // 输出读取的内容
+        printf("devnum: %s", buffer);
+    } else {
+        perror("读取文件时出错");
+        fclose(file);
+        return EXIT_FAILURE;
+    }
+    dev_num = atoi(buffer);
+    // 关闭文件
+    fclose(file);
+
+    printf("%03d,%03d\n",bus_num,dev_num);
+    reset_usb(bus_num,dev_num);    
+    
+    return 0;
+}
+
