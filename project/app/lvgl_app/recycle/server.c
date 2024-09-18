@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.23";
+char *local_version = "1.21";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -38,6 +38,8 @@ char out_video_close_path[64];
 
 #define CONFIG_SERVER "api.nwrecycle.com"
 #define CONFIG_SERVER_PORT 9096
+#define UPDATE_WAIT_TIME 120
+
 extern lv_disp_drv_t disp_drv;
 char *preview_data;
 char in_video[12];
@@ -77,6 +79,9 @@ int ir_open_flag;
 
 int is_close_door=0;
 
+char update_version[16], update_url[64], update_md5[64];
+
+int is_update=0;
 
 
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
@@ -1329,11 +1334,138 @@ void handle_restart(cJSON *response_json) {
     cJSON_Delete(root);
 }
 
+// 比较版本
+int compare_versions(const char *v1, const char *v2) {
+    int v1_major, v1_minor, v2_major, v2_minor;
+    sscanf(v1, "%d.%d", &v1_major, &v1_minor);
+    sscanf(v2, "%d.%d", &v2_major, &v2_minor);
+    if (v1_major > v2_major) return 1;
+    if (v1_major < v2_major) return -1;
+    if (v1_minor > v2_minor) return 1;
+    if (v1_minor < v2_minor) return -1;
+    return 0;
+}
+
+int download_file(const char *url, const char *filename) {
+    printf("Downloading file from %s to %s\n", url, filename);
+    CURL *curl;
+    FILE *fp;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (curl) {
+        fp = fopen(filename, "wb");
+        if (fp == NULL) {
+            printf("Error opening file %s for writing.\n", filename);
+            curl_easy_cleanup(curl);
+            return 1;
+        }
+        // 设置连接超时时间为 15 秒
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
+        // 设置传输超时时间为 40 秒
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 40L);
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        res = curl_easy_perform(curl);
+        fclose(fp);
+        curl_easy_cleanup(curl);
+        if (res == CURLE_OK) {
+            printf("File downloaded successfully.\n");
+            return 0;
+        } else {
+            printf("File download failed: %s\n", curl_easy_strerror(res));
+            return 1;
+        }
+    }
+    printf("Error initializing CURL.\n");
+    return 1;
+}
+
+int calculate_md5(const char *filename, char *md5_str) {
+    printf("Calculating MD5 for %s\n", filename);
+    char command[128];
+    sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
+    FILE *fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("Error opening pipe for MD5 calculation.\n");
+        return 1;
+    }
+    fgets(md5_str, 64, fp);
+    pclose(fp);
+    // Remove the trailing newline character
+    md5_str[strcspn(md5_str, "\n")] = 0;
+    printf("Calculated MD5: %s\n", md5_str);
+    return 0;
+}
 
 
+void delete_file(const char *filename) {
+    if (remove(filename) != 0) {
+        perror("Error deleting file");
+    } else {
+        printf("File %s successfully deleted\n", filename);
+    }
+}
+
+
+void set_file_executable(const char *filename) {
+    if (chmod(filename, S_IRWXU) != 0) {
+        perror("Error setting file executable");
+    } else {
+        printf("File %s is now executable\n", filename);
+    }
+}
+
+void *update_thread(void* arg){
+    const char *filename = "/root/lvgl_app_temp";
+    const char *lvgl_filename = "/root/lvgl_app";
+
+    updating_flag=1; 
+    printf("download\n");
+    // 下载文件
+    if (download_file(update_url, filename) == 0) {
+        // 校验 MD5
+        char downloaded_md5[64];
+        printf("calculate_md5\n");
+        if (calculate_md5(filename, downloaded_md5) == 0 && strcmp(downloaded_md5, update_md5) == 0) {
+            printf("MD5 verification succeeded.\n");
+
+            // 设置文件可执行
+            set_file_executable(filename);
+
+            // 尝试重命名文件
+            if (rename(filename, lvgl_filename) == 0) {
+                printf("File renamed successfully.\n");
+            } else {
+                perror("Error renaming file"); // 打印错误信息
+            }
+
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddStringToObject(root, "cmd", "ota");
+            cJSON_AddNumberToObject(root, "retCode", 0);
+            char *json_str = cJSON_PrintUnformatted(root);
+
+            // 发送响应
+            printf("Sending ota response: %s\n", json_str);
+            send_tcp_packet(json_str, strlen(json_str));
+            free(json_str);
+            cJSON_Delete(root);
+            is_update=1;
+            return ;
+        } else {
+            printf("MD5 verification failed.\n");
+            // 如果 MD5 校验失败，删除文件
+            delete_file(filename);
+        }
+    } else {
+        printf("File download failed.\n");
+        delete_file(filename);
+    }
+    is_update=2;
+    return ;
+}
 
 void handle_ota(cJSON *response_json) {
-    char version[16], url[64], md5[64];
     cJSON *version_item = cJSON_GetObjectItem(response_json, "version");
     cJSON *url_item = cJSON_GetObjectItem(response_json, "url");
     cJSON *md5_item = cJSON_GetObjectItem(response_json, "md5");
@@ -1344,150 +1476,51 @@ void handle_ota(cJSON *response_json) {
         printf("URL: %s\n", url_item->valuestring);
         printf("MD5: %s\n", md5_item->valuestring);
 
-        strncpy(version, version_item->valuestring, sizeof(version) - 1);
-        version[sizeof(version) - 1] = '\0';
-        strncpy(url, url_item->valuestring, sizeof(url) - 1);
-        url[sizeof(url) - 1] = '\0';
-        strncpy(md5, md5_item->valuestring, sizeof(md5) - 1);
-        md5[sizeof(md5) - 1] = '\0';
+        strncpy(update_version, version_item->valuestring, sizeof(update_version) - 1);
+        update_version[sizeof(update_version) - 1] = '\0';
+        strncpy(update_url, url_item->valuestring, sizeof(update_url) - 1);
+        update_url[sizeof(update_url) - 1] = '\0';
+        strncpy(update_md5, md5_item->valuestring, sizeof(update_md5) - 1);
+        update_md5[sizeof(update_md5) - 1] = '\0';
 
         int retCode = 1;
 
-        // 比较版本
-        int compare_versions(const char *v1, const char *v2) {
-            int v1_major, v1_minor, v2_major, v2_minor;
-            sscanf(v1, "%d.%d", &v1_major, &v1_minor);
-            sscanf(v2, "%d.%d", &v2_major, &v2_minor);
-
-            if (v1_major > v2_major) return 1;
-            if (v1_major < v2_major) return -1;
-            if (v1_minor > v2_minor) return 1;
-            if (v1_minor < v2_minor) return -1;
-            return 0;
-        }
-
-        if (compare_versions(version, local_version) > 0) {
-            printf("New version available: %s\n", version);
-            const char *filename = "/root/lvgl_app_temp";
-            const char *lvgl_filename = "/root/lvgl_app";
-
-            updating_flag=1; 
-
-            int download_file(const char *url, const char *filename) {
-                printf("Downloading file from %s to %s\n", url, filename);
-                CURL *curl;
-                FILE *fp;
-                CURLcode res;
-
-                curl = curl_easy_init();
-                if (curl) {
-                    fp = fopen(filename, "wb");
-                    if (fp == NULL) {
-                        printf("Error opening file %s for writing.\n", filename);
-                        curl_easy_cleanup(curl);
-                        return 1;
-                    }
-                    // 设置连接超时时间为 10 秒
-                    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
-
-                    // 设置传输超时时间为 30 秒
-                    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 40L);
-                    curl_easy_setopt(curl, CURLOPT_URL, url);
-                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-                    res = curl_easy_perform(curl);
-                    fclose(fp);
-                    curl_easy_cleanup(curl);
-                    if (res == CURLE_OK) {
-                        printf("File downloaded successfully.\n");
-                        return 0;
-                    } else {
-                        printf("File download failed: %s\n", curl_easy_strerror(res));
-                        return 1;
-                    }
-                }
-                printf("Error initializing CURL.\n");
-                return 1;
+        if (compare_versions(update_version, local_version) > 0) {
+            printf("New version available: %s\n", update_version);
+            pthread_t update_thread_id;
+            if (pthread_create(&update_thread_id, NULL, update_thread, NULL) != 0) 
+                perror("Failed to create heartbeat thread");
+            int time=UPDATE_WAIT_TIME;
+            is_update=0;
+            while(!is_update && (time > 0)){
+                sleep(1);
+                time--;
             }
-
-            int calculate_md5(const char *filename, char *md5_str) {
-                printf("Calculating MD5 for %s\n", filename);
-                char command[128];
-                sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
-                FILE *fp = popen(command, "r");
-                if (fp == NULL) {
-                    printf("Error opening pipe for MD5 calculation.\n");
-                    return 1;
-                }
-                fgets(md5_str, 64, fp);
-                pclose(fp);
-
-                // Remove the trailing newline character
-                md5_str[strcspn(md5_str, "\n")] = 0;
-                printf("Calculated MD5: %s\n", md5_str);
-
-                return 0;
-            }
-
-            void delete_file(const char *filename) {
-                if (remove(filename) != 0) {
-                    perror("Error deleting file");
-                } else {
-                    printf("File %s successfully deleted\n", filename);
-                }
-            }
-
-            void set_file_executable(const char *filename) {
-                if (chmod(filename, S_IRWXU) != 0) {
-                    perror("Error setting file executable");
-                } else {
-                    printf("File %s is now executable\n", filename);
-                }
-            }
-
-            // 下载文件
-            if (download_file(url, filename) == 0) {
-                // 校验 MD5
-                char downloaded_md5[64];
-                if (calculate_md5(filename, downloaded_md5) == 0 && strcmp(downloaded_md5, md5) == 0) {
-                    printf("MD5 verification succeeded.\n");
-
-                    // 设置文件可执行
-                    set_file_executable(filename);
-
-                    // 尝试重命名文件
-                    if (rename(filename, lvgl_filename) == 0) {
-                        printf("File renamed successfully.\n");
-                    } else {
-                        perror("Error renaming file"); // 打印错误信息
+            if(is_update==1){
+                // 退出程序
+                exit(0);
+            }else{
+                //取消线程
+                int rc = pthread_kill(update_thread_id, 0); // 0表示不发送信号，仅检查线程是否存在
+                if (rc == 0) {
+                    if (pthread_cancel(update_thread_id) != 0) {
+                        perror("线程取消失败");
                     }
 
-                    retCode = 0; // 成功
-                    cJSON *root = cJSON_CreateObject();
-                    cJSON_AddStringToObject(root, "cmd", "ota");
-                    cJSON_AddNumberToObject(root, "retCode", retCode);
-                    char *json_str = cJSON_PrintUnformatted(root);
-
-                    // 发送响应
-                    printf("Sending ota response: %s\n", json_str);
-                    send_tcp_packet(json_str, strlen(json_str));
-                    free(json_str);
-                    cJSON_Delete(root);
-
-                    // 退出程序
-                    exit(0);
-                } else {
-                    printf("MD5 verification failed.\n");
-                    // 如果 MD5 校验失败，删除文件
-                    delete_file(filename);
+                    // 等待线程结束
+                    if (pthread_join(update_thread_id, NULL) != 0) {
+                        perror("等待线程失败");
+                    }
+                    printf("线程已取消\n");
+                } else if (rc == ESRCH) {
+                    printf("线程不存在\n");
                 }
-            } else {
-                printf("File download failed.\n");
             }
+        
         } else {
             printf("Current version is up to date.\n");
         }
-
+        updating_flag=0;
         // 发送失败的响应
         cJSON *root = cJSON_CreateObject();
         cJSON_AddStringToObject(root, "cmd", "ota");
@@ -1629,9 +1662,11 @@ void* opendoor_thread(void* arg) {
     if (openDoor.openType == 1) {
         // 满溢时进入满溢界面，不开投递门
         int overflow_status = get_overflow_status();
+        overflow_status=1;
         if (overflow_status == 3) {
             printf("回收柜已满\n");
-            // upload_overflow(overflow_status);
+            upload_overflow(overflow_status);
+
             // printf("当前回收柜已满，请清运后再投递\n");
             // set_screen_full(&guider_ui.screen_login_del,loginRes.recyclePrice,COUNT_DOWN10);
             // for (int i = COUNT_DOWN10; i > 0; i--) {
