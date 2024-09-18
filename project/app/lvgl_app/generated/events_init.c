@@ -20,7 +20,7 @@
 #include "capture.h"
 #include "custom.h"
 
-extern int settlement,password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect,full;
+extern int settlement,password_2,password_3,password_1,rod_hinder_value,peels_en,cal_en,server_connect,full,key_press,key_press_end;
 extern video_device_t out_video_device;
 extern video_device_t in_video_device;
 #include "server.h"
@@ -402,7 +402,8 @@ static void screen_test_rod_push_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		lv_obj_set_style_bg_color(guider_ui.screen_test_rod_push_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+		key_press=1;
+	lv_obj_set_style_bg_color(guider_ui.screen_test_rod_push_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	set_post_door_open();
 	lv_obj_set_style_bg_color(guider_ui.screen_test_rod_push_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
 	
@@ -421,7 +422,8 @@ static void screen_test_rod_pull_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		lv_obj_set_style_bg_color(guider_ui.screen_test_rod_pull_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+		key_press=1;
+	lv_obj_set_style_bg_color(guider_ui.screen_test_rod_pull_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	set_post_door_close();
 	lv_obj_set_style_bg_color(guider_ui.screen_test_rod_pull_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
 	
@@ -438,7 +440,8 @@ static void screen_test_inside_light_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		lv_obj_set_style_bg_color(guider_ui.screen_test_inside_light_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+		key_press=1;
+	lv_obj_set_style_bg_color(guider_ui.screen_test_inside_light_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	inside_light(1);
 	sleep(5);
 	inside_light(0);
@@ -456,7 +459,8 @@ static void screen_test_outside_light_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		lv_obj_set_style_bg_color(guider_ui.screen_test_outside_light_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
+		key_press=1;
+	lv_obj_set_style_bg_color(guider_ui.screen_test_outside_light_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	outside_light(1);
 	sleep(5);
 	outside_light(0);
@@ -474,6 +478,7 @@ static void screen_test_inside_cam_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
+		key_press=1;
 		inside_light(1);
 		in_video_device.test_flag=1;
 		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
@@ -490,8 +495,9 @@ static void screen_test_outside_cam_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
-		out_video_device.test_flag=1;
+		key_press=1;
+		ui_load_scr_animation(&guider_ui, &guider_ui.screen_test_cam, guider_ui.screen_test_cam_del, &guider_ui.screen_test_del, setup_scr_screen_test_cam, LV_SCR_LOAD_ANIM_NONE, 200, 200, false, true);
+	out_video_device.test_flag=1;
 		break;
 	}
 	default:
@@ -505,7 +511,8 @@ static void screen_test_press_up_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		rod_hinder_value+=5;
+		key_press=1;
+	rod_hinder_value+=5;
 	char str[10];
 	sprintf(str,"%d",rod_hinder_value);
 	lv_label_set_text(guider_ui.screen_test_rod_hinder_value,str);
@@ -522,7 +529,8 @@ static void screen_test_press_down_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		rod_hinder_value-=5;
+		key_press=1;
+	rod_hinder_value-=5;
 	char str[10];
 	sprintf(str,"%d",rod_hinder_value);
 	lv_label_set_text(guider_ui.screen_test_rod_hinder_value,str);
@@ -539,7 +547,8 @@ static void screen_test_cal_2_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		if(peels_en==1){
+		key_press=1;
+	if(peels_en==1){
 	  if(cal_en==0){
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_2_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	    set_rat_weight(2.00);
@@ -563,7 +572,8 @@ static void screen_test_get_weight_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		if(peels_en==1){
+		key_press=1;
+	if(peels_en==1){
 	  if(cal_en==1){
 	    double weight=get_current_weight();
 	    char str[10];
@@ -592,7 +602,8 @@ static void screen_test_quit_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		double cur_weight= get_current_weight();
+		key_press_end=1;
+	double cur_weight= get_current_weight();
 	set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
 	char str[20];
 	sprintf(str, "%d", rod_hinder_value);
@@ -612,7 +623,8 @@ static void screen_test_open_lock_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		set_clear_door_open();
+		key_press=1;
+	set_clear_door_open();
 		break;
 	}
 	default:
@@ -626,7 +638,8 @@ static void screen_test_ir_status_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0)
+		key_press=1;
+	if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0)
 	  lv_label_set_text(guider_ui.screen_test_ir1_status,"1");
 	else
 	  lv_label_set_text(guider_ui.screen_test_ir1_status,"0");
@@ -648,7 +661,8 @@ static void screen_test_peels_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		if(peels_en==0){
+		key_press=1;
+	if(peels_en==0){
 	  peels_en=1;
 	  lv_obj_set_style_bg_color(guider_ui.screen_test_peels_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	  lv_obj_set_style_bg_color(guider_ui.screen_test_cal_2_key, lv_color_hex(0x65b763), LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -679,7 +693,8 @@ static void screen_test_cal_100_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		if(peels_en==1){
+		key_press=1;
+	if(peels_en==1){
 	  if(cal_en==0){
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_100_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	    set_rat_weight(100.00);
@@ -702,7 +717,8 @@ static void screen_test_cal_25_key_event_handler (lv_event_t *e)
 	switch (code) {
 	case LV_EVENT_CLICKED:
 	{
-		if(peels_en==1){
+		key_press=1;
+	if(peels_en==1){
 	  if(cal_en==0){
 	    lv_obj_set_style_bg_color(guider_ui.screen_test_cal_25_key, lv_color_hex(0x345e33), LV_PART_MAIN|LV_STATE_DEFAULT);
 	    set_rat_weight(25.00);

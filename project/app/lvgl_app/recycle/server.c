@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.21";
+char *local_version = "1.23";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -61,6 +61,7 @@ pthread_t capture_in_thread_id = NULL;
 pthread_t capture_out_thread_id = NULL;
 pthread_t venc_rsv_thread_id = NULL;
 pthread_t opendoor_thread_id = NULL;
+pthread_t debug_count_thread_id = NULL;
 
 extern char key_input[5];
 extern int key_input_count;
@@ -82,6 +83,10 @@ int is_close_door=0;
 char update_version[16], update_url[64], update_md5[64];
 
 int is_update=0;
+int key_press=0;
+int key_press_end=0;
+
+#define DEBUG_COUNT_TIME 90
 
 
 const char* get_oldest_folder(const char* path1, const char* path2, struct stat *stat1, struct stat *stat2) {
@@ -157,6 +162,42 @@ int check_dir_num(int num){
     return 0;    
 }
 
+void* debug_count_thread(void* arg) {
+    printf("enter debug_count_thread\n");
+    key_press=0;
+    key_press_end=0;
+    int time=0;
+    while(!key_press_end){
+        if(key_press){
+            time=0;
+            key_press=0;
+        }else{
+            if(time < DEBUG_COUNT_TIME)
+                time++;
+            else{
+                if(out_video_device.test_flag ||in_video_device.test_flag){
+                    out_video_device.test_flag=0;
+                    in_video_device.test_flag=0;
+                    inside_light(0);
+                    pthread_mutex_lock(&lv_task_mutex);
+                    ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
+                    set_screen_test_rod_hinder_value(rod_hinder_value);
+                    pthread_mutex_unlock(&lv_task_mutex);
+                }
+
+                double cur_weight= get_current_weight();
+                pthread_mutex_lock(&lv_task_mutex);
+                set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
+                set_screen_login_qrcode(loginRes.qrCode);
+                pthread_mutex_unlock(&lv_task_mutex);
+	            screen_login_flag = 1;
+                key_press_end=1;
+            }
+        }
+        sleep(1);
+    }
+    printf("end\n");
+}
 
 void* close_door_thread(void* arg) {
     printf("enter close_door_thread\n");
@@ -1268,6 +1309,12 @@ void handle_debug() {
     set_screen_test(&guider_ui.screen_login_del);
     pthread_mutex_unlock(&lv_task_mutex);
 
+    int ret = pthread_create(&debug_count_thread_id, NULL, debug_count_thread, NULL);
+    if (ret != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", "debug");
     cJSON_AddNumberToObject(root, "retCode", retCode);
@@ -1687,6 +1734,8 @@ void* opendoor_thread(void* arg) {
             ssize_t bytes_written;
 
             const char *filename = "opendoor.txt";
+            reset_cam(0);
+            reset_cam(1);
 
             transid_fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
             if (transid_fd == -1) {
@@ -1700,16 +1749,6 @@ void* opendoor_thread(void* arg) {
                 perror("Error writing to file");
                 close(transid_fd);
             }
-
-            sprintf(line,"%0.2f\n",sub_weight);
-
-            bytes_written = write(transid_fd, line, strlen(line));
-            if (bytes_written == -1) {
-                perror("Error writing to file");
-                close(transid_fd);
-            }
-            fsync(transid_fd);
-            close(transid_fd);
 
             printf("set_screen_submit\n");
             inside_light(1);
@@ -1725,6 +1764,26 @@ void* opendoor_thread(void* arg) {
             time(&now);
             localNow = localtime(&now);
             strftime(currentTime, sizeof(currentTime), "%Y%m%d_%H%M%S", localNow);
+            
+            sprintf(line,"%s\n",currentTime);
+
+            bytes_written = write(transid_fd, line, strlen(line));
+            if (bytes_written == -1) {
+                perror("Error writing to file");
+                close(transid_fd);
+            }
+
+            sprintf(line,"%0.2f\n",sub_weight);
+
+            bytes_written = write(transid_fd, line, strlen(line));
+            if (bytes_written == -1) {
+                perror("Error writing to file");
+                close(transid_fd);
+            }
+
+            fsync(transid_fd);
+            close(transid_fd);
+
             printf("check_dir_num\n");
             check_dir_num(DIR_NUM);
             struct stat statbuf;
@@ -1839,7 +1898,12 @@ void* opendoor_thread(void* arg) {
                 usleep(1000000 / REFRESH_RATE);
             }
             is_close_door=0;
-            close_door(cur_weight, diff_weight);
+            if(close_door(cur_weight, diff_weight) == 0){
+                if (unlink(filename) == -1) {
+                    // 如果删除失败，打印错误信息
+                    perror("Error deleting file");
+                }
+            }
 
             out_video_device.photo_opendoor=0;
             out_video_device.photo_flag=1;
@@ -1854,10 +1918,6 @@ void* opendoor_thread(void* arg) {
             
             sleep(2);
             inside_light(0);
-            if (unlink(filename) == -1) {
-                // 如果删除失败，打印错误信息
-                perror("Error deleting file");
-            }
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
@@ -1981,6 +2041,7 @@ void* opendoor_thread(void* arg) {
 int close_door(double cur_weight, double diff_weight) 
 {
     char recv_buf[MAX_BUF_SIZE];
+    int ret=0;
 
     // 创建 JSON 请求
     closeDoor.curWeight = cur_weight;
@@ -1995,15 +2056,13 @@ int close_door(double cur_weight, double diff_weight)
 
     // 发送关门请求
     printf("Sending closeDoor request: %s\n", json_str);
-    while(send_tcp_packet(json_str, strlen(json_str)) < 0){
-        printf("resend close door!\n");
-        usleep(400 * 1000);
-    }
+    if(send_tcp_packet(json_str, strlen(json_str)) < 0)
+        ret=-1;
     
     free(json_str);
     cJSON_Delete(root);
 
-    return 0;
+    return ret;
 }
 
 // 上传超重

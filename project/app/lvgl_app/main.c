@@ -38,6 +38,7 @@ extern char trans_Id[64];
 #define SIGNAL_ERR_COUNT 5
 
 #define NTP_UPDATE_COUNT 86400
+#define CHECK_OPENDOOR_COUNT 30
 
 lv_ui guider_ui;
 extern int sock;
@@ -65,6 +66,7 @@ int ntp_update(){
     system("ntpdate ntp1.aliyun.com");
 }
 
+extern pthread_t opendoor_thread_id;
 
 void sig_proc(int signo) {
     if (signo == SIGINT || signo == SIGTERM) {
@@ -180,6 +182,24 @@ void* keyboard_thread(void* arg) {
     }
 }
 
+void upload_close_door(char *time){
+    char in_video_open_path[64];
+    char out_video_open_path[64];
+    char in_video_close_path[64];
+    char out_video_close_path[64];
+    char time_path[32];
+    char *media_path="/root/media";
+    sprintf(time_path,"%s/%s",media_path,time);
+    sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
+    sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
+    sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
+    sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
+
+    upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
+    upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
+    upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
+    upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_close_path);
+}
 // 辅助线程
 void* aux_task_thread(void* arg) {
 
@@ -188,6 +208,7 @@ void* aux_task_thread(void* arg) {
     int light_count = 0;
     int server_count = 0;
     int overflow_count = 0;
+    int opendoor_count=0;
     int current_light_state = 0;
     int curCapacity,curCapacityBefore;
     long ntp_count=0;
@@ -318,6 +339,45 @@ void* aux_task_thread(void* arg) {
             ntp_count=0;
         }
         
+        if(opendoor_count > CHECK_OPENDOOR_COUNT){
+            opendoor_count=0;
+            if(opendoor_thread_id == NULL){
+                opendoor_thread_id=1;
+                char *filename = "opendoor.txt"; // 你要读取的文件名
+                FILE *file = fopen(filename, "r");
+                char buffer[20];
+                char time[24];
+                int size;
+                if (file != NULL) {
+                    fgets(trans_Id, sizeof(trans_Id), file);
+                    trans_Id[strlen(trans_Id)-1]='\0';
+                    fgets(time, sizeof(time), file);
+                    time[strlen(time)-1]='\0';
+                    fgets(buffer, sizeof(buffer), file);
+                    buffer[strlen(buffer)-1]='\0';
+                    char *endptr;
+                    double sub_weight = strtod(buffer, &endptr);
+                    printf("time:%s,trans_Id:%s,weight=%f\n",time,trans_Id,sub_weight);
+                    
+                    double cur_weight= get_current_weight();
+                    if(cur_weight < 0)
+                        cur_weight=0.0;
+                    double diff_weight = round((cur_weight - sub_weight) * 100) / 100;
+                    close_door(cur_weight, diff_weight);
+                    fclose(file);
+
+                    if (remove(filename) == 0) {
+                        printf("文件 '%s' 删除成功。\n", filename);
+                    } else {
+                        perror("删除文件失败");
+                    }
+
+                    upload_close_door(time);
+                    opendoor_thread_id=NULL;
+                }
+            }
+        }
+
         sleep(1);
 
         // 触屏 进入配置模式
@@ -334,6 +394,7 @@ void* aux_task_thread(void* arg) {
         light_count++;
         server_count++;
         ntp_count++;
+        opendoor_count++;
     }
     printf("exit aux_task_thread");
     return NULL;
@@ -447,28 +508,6 @@ int main(void) {
         pthread_mutex_unlock(&lv_task_mutex);
     }
 
-    char *filename = "opendoor.txt"; // 你要读取的文件名
-    FILE *file = fopen(filename, "r");
-    char buffer[20];
-    int size;
-    if (file != NULL) {
-        fgets(trans_Id, sizeof(trans_Id), file);
-        trans_Id[strlen(trans_Id)-1]='\0';
-        fgets(buffer, sizeof(buffer), file);
-        buffer[strlen(buffer)-1]='\0';
-        char *endptr;
-        double sub_weight = strtod(buffer, &endptr);
-        printf("trans_Id:%s,weight=%f\n",trans_Id,sub_weight);
-        
-        double cur_weight= get_current_weight();
-        if(cur_weight < 0)
-            cur_weight=0.0;
-        double diff_weight = round((cur_weight - sub_weight) * 100) / 100;
-
-        close_door(cur_weight, diff_weight);
-        
-        fclose(file);
-    }
     while (g_main_run_) {
         while (server_connect) 
         {
