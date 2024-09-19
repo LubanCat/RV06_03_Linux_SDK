@@ -301,7 +301,7 @@ void* capture_out_thread(void* arg) {
 
             //获取rgb数据
             video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
-
+            video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
             //测试
             // if(out_video_device.test_flag){
             //     lv_color_t color_p[640*480];
@@ -1734,9 +1734,9 @@ void* opendoor_thread(void* arg) {
             ssize_t bytes_written;
 
             const char *filename = "opendoor.txt";
-            reset_cam(0);
-            reset_cam(1);
-
+            // reset_cam(0);
+            // reset_cam(1);
+            inside_light(1);
             transid_fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
             if (transid_fd == -1) {
                 perror("Error opening file");
@@ -1751,7 +1751,6 @@ void* opendoor_thread(void* arg) {
             }
 
             printf("set_screen_submit\n");
-            inside_light(1);
             // 投递界面
             pthread_mutex_lock(&lv_task_mutex);
             set_screen_submit(&guider_ui.screen_login_del,0,COUNT_DOWN99,0);
@@ -1814,6 +1813,8 @@ void* opendoor_thread(void* arg) {
             sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
             sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
+
+            usleep(200 * 1000);
 
             in_video_device.photo_flag=1;
             in_video_device.photo_opendoor=1;
@@ -1917,7 +1918,7 @@ void* opendoor_thread(void* arg) {
             in_video_device.photo_flag=1;
             
             sleep(2);
-            inside_light(0);
+            
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
@@ -1927,7 +1928,7 @@ void* opendoor_thread(void* arg) {
             pthread_mutex_lock(&lv_task_mutex);
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             pthread_mutex_unlock(&lv_task_mutex);
-
+            inside_light(0);
             openDoor.openType = 0;
         }
     } else if (openDoor.openType == 2) {

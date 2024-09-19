@@ -375,6 +375,7 @@ void* aux_task_thread(void* arg) {
                     upload_close_door(time);
                     opendoor_thread_id=NULL;
                 }
+                opendoor_thread_id=NULL;
             }
         }
 
