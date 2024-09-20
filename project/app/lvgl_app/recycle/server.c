@@ -301,7 +301,6 @@ void* capture_out_thread(void* arg) {
 
             //获取rgb数据
             video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
-            video_linux_get_frame_rgb(&out_video_device.video_frame,data,&length);
             //测试
             // if(out_video_device.test_flag){
             //     lv_color_t color_p[640*480];
@@ -442,6 +441,7 @@ void* capture_in_thread(void* arg) {
                     //设置摄像头正常工作的flag
                     in_video_device.err=0;
                     in_video_device.live=1;
+                    video_linux_skip_frame(&in_video_device.video_frame,10);
                     printf("in_video_device capture_start\n");
                 }else{
                     printf("in_video_device.err\n");
@@ -1813,8 +1813,6 @@ void* opendoor_thread(void* arg) {
             sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
             sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
             sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
-
-            usleep(200 * 1000);
 
             in_video_device.photo_flag=1;
             in_video_device.photo_opendoor=1;

@@ -19,6 +19,7 @@
 #include "generated/gui_guider.h"
 #include "generated/events_init.h"
 #include "capture.h"
+#include <sys/stat.h>
 
 #define DISP_BUF_SIZE (600 * 1024 * 4)
 #define MAX_WEIGHT 200
@@ -49,6 +50,10 @@ pthread_mutex_t lv_task_mutex = PTHREAD_MUTEX_INITIALIZER;
 int server_connect;
 extern char cleantime_str[100];
 extern int updating_flag;
+extern pthread_mutex_t camara_mutex;
+
+extern video_device_t out_video_device;
+extern video_device_t in_video_device;
 
 char key_input[5];
 int key_input_count;
@@ -182,6 +187,17 @@ void* keyboard_thread(void* arg) {
     }
 }
 
+int is_file_exist(char *filename){
+    struct stat buffer;
+    if (stat(filename, &buffer) == 0)
+        return 0;
+    else
+        if (errno == ENOENT)
+            return -1;
+        else 
+            return -1;
+}
+
 void upload_close_door(char *time){
     char in_video_open_path[64];
     char out_video_open_path[64];
@@ -189,17 +205,28 @@ void upload_close_door(char *time){
     char out_video_close_path[64];
     char time_path[32];
     char *media_path="/root/media";
+    char device[64];
     sprintf(time_path,"%s/%s",media_path,time);
     sprintf(in_video_open_path,"%s/in_video_open.jpg",time_path);
     sprintf(out_video_open_path,"%s/out_video_open.jpg",time_path);
     sprintf(in_video_close_path,"%s/in_video_close.jpg",time_path);
     sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
 
+    if(is_file_exist(in_video_close_path) == -1){
+        get_cam_video(0,device);
+        capture_jpg_compass(device,10,640,480,in_video_close_path);
+    }
+
+    if(is_file_exist(out_video_close_path) == -1){
+        get_cam_video(1,device);
+        capture_jpg_compass(device,10,640,480,out_video_close_path);
+    }
+
     upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
     upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
     upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
     upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_close_path);
-}
+}   
 // 辅助线程
 void* aux_task_thread(void* arg) {
 
@@ -341,9 +368,11 @@ void* aux_task_thread(void* arg) {
         
         if(opendoor_count > CHECK_OPENDOOR_COUNT){
             opendoor_count=0;
+            printf("time is ok\n");
             if(opendoor_thread_id == NULL){
+                printf("Enter\n");
                 opendoor_thread_id=1;
-                char *filename = "opendoor.txt"; // 你要读取的文件名
+                char *filename = "/root/opendoor.txt"; // 你要读取的文件名
                 FILE *file = fopen(filename, "r");
                 char buffer[20];
                 char time[24];
@@ -365,7 +394,6 @@ void* aux_task_thread(void* arg) {
                     double diff_weight = round((cur_weight - sub_weight) * 100) / 100;
                     close_door(cur_weight, diff_weight);
                     fclose(file);
-
                     if (remove(filename) == 0) {
                         printf("文件 '%s' 删除成功。\n", filename);
                     } else {
@@ -376,6 +404,7 @@ void* aux_task_thread(void* arg) {
                     opendoor_thread_id=NULL;
                 }
                 opendoor_thread_id=NULL;
+                printf("Quit\n");
             }
         }
 
@@ -389,7 +418,7 @@ void* aux_task_thread(void* arg) {
         //     password_2 = 0;
         //     password_3 = 0;
         // }
-
+        printf("-\n");
         overflow_count++;
         signal_count++;
         light_count++;

@@ -170,6 +170,24 @@ int capture_stop(video_frame_t *video_frame)
     return 1;
 }
 
+int video_linux_skip_frame(video_frame_t *video_frame,int time)
+{
+    //出队
+    struct v4l2_buffer readbuf;
+    readbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    readbuf.memory = V4L2_MEMORY_MMAP;
+
+    for(int i=0;i<time;i++){
+        if(ioctl(video_frame->fd, VIDIOC_DQBUF, &readbuf) < 0)
+            perror("dqbuf fail");
+
+        if(ioctl(video_frame->fd, VIDIOC_QBUF, &readbuf) < 0)
+            perror("qbuf fail");
+    }
+
+    return 1;
+}
+
 int video_linux_get_frame_rgb(video_frame_t *video_frame,char *data,int *length)
 {
     //出队
@@ -216,7 +234,7 @@ int video_linux_get_frame_rgb(video_frame_t *video_frame,char *data,int *length)
     return 1;
 }
 
-int capture_jpg_compass(char *device,int width,int height,char *output_path){
+int capture_jpg_compass(char *device,int time,int width,int height,char *output_path){
     video_frame_t video_frame;
     video_frame.width=width;
     video_frame.height=height;
@@ -229,7 +247,7 @@ int capture_jpg_compass(char *device,int width,int height,char *output_path){
 
     char *data = malloc(width*height*3);
     int length;
-
+    video_linux_skip_frame(&video_frame,time);
     video_linux_get_frame_rgb(&video_frame,data,&length);
     capture_stop(&video_frame);
 
