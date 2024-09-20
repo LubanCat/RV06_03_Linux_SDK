@@ -1409,7 +1409,7 @@ int download_file(const char *url, const char *filename) {
         // 设置连接超时时间为 15 秒
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
         // 设置传输超时时间为 40 秒
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 40L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 75L);
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
