@@ -98,8 +98,8 @@ int main(void) {
     lv_indev_drv_register(&indev_drv);
 
     //用于自定义的lvgl程序
-    // setup_ui(&guider_ui);
-    // events_init(&guider_ui);
+    setup_ui(&guider_ui);
+    events_init(&guider_ui);
 
     //用于demo
     // lv_demo_benchmark_set_max_speed(true);
@@ -107,7 +107,7 @@ int main(void) {
     // lv_demo_widgets();
     // lv_demo_stress();
     // lv_demo_keypad_encoder();
-    lv_demo_music();
+    // lv_demo_music();
 
     ret = pthread_create(&lv_task_thread_id, NULL, lv_task_thread, NULL);
     if (ret != 0) {

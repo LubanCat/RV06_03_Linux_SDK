@@ -35,6 +35,11 @@
  * Create a demo application
  */
 
+void change_btn_label(){
+  lv_label_set_text(guider_ui.screen_btn_label, "123");
+}
+
+
 void custom_init(lv_ui *ui)
 {
     /* Add your codes here */
