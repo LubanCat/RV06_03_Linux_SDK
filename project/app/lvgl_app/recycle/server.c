@@ -441,7 +441,6 @@ void* capture_in_thread(void* arg) {
                     //设置摄像头正常工作的flag
                     in_video_device.err=0;
                     in_video_device.live=1;
-                    video_linux_skip_frame(&in_video_device.video_frame,10);
                     printf("in_video_device capture_start\n");
                 }else{
                     printf("in_video_device.err\n");
@@ -523,9 +522,32 @@ void* capture_in_thread(void* arg) {
 }
 
 int cam_init(){
+    int ret ;
     get_cam_video(0,in_video);
     get_cam_video(1,out_video);
+    inside_light(1);
+    video_frame_t video_frame;
+    video_frame.width=640;
+    video_frame.height=480;
+    sprintf(video_frame.device,"%s",out_video);
+    ret = capture_start(&video_frame);
+    if(ret < 0){
+        capture_stop(&video_frame);
+        return -1;
+    }
 
+    video_linux_skip_frame(&video_frame,90);
+    capture_stop(&video_frame);
+
+    sprintf(video_frame.device,"%s",in_video);
+    ret = capture_start(&video_frame);
+    if(ret < 0){
+        capture_stop(&video_frame);
+        return -1;
+    }
+    video_linux_skip_frame(&video_frame,90);
+    capture_stop(&video_frame);
+    inside_light(0);
     out_video_device.photo_flag=0;
     out_video_device.record_flag=0;
     out_video_device.test_flag=0;
@@ -540,8 +562,6 @@ int cam_init(){
     in_video_device.avc_init_flag=0;
     in_video_device.preview_flag=0;
 
-
-    
     // out_video_device.video_frame.width=640;
     // out_video_device.video_frame.height=480;
     // char *data=malloc(out_video_device.video_frame.width * out_video_device.video_frame.height * 3);
@@ -560,7 +580,7 @@ int cam_init(){
 
     // free(data);
 
-    int ret = pthread_create(&capture_in_thread_id, NULL, capture_in_thread, NULL);
+    ret = pthread_create(&capture_in_thread_id, NULL, capture_in_thread, NULL);
     if (ret != 0) {
         perror("pthread_create");
     }
@@ -569,8 +589,6 @@ int cam_init(){
     if (ret != 0) {
         perror("pthread_create");
     }
-
-    
 }
 
 // 设备信息
@@ -1733,7 +1751,7 @@ void* opendoor_thread(void* arg) {
             int transid_fd;
             ssize_t bytes_written;
 
-            const char *filename = "opendoor.txt";
+            const char *filename = "/root/opendoor.txt";
             // reset_cam(0);
             // reset_cam(1);
             inside_light(1);

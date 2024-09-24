@@ -418,7 +418,7 @@ void* aux_task_thread(void* arg) {
         //     password_2 = 0;
         //     password_3 = 0;
         // }
-        printf("-\n");
+        // printf("-\n");
         overflow_count++;
         signal_count++;
         light_count++;
