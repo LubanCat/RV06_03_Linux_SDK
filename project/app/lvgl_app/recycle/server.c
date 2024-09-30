@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.27";
+char *local_version = "1.28";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -1937,7 +1937,7 @@ void* opendoor_thread(void* arg) {
             in_video_device.photo_flag=1;
             
             sleep(2);
-            
+
             sync();
 
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
