@@ -1846,6 +1846,9 @@ void* opendoor_thread(void* arg) {
             out_video_device.record_flag=1;
 
             set_post_door_open();
+
+            sync();
+
             printf("可回收物仓门已打开，请尽快投递\n");
             for (; i >= 0; i--) {
                 // 获取重量，循环更新页面
@@ -1935,12 +1938,14 @@ void* opendoor_thread(void* arg) {
             
             sleep(2);
             
+            sync();
+
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_open_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_close_path);
             upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_close_path);
             //upload_video("http://api.nwrecycle.com/api/device/upload/video", "/root/media/record.mp4");
-
+            
             pthread_mutex_lock(&lv_task_mutex);
             set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
             pthread_mutex_unlock(&lv_task_mutex);

@@ -39,7 +39,7 @@ extern char trans_Id[64];
 #define SIGNAL_ERR_COUNT 5
 
 #define NTP_UPDATE_COUNT 86400
-#define CHECK_OPENDOOR_COUNT 30
+#define CHECK_OPENDOOR_COUNT 4
 
 lv_ui guider_ui;
 extern int sock;
@@ -59,6 +59,8 @@ char key_input[5];
 int key_input_count;
 
 int overflow_flag=0;
+int cam_flag=0;
+
 
 int phone_login_flag=0;
 int phone_login_update=0;
@@ -213,8 +215,11 @@ void upload_close_door(char *time){
     sprintf(out_video_close_path,"%s/out_video_close.jpg",time_path);
 
     if(is_file_exist(in_video_close_path) == -1){
+        inside_light(1);
+        sleep(1);
         get_cam_video(0,device);
         capture_jpg_compass(device,10,640,480,in_video_close_path);
+        inside_light(0);
     }
 
     if(is_file_exist(out_video_close_path) == -1){
@@ -366,7 +371,7 @@ void* aux_task_thread(void* arg) {
             ntp_count=0;
         }
         
-        if(opendoor_count > CHECK_OPENDOOR_COUNT){
+        if(opendoor_count > CHECK_OPENDOOR_COUNT && cam_flag){
             opendoor_count=0;
             printf("time is ok\n");
             if(opendoor_thread_id == NULL){
@@ -521,6 +526,7 @@ int main(void) {
     }
 
     cam_init();
+    cam_flag=1;
     pthread_mutex_lock(&lv_task_mutex);
     set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
     pthread_mutex_unlock(&lv_task_mutex);
