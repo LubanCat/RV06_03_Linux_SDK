@@ -38,7 +38,7 @@ char out_video_close_path[64];
 
 #define CONFIG_SERVER "api.nwrecycle.com"
 #define CONFIG_SERVER_PORT 9096
-#define UPDATE_WAIT_TIME 120
+#define UPDATE_WAIT_TIME 320
 
 extern lv_disp_drv_t disp_drv;
 char *preview_data;
@@ -1424,10 +1424,10 @@ int download_file(const char *url, const char *filename) {
             curl_easy_cleanup(curl);
             return 1;
         }
-        // 设置连接超时时间为 15 秒
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
-        // 设置传输超时时间为 40 秒
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 75L);
+        // 设置连接超时时间为 10 秒
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+        // 设置传输超时时间为 300 秒
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300L);
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
