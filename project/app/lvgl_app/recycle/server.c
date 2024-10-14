@@ -1837,15 +1837,16 @@ void* opendoor_thread(void* arg) {
 
             usleep(400000);
 
+            out_video_device.preview_flag=1;
+
+            set_post_door_open();
+
             out_video_device.photo_flag=1;
             out_video_device.photo_opendoor=1;
 
-            usleep(100000);
+            usleep(200000);
 
-            out_video_device.preview_flag=1;
             out_video_device.record_flag=1;
-
-            set_post_door_open();
 
             sync();
 

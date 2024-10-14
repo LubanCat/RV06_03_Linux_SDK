@@ -373,9 +373,8 @@ void* aux_task_thread(void* arg) {
         
         if(opendoor_count > CHECK_OPENDOOR_COUNT && cam_flag){
             opendoor_count=0;
-            printf("time is ok\n");
             if(opendoor_thread_id == NULL){
-                printf("Enter\n");
+                printf("check /root/opendoor.txt\n");
                 opendoor_thread_id=1;
                 char *filename = "/root/opendoor.txt"; // 你要读取的文件名
                 FILE *file = fopen(filename, "r");
@@ -409,7 +408,6 @@ void* aux_task_thread(void* arg) {
                     opendoor_thread_id=NULL;
                 }
                 opendoor_thread_id=NULL;
-                printf("Quit\n");
             }
         }
 
