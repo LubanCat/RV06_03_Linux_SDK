@@ -1961,37 +1961,41 @@ void* opendoor_thread(void* arg) {
         if(cur_weight < 0)
             cur_weight=0.0;
 
-        // 清运操作页面1
-        pthread_mutex_lock(&lv_task_mutex);
-        set_screen_clean(&guider_ui.screen_login_del,COUNT_DOWN99,sub_weight);
-        pthread_mutex_unlock(&lv_task_mutex);
+        // // 清运操作页面1
+        // pthread_mutex_lock(&lv_task_mutex);
+        // set_screen_clean(&guider_ui.screen_login_del,COUNT_DOWN99,sub_weight);
+        // pthread_mutex_unlock(&lv_task_mutex);
 
-        for (; i > 0; i--) {
-            if ((i % REFRESH_RATE) == 0) {
-                // 更新清运界面倒计时
-                pthread_mutex_lock(&lv_task_mutex);
-                set_screen_clean_time(i/REFRESH_RATE);
-                pthread_mutex_unlock(&lv_task_mutex);
-                printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i/REFRESH_RATE, sub_weight);
-            }
-            // 获取开启清运门按键状态，按下开启清运门
-            if (open_clean_door_flag) {
-                inside_light(1);
-                printf("按键：开启清运门\n");
-                set_clear_door_open();
-                open_clean_door_flag=0;
-                clearing = 1;
-                break;
-            }
+        // for (; i > 0; i--) {
+        //     if ((i % REFRESH_RATE) == 0) {
+        //         // 更新清运界面倒计时
+        //         pthread_mutex_lock(&lv_task_mutex);
+        //         set_screen_clean_time(i/REFRESH_RATE);
+        //         pthread_mutex_unlock(&lv_task_mutex);
+        //         printf("倒计时: %d秒后返回登录界面，可清运重量%.2fKG\n", i/REFRESH_RATE, sub_weight);
+        //     }
+        //     // 获取开启清运门按键状态，按下开启清运门
+        //     if (open_clean_door_flag) {
+        //         inside_light(1);
+        //         printf("按键：开启清运门\n");
+        //         set_clear_door_open();
+        //         open_clean_door_flag=0;
+        //         clearing = 1;
+        //         break;
+        //     }
 
-            // 获取退出按键状态，按下返回登录界面
-            if (quit_flag) {
-                printf("按键：退出该模式\n");
-                quit_flag=0;
-                break;
-            }
-            usleep(1000000 / REFRESH_RATE);
-        }
+        //     // 获取退出按键状态，按下返回登录界面
+        //     if (quit_flag) {
+        //         printf("按键：退出该模式\n");
+        //         quit_flag=0;
+        //         break;
+        //     }
+        //     usleep(1000000 / REFRESH_RATE);
+        // }
+
+        inside_light(1);
+        set_clear_door_open();
+        clearing = 1;
 
         // 判断是否进入清运状态，显示正在清运
         if (clearing == 1) {

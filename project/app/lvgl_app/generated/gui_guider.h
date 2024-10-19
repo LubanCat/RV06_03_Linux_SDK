@@ -54,8 +54,10 @@ typedef struct
 	lv_obj_t *screen_login_img_1;
 	lv_obj_t *screen_login_full;
 	lv_obj_t *screen_login_updating;
+	lv_obj_t *screen_login_label_24;
+	lv_obj_t *screen_login_sn_num;
 	lv_obj_t *screen_login_keyboard;
-	lv_obj_t *screen_login_label_8;
+	lv_obj_t *screen_login_img_2;
 	lv_obj_t *screen_login_phone_number;
 	lv_obj_t *screen_login_key_1;
 	lv_obj_t *screen_login_key_2;
@@ -78,12 +80,16 @@ typedef struct
 	lv_obj_t *screen_login_label_31;
 	lv_obj_t *screen_login_label_32;
 	lv_obj_t *screen_login_label_33;
-	lv_obj_t *screen_login_label_34;
 	lv_obj_t *screen_login_label_35;
 	lv_obj_t *screen_login_label_36;
+	lv_obj_t *screen_login_label_34;
 	lv_obj_t *screen_login_key_enter;
-	lv_obj_t *screen_login_label_24;
-	lv_obj_t *screen_login_sn_num;
+	lv_obj_t *screen_login_label_38;
+	lv_obj_t *screen_login_img_3;
+	lv_obj_t *screen_login_img_4;
+	lv_obj_t *screen_login_img_5;
+	lv_obj_t *screen_login_key_time;
+	lv_obj_t *screen_login_label_40;
 	lv_obj_t *screen_login_phone_notice;
 	lv_obj_t *screen_login_phone_bad;
 	lv_obj_t *screen_full;
@@ -246,22 +252,26 @@ LV_IMG_DECLARE(_2_alpha_30x29);
 LV_IMG_DECLARE(_3_alpha_30x29);
 LV_IMG_DECLARE(_4_alpha_30x29);
 LV_IMG_DECLARE(_5_alpha_30x29);
-LV_IMG_DECLARE(_phone_login_alpha_118x167);
+LV_IMG_DECLARE(_phone_login2_alpha_181x181);
 LV_IMG_DECLARE(_91_alpha_300x252);
 LV_IMG_DECLARE(_111_alpha_555x350);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_1_alpha_120x60);
-LV_IMG_DECLARE(_key_2_alpha_400x50);
+LV_IMG_DECLARE(_key_backup_alpha_438x369);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_6_alpha_400x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_4_alpha_255x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_3_alpha_120x60);
+LV_IMG_DECLARE(_key_5_alpha_400x60);
+LV_IMG_DECLARE(_logo_alpha_100x100);
+LV_IMG_DECLARE(_key_6_alpha_154x56);
+LV_IMG_DECLARE(_count_alpha_45x37);
 LV_IMG_DECLARE(_phone_notice_alpha_555x350);
 LV_IMG_DECLARE(_phone_num_not_use_alpha_550x110);
 
@@ -282,11 +292,11 @@ LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_28)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_24)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_12)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_32)
 LV_FONT_DECLARE(lv_font_Amiko_Regular_16)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_38)
-LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_96)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_36)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_96)
+LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_32)
 LV_FONT_DECLARE(lv_font_montserratMedium_12)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_54)
 LV_FONT_DECLARE(lv_font_SourceHanSerifCN2_30)

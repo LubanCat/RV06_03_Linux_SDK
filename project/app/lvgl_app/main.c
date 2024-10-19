@@ -38,6 +38,8 @@ extern char trans_Id[64];
 // 读4G信号错误的时间 单位：次数 时间=SIGNAL_UPDATE_TIME * 次数
 #define SIGNAL_ERR_COUNT 5
 
+#define KEYBOARD_TIME 60
+
 #define NTP_UPDATE_COUNT 86400
 #define CHECK_OPENDOOR_COUNT 4
 
@@ -99,6 +101,7 @@ void* keyboard_thread(void* arg) {
     char input[5];
     int input_count;
     int show=0;
+    int time=0;
     while(g_main_run_){
         // 进入登录界面
         if(phone_login_flag && screen_login_flag && !overflow_flag){
@@ -153,10 +156,18 @@ void* keyboard_thread(void* arg) {
                     // printf("phone_number:%s\n",phone_number);
                     pthread_mutex_lock(&lv_task_mutex);
                     set_screen_login_phone_number(phone_number,phone_number_count);
+                    pthread_mutex_unlock(&lv_task_mutex); 
+                }
+
+                if(time % 10 == 0){
+                    pthread_mutex_lock(&lv_task_mutex);
+                    lv_label_set_text_fmt(guider_ui.screen_login_key_time, "%d", KEYBOARD_TIME-time/10);
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
- 
-                
+                if(time / 10 == KEYBOARD_TIME){
+                    phone_login_flag=0;
+                }
+
                 //更新显示数据
                 // printf("phone_number:%s\n",phone_number);
             }else{
@@ -167,6 +178,7 @@ void* keyboard_thread(void* arg) {
                 printf("open key_board\n");
                 pthread_mutex_lock(&lv_task_mutex);
                 lv_obj_clear_flag(guider_ui.screen_login_keyboard, LV_OBJ_FLAG_HIDDEN);
+                lv_label_set_text_fmt(guider_ui.screen_login_key_time, "%d", KEYBOARD_TIME);
                 show=1;
                 pthread_mutex_unlock(&lv_task_mutex);
             }
@@ -175,6 +187,7 @@ void* keyboard_thread(void* arg) {
             phone_login_flag=0;
             phone_login_update=0;
             phone_number_count=0;
+            time=0;
 
             phone_number[0]='\0';
             if(show){
@@ -186,6 +199,7 @@ void* keyboard_thread(void* arg) {
             }
         }
         usleep(100 * 1000);
+        time++;
     }
 }
 
