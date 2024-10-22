@@ -165,6 +165,8 @@ void* keyboard_thread(void* arg) {
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
                 if(time / 10 == KEYBOARD_TIME){
+                    phone_number_count=0;
+                    phone_number[0]='\0';
                     phone_login_flag=0;
                 }
 
