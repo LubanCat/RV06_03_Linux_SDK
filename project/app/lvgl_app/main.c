@@ -234,13 +234,13 @@ void upload_close_door(char *time){
         inside_light(1);
         sleep(1);
         get_cam_video(0,device);
-        capture_jpg_compass(device,10,640,480,in_video_close_path);
+        capture_jpg_compass_osd(device,10,640,480,in_video_close_path,1);
         inside_light(0);
     }
 
     if(is_file_exist(out_video_close_path) == -1){
         get_cam_video(1,device);
-        capture_jpg_compass(device,10,640,480,out_video_close_path);
+        capture_jpg_compass_osd(device,10,640,480,out_video_close_path,1);
     }
 
     upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
@@ -454,6 +454,9 @@ int main(void) {
     pthread_t aux_task_thread_id;
     pthread_t socket_task_thread_id;
     int ret;
+
+    // capture_jpg_compass_osd("/dev/video0",30,640,480,"/root/123.jpg",1);
+    // return 0;
 
     signal(SIGINT, sig_proc);
     signal(SIGTERM, sig_proc);

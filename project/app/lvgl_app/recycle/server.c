@@ -36,6 +36,11 @@ char out_video_open_path[64];
 char in_video_close_path[64];
 char out_video_close_path[64];
 
+char in_video_clean_open_path[64]   = "/root/media/clean/in_video_open.jpg";
+char out_video_clean_open_path[64]  = "/root/media/clean/out_video_open.jpg";
+char in_video_clean_close_path[64]  = "/root/media/clean/in_video_close.jpg";
+char out_video_clean_close_path[64] = "/root/media/clean/out_video_close.jpg";
+
 #define CONFIG_SERVER "api.nwrecycle.com"
 #define CONFIG_SERVER_PORT 9096
 #define UPDATE_WAIT_TIME 320
@@ -1956,6 +1961,7 @@ void* opendoor_thread(void* arg) {
     } else if (openDoor.openType == 2) {
         int i = COUNT_DOWN99 * REFRESH_RATE;
         int clearing = 0;
+        char device[64];
         double diff_weight = 0;
         double cur_weight = get_current_weight();
         if(cur_weight < 0)
@@ -1993,7 +1999,26 @@ void* opendoor_thread(void* arg) {
         //     usleep(1000000 / REFRESH_RATE);
         // }
 
+        check_dir_num(DIR_NUM);
+        struct stat statbuf;
+        //创建文件夹
+        char *clean_path="/root/media/clean";
+        if (stat(clean_path, &statbuf) == -1) {
+            // 文件夹不存在，尝试创建
+            if (mkdir(clean_path, 0755) == -1) {
+                perror("mkdir error");
+            }
+            printf("文件夹 '%s' 已创建\n", clean_path);
+        } else if (S_ISDIR(statbuf.st_mode))
+            printf("文件夹 '%s' 已存在\n", clean_path);
+        else
+            printf("路径 '%s' 已存在，但不是文件夹\n", clean_path);
+
         inside_light(1);
+        get_cam_video(0,device);
+        capture_jpg_compass_osd(device,30,640,480,in_video_clean_open_path,0);
+        get_cam_video(1,device);
+        capture_jpg_compass_osd(device,30,640,480,out_video_clean_open_path,0);
         set_clear_door_open();
         clearing = 1;
 
@@ -2026,7 +2051,6 @@ void* opendoor_thread(void* arg) {
                 if (get_clear_door_status() == 0) {
                     if(settlement){
                         close_door(cur_weight, diff_weight); // 发送关门信息
-                        inside_light(0);
                         hand_close_door_flag=0;
                         clearing = 2;
                         settlement=0;
@@ -2040,12 +2064,19 @@ void* opendoor_thread(void* arg) {
 
         // 判断进入清运完成状态
         if (clearing == 2) {
-
+            capture_jpg_compass_osd(device,10,640,480,in_video_clean_close_path,0);
+            capture_jpg_compass_osd(device,10,640,480,out_video_clean_close_path,0);
+            inside_light(0);
             // 更新清运完成页面
             pthread_mutex_lock(&lv_task_mutex);
             set_screen_cleaned(&guider_ui.screen_login_del, COUNT_DOWN10, sub_weight, cur_weight, diff_weight);
             pthread_mutex_unlock(&lv_task_mutex);
 
+            upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_clean_open_path);
+            upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_clean_open_path);
+            upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_clean_close_path);
+            upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, in_video_clean_close_path);
+            
             printf("清运前重量%.2fKG,清运后重量%.2fKG,清运重量%.2fKG\n", sub_weight, cur_weight, diff_weight);
             for (i = COUNT_DOWN10; i > 0; i--) {
                 printf("清运完成: %d秒后返回登录界面\n", i);
@@ -2055,6 +2086,7 @@ void* opendoor_thread(void* arg) {
                 sleep(1);
             }
         }
+
         pthread_mutex_lock(&lv_task_mutex);
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息

@@ -49,6 +49,7 @@ include_directories(
     generated/mPythonImages
     recycle/
     ${CMAKE_SOURCE_DIR}/../../../media/rockit/rockit/mpi/sdk/include
+    ${CMAKE_SOURCE_DIR}/../../../media/rockit/rockit/mpi/example/include/
 )
 
 # Define library directory

@@ -9,7 +9,7 @@
 #include <linux/videodev2.h>
 #include <fcntl.h>
 #include <sys/times.h>
-#include <time.h> 
+#include <time.h>
 #include <jpeglib.h>
 
 typedef struct {
@@ -43,6 +43,7 @@ int video_linux_skip_frame(video_frame_t *video_frame,int time);
 int video_linux_get_frame_rgb(video_frame_t *video_frame,char *data,int *length);
 int capture_stop(video_frame_t *video_frame);
 int capture_jpg_compass(char *device,int time,int width,int height,char *output_path);
+int capture_jpg_compass_osd(char *device,int capture_time,int width,int height,char *output_path,int type);
 int get_cam_video(int ch,char *video_path);
 int reset_usb(int bus_num,int dev_num);
 int reset_cam(int ch);
