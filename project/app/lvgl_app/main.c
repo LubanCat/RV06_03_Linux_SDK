@@ -167,7 +167,11 @@ void* keyboard_thread(void* arg) {
                 if(time / 10 == KEYBOARD_TIME){
                     phone_number_count=0;
                     phone_number[0]='\0';
-                    phone_login_flag=0;
+                    pthread_mutex_lock(&lv_task_mutex);
+                    set_screen_login_phone_number(phone_number,phone_number_count);
+                    pthread_mutex_unlock(&lv_task_mutex); 
+                    phone_login_update=0;
+                    phone_login_flag=0;                            
                 }
 
                 //更新显示数据
