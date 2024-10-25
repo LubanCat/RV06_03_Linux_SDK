@@ -24,12 +24,14 @@ typedef struct
 {
     int self_adc_var;
     double rat;
+    double com_weight;
 } Recycle_Box_Cnf;
 
 extern Recycle_Box_Cnf g_sRecycle_Box_Cnf;
 extern int rod_hinder_value;
 // 获取当前重量
 double get_current_weight();
+double set_com_weight() ;
 
 // 获取超重状态
 int get_overflow_status();

@@ -93,7 +93,7 @@ void set_rat_weight(double rat_weight)
 {
     char str[32] = {0};
     int sum = 0.0;
-
+    g_sRecycle_Box_Cnf.com_weight=0;
     printf("准备校准\n");
     printf("rat_weight = %f\n", rat_weight);
 
@@ -114,14 +114,29 @@ void set_rat_weight(double rat_weight)
     write_device_info("rat", str);
 }
 
-double get_current_weight() 
+
+double set_com_weight() 
 {
     // 从adc读取数据
     int adc_read = read_weight_adc();
     int diff_adc_value = adc_read - g_sRecycle_Box_Cnf.self_adc_var;
     
     // 重量转换
-    double weight = diff_adc_value * 1.0 * g_sRecycle_Box_Cnf.rat;
+    double weight = diff_adc_value * 1.0 * g_sRecycle_Box_Cnf.rat ;
+    g_sRecycle_Box_Cnf.com_weight = weight;
+    printf("称重 com_weight%f\n", g_sRecycle_Box_Cnf.com_weight);
+
+    return weight;
+}
+
+double get_current_weight() 
+{      
+    // 从adc读取数据
+    int adc_read = read_weight_adc();
+    int diff_adc_value = adc_read - g_sRecycle_Box_Cnf.self_adc_var;
+    
+    // 重量转换
+    double weight = diff_adc_value * 1.0 * g_sRecycle_Box_Cnf.rat - g_sRecycle_Box_Cnf.com_weight;
     if (weight < 0)	weight = 0.00;
     weight = round(weight * 100) / 100; // 保留两位小数
     

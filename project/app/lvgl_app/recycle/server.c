@@ -1961,7 +1961,8 @@ void* opendoor_thread(void* arg) {
     } else if (openDoor.openType == 2) {
         int i = COUNT_DOWN99 * REFRESH_RATE;
         int clearing = 0;
-        char device[64];
+        char in_device[64];
+        char out_device[64];
         double diff_weight = 0;
         double cur_weight = get_current_weight();
         if(cur_weight < 0)
@@ -2015,10 +2016,10 @@ void* opendoor_thread(void* arg) {
             printf("路径 '%s' 已存在，但不是文件夹\n", clean_path);
 
         inside_light(1);
-        get_cam_video(0,device);
-        capture_jpg_compass_osd(device,30,640,480,in_video_clean_open_path,0);
-        get_cam_video(1,device);
-        capture_jpg_compass_osd(device,30,640,480,out_video_clean_open_path,0);
+        get_cam_video(0,in_device);
+        capture_jpg_compass_osd(in_device,30,640,480,in_video_clean_open_path,0);
+        get_cam_video(1,out_device);
+        capture_jpg_compass_osd(out_device,30,640,480,out_video_clean_open_path,0);
         set_clear_door_open();
         clearing = 1;
 
@@ -2064,8 +2065,8 @@ void* opendoor_thread(void* arg) {
 
         // 判断进入清运完成状态
         if (clearing == 2) {
-            capture_jpg_compass_osd(device,10,640,480,in_video_clean_close_path,0);
-            capture_jpg_compass_osd(device,10,640,480,out_video_clean_close_path,0);
+            capture_jpg_compass_osd(in_device,10,640,480,in_video_clean_close_path,0);
+            capture_jpg_compass_osd(out_device,10,640,480,out_video_clean_close_path,0);
             inside_light(0);
             // 更新清运完成页面
             pthread_mutex_lock(&lv_task_mutex);
@@ -2086,11 +2087,12 @@ void* opendoor_thread(void* arg) {
                 sleep(1);
             }
         }
-
+        
         pthread_mutex_lock(&lv_task_mutex);
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
         pthread_mutex_unlock(&lv_task_mutex);
+        set_com_weight();
         openDoor.openType = 0;
     }
     opendoor_thread_id=NULL;

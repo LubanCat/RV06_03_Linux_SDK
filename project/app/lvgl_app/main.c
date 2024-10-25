@@ -395,13 +395,13 @@ void* aux_task_thread(void* arg) {
             opendoor_count=0;
             if(opendoor_thread_id == NULL){
                 printf("check /root/opendoor.txt\n");
-                opendoor_thread_id=1;
                 char *filename = "/root/opendoor.txt"; // 你要读取的文件名
                 FILE *file = fopen(filename, "r");
                 char buffer[20];
                 char time[24];
                 int size;
                 if (file != NULL) {
+                    opendoor_thread_id=1;
                     fgets(trans_Id, sizeof(trans_Id), file);
                     trans_Id[strlen(trans_Id)-1]='\0';
                     fgets(time, sizeof(time), file);
