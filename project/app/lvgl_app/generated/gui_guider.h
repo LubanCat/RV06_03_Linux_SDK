@@ -139,6 +139,8 @@ typedef struct
 	lv_obj_t *screen_cleaning_settlement;
 	lv_obj_t *screen_cleaning_settlement_label;
 	lv_obj_t *screen_cleaning_label_4;
+	lv_obj_t *screen_cleaning_settlement_2;
+	lv_obj_t *screen_cleaning_settlement_2_label;
 	lv_obj_t *screen_cleaned;
 	bool screen_cleaned_del;
 	lv_obj_t *screen_cleaned_img_2;

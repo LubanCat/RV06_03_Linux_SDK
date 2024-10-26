@@ -1719,6 +1719,7 @@ void* opendoor_thread(void* arg) {
     quit_flag=0;
     open_clean_door_flag=0;
     hand_close_door_flag=0;
+    int reset_weight=0;
 
     // 关闭登录页面元素更新
     screen_login_flag=0;
@@ -1815,8 +1816,8 @@ void* opendoor_thread(void* arg) {
                 // 文件夹不存在，尝试创建
                 if (mkdir(media_path, 0755) == -1) {
                     perror("mkdir error");
-                }
-                printf("文件夹 '%s' 已创建\n", media_path);
+                }else
+                    printf("文件夹 '%s' 已创建\n", media_path);
             } else if (S_ISDIR(statbuf.st_mode))
                 printf("文件夹 '%s' 已存在\n", media_path);
             else
@@ -1999,17 +2000,28 @@ void* opendoor_thread(void* arg) {
         //     }
         //     usleep(1000000 / REFRESH_RATE);
         // }
-
-        check_dir_num(DIR_NUM);
+        
         struct stat statbuf;
+        char *media_path="/root/media";
+        if (stat(media_path, &statbuf) == -1) {
+            // 文件夹不存在，尝试创建
+            if (mkdir(media_path, 0755) == -1) {
+                perror("mkdir error");
+            }else
+                printf("文件夹 '%s' 已创建\n", media_path);
+        } else if (S_ISDIR(statbuf.st_mode))
+            printf("文件夹 '%s' 已存在\n", media_path);
+        else
+            printf("路径 '%s' 已存在，但不是文件夹\n", media_path);
+
         //创建文件夹
         char *clean_path="/root/media/clean";
         if (stat(clean_path, &statbuf) == -1) {
             // 文件夹不存在，尝试创建
             if (mkdir(clean_path, 0755) == -1) {
                 perror("mkdir error");
-            }
-            printf("文件夹 '%s' 已创建\n", clean_path);
+            }else
+                printf("文件夹 '%s' 已创建\n", clean_path);
         } else if (S_ISDIR(statbuf.st_mode))
             printf("文件夹 '%s' 已存在\n", clean_path);
         else
@@ -2017,9 +2029,13 @@ void* opendoor_thread(void* arg) {
 
         inside_light(1);
         get_cam_video(0,in_device);
-        capture_jpg_compass_osd(in_device,30,640,480,in_video_clean_open_path,0);
         get_cam_video(1,out_device);
+
+        pthread_mutex_lock(&camara_mutex);
+        capture_jpg_compass_osd(in_device,30,640,480,in_video_clean_open_path,0);
         capture_jpg_compass_osd(out_device,30,640,480,out_video_clean_open_path,0);
+        pthread_mutex_unlock(&camara_mutex);
+
         set_clear_door_open();
         clearing = 1;
 
@@ -2054,6 +2070,10 @@ void* opendoor_thread(void* arg) {
                         close_door(cur_weight, diff_weight); // 发送关门信息
                         hand_close_door_flag=0;
                         clearing = 2;
+                        if(settlement == 1)
+                            reset_weight=1;
+                        else
+                            reset_weight=0;
                         settlement=0;
                         break;
                     }
@@ -2092,7 +2112,8 @@ void* opendoor_thread(void* arg) {
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
         // 关门,发关门消息
         pthread_mutex_unlock(&lv_task_mutex);
-        set_com_weight();
+        if(reset_weight)
+            set_com_weight();
         openDoor.openType = 0;
     }
     opendoor_thread_id=NULL;

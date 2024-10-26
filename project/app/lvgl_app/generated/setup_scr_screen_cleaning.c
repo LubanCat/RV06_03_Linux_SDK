@@ -135,12 +135,12 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	//Write codes screen_cleaning_settlement
 	ui->screen_cleaning_settlement = lv_btn_create(ui->screen_cleaning);
 	ui->screen_cleaning_settlement_label = lv_label_create(ui->screen_cleaning_settlement);
-	lv_label_set_text(ui->screen_cleaning_settlement_label, "去结算并上传数据");
+	lv_label_set_text(ui->screen_cleaning_settlement_label, "结算并重置当前重量");
 	lv_label_set_long_mode(ui->screen_cleaning_settlement_label, LV_LABEL_LONG_WRAP);
 	lv_obj_align(ui->screen_cleaning_settlement_label, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_style_pad_all(ui->screen_cleaning_settlement, 0, LV_STATE_DEFAULT);
 	lv_obj_set_width(ui->screen_cleaning_settlement_label, LV_PCT(100));
-	lv_obj_set_pos(ui->screen_cleaning_settlement, 145, 865);
+	lv_obj_set_pos(ui->screen_cleaning_settlement, 145, 747);
 	lv_obj_set_size(ui->screen_cleaning_settlement, 310, 60);
 
 	//Write style for screen_cleaning_settlement, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -159,7 +159,7 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	ui->screen_cleaning_label_4 = lv_label_create(ui->screen_cleaning);
 	lv_label_set_text(ui->screen_cleaning_label_4, "注意：请关闭清运门后再结算");
 	lv_label_set_long_mode(ui->screen_cleaning_label_4, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_cleaning_label_4, 36, 773);
+	lv_obj_set_pos(ui->screen_cleaning_label_4, 36, 666);
 	lv_obj_set_size(ui->screen_cleaning_label_4, 528, 81);
 
 	//Write style for screen_cleaning_label_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -177,6 +177,29 @@ void setup_scr_screen_cleaning(lv_ui *ui)
 	lv_obj_set_style_pad_bottom(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_left(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_cleaning_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+	//Write codes screen_cleaning_settlement_2
+	ui->screen_cleaning_settlement_2 = lv_btn_create(ui->screen_cleaning);
+	ui->screen_cleaning_settlement_2_label = lv_label_create(ui->screen_cleaning_settlement_2);
+	lv_label_set_text(ui->screen_cleaning_settlement_2_label, "结算但不重置当前重量");
+	lv_label_set_long_mode(ui->screen_cleaning_settlement_2_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_cleaning_settlement_2_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_cleaning_settlement_2, 0, LV_STATE_DEFAULT);
+	lv_obj_set_width(ui->screen_cleaning_settlement_2_label, LV_PCT(100));
+	lv_obj_set_pos(ui->screen_cleaning_settlement_2, 145, 848);
+	lv_obj_set_size(ui->screen_cleaning_settlement_2, 310, 60);
+
+	//Write style for screen_cleaning_settlement_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_cleaning_settlement_2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_cleaning_settlement_2, lv_color_hex(0xef7084), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_grad_dir(ui->screen_cleaning_settlement_2, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_cleaning_settlement_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_cleaning_settlement_2, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_cleaning_settlement_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_cleaning_settlement_2, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_cleaning_settlement_2, &lv_font_SourceHanSerifCN2_30, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_opa(ui->screen_cleaning_settlement_2, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_cleaning_settlement_2, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//The custom code of screen_cleaning.
 	

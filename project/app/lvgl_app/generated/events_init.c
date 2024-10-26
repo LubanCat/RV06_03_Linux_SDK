@@ -391,9 +391,24 @@ static void screen_cleaning_settlement_event_handler (lv_event_t *e)
 		break;
 	}
 }
+static void screen_cleaning_settlement_2_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		settlement=2;
+		break;
+	}
+	default:
+		break;
+	}
+}
 void events_init_screen_cleaning(lv_ui *ui)
 {
 	lv_obj_add_event_cb(ui->screen_cleaning_settlement, screen_cleaning_settlement_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_cleaning_settlement_2, screen_cleaning_settlement_2_event_handler, LV_EVENT_ALL, ui);
 }
 static void screen_test_rod_push_key_event_handler (lv_event_t *e)
 {

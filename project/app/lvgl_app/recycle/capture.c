@@ -2604,11 +2604,11 @@ int capture_jpg_compass_osd(char *device,int capture_time,int width,int height,c
 
     ret = RK_MPI_VENC_SendFrame(0, &stFrame, -1);
 
-    FILE *fp = fopen(output_path, "wb+");
     rcv.pstPack = (VENC_PACK_S *)malloc(sizeof(VENC_PACK_S));
     ret = RK_MPI_VENC_GetStream(0, &rcv, 3000);
     if (ret == RK_SUCCESS) {
 		void *data = RK_MPI_MB_Handle2VirAddr(rcv.pstPack->pMbBlk);
+		FILE *fp = fopen(output_path, "wb+");
 		fwrite(data, 1, rcv.pstPack->u32Len, fp);
         printf("pic size = %d\n",rcv.pstPack->u32Len);
         fflush(fp);
