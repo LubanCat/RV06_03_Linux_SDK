@@ -475,7 +475,7 @@ void setup_scr_screen_login(lv_ui *ui)
 	//Write codes screen_login_img_1
 	ui->screen_login_img_1 = lv_img_create(ui->screen_login);
 	lv_obj_add_flag(ui->screen_login_img_1, LV_OBJ_FLAG_CLICKABLE);
-	lv_img_set_src(ui->screen_login_img_1, &_phone_login2_alpha_181x181);
+	lv_img_set_src(ui->screen_login_img_1, &_phone_login3_alpha_181x181);
 	lv_img_set_pivot(ui->screen_login_img_1, 50,50);
 	lv_img_set_angle(ui->screen_login_img_1, 0);
 	lv_obj_set_pos(ui->screen_login_img_1, 345, 702);

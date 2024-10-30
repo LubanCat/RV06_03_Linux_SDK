@@ -220,6 +220,13 @@ int is_file_exist(char *filename){
             return -1;
 }
 
+int get_network_status() {
+    if(system("ping -c 1 8.8.8.8 > /dev/null") == 0)
+        return 1;
+    else
+        return 0;
+}
+
 void upload_close_door(char *time){
     char in_video_open_path[64];
     char out_video_open_path[64];
@@ -290,7 +297,8 @@ void* aux_task_thread(void* arg) {
             if(screen_login_flag){
                 // 在登录页面才更新
                 pthread_mutex_lock(&lv_task_mutex);
-                set_screen_login_net_status(heartBeat.signal);
+                set_screen_login_singal(heartBeat.signal);
+                set_screen_login_net_status(get_network_status());
                 pthread_mutex_unlock(&lv_task_mutex);
             }
             signal_count = 0;
@@ -549,7 +557,7 @@ int main(void) {
     cam_init();
     cam_flag=1;
     pthread_mutex_lock(&lv_task_mutex);
-    set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+    set_screen_login(&guider_ui.blank_del, loginRes.recyclePrice, get_current_weight(), cleantime_str, loginRes.qrCode,1, heartBeat.signal,server_connect);
     pthread_mutex_unlock(&lv_task_mutex);
     
     int curCapacity = get_overflow_status();

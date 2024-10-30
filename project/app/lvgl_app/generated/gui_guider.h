@@ -254,7 +254,7 @@ LV_IMG_DECLARE(_2_alpha_30x29);
 LV_IMG_DECLARE(_3_alpha_30x29);
 LV_IMG_DECLARE(_4_alpha_30x29);
 LV_IMG_DECLARE(_5_alpha_30x29);
-LV_IMG_DECLARE(_phone_login2_alpha_181x181);
+LV_IMG_DECLARE(_phone_login3_alpha_181x181);
 LV_IMG_DECLARE(_91_alpha_300x252);
 LV_IMG_DECLARE(_111_alpha_555x350);
 LV_IMG_DECLARE(_key_backup_alpha_438x369);

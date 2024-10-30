@@ -65,7 +65,15 @@ void set_screen_login_weigth(double weigth){
     set_lv_label_text_weight(guider_ui.screen_login_weigth,weigth);
 }
 
-void set_screen_login_net_status(int singal){
+void set_screen_login_net_status(int net_status){
+
+    if(net_status)
+        lv_label_set_text(guider_ui.screen_login_net_status, "已连网");
+    else
+        lv_label_set_text(guider_ui.screen_login_net_status, "无网络");
+}
+
+void set_screen_login_singal(int singal){
     int net_status;
 
     lv_obj_add_flag(guider_ui.screen_login_net_0, LV_OBJ_FLAG_HIDDEN);
@@ -95,10 +103,6 @@ void set_screen_login_net_status(int singal){
         lv_obj_clear_flag(guider_ui.screen_login_net_5, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if(net_status)
-        lv_label_set_text(guider_ui.screen_login_net_status, "已连网");
-    else
-        lv_label_set_text(guider_ui.screen_login_net_status, "无网络");
 }
 
 
@@ -195,7 +199,7 @@ void set_screen_test_rod_hinder_value(int rod_hinder_value){
     set_lv_label_text_int(guider_ui.screen_test_rod_hinder_value,rod_hinder_value);
 }
 
-void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int singal,int server_status){
+void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int net_status,int singal,int server_status){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, 
                         guider_ui.screen_login_del, screen_del, 
                         setup_scr_screen_login, LV_SCR_LOAD_ANIM_NONE, 
@@ -203,7 +207,8 @@ void set_screen_login(bool *screen_del,double price,double weigth,char *time,cha
 
     set_screen_login_price(price);
     set_screen_login_weigth(weigth);
-    set_screen_login_net_status(singal);
+    set_screen_login_singal(singal);
+    set_screen_login_net_status(net_status);
     set_screen_login_qrcode(qrcode);
     set_screen_login_server_status(server_status);
     lv_label_set_text(guider_ui.screen_login_version,local_version);

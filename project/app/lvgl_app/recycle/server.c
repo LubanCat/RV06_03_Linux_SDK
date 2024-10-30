@@ -192,7 +192,7 @@ void* debug_count_thread(void* arg) {
 
                 double cur_weight= get_current_weight();
                 pthread_mutex_lock(&lv_task_mutex);
-                set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, heartBeat.signal,server_connect);
+                set_screen_login(&guider_ui.screen_test_del, loginRes.recyclePrice, cur_weight, "2024/06/27 15:35:99", loginRes.qrCode, 1,heartBeat.signal,server_connect);
                 set_screen_login_qrcode(loginRes.qrCode);
                 pthread_mutex_unlock(&lv_task_mutex);
 	            screen_login_flag = 1;
@@ -1748,7 +1748,7 @@ void* opendoor_thread(void* arg) {
             //     sleep(1);
             // }
             // // 返回到登录页面
-            // set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+            // set_screen_login(&guider_ui.screen_full_del, loginRes.recyclePrice, sub_weight, cleantime_str, loginRes.qrCode, 1, heartBeat.signal,server_connect);
         } else {
             int i = COUNT_DOWN99 * REFRESH_RATE;
             double cur_weight = 0, diff_weight, money;
@@ -1954,7 +1954,7 @@ void* opendoor_thread(void* arg) {
             //upload_video("http://api.nwrecycle.com/api/device/upload/video", "/root/media/record.mp4");
             
             pthread_mutex_lock(&lv_task_mutex);
-            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+            set_screen_login(&guider_ui.screen_submit_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, 1, heartBeat.signal,server_connect);
             pthread_mutex_unlock(&lv_task_mutex);
             inside_light(0);
             openDoor.openType = 0;
@@ -2107,13 +2107,15 @@ void* opendoor_thread(void* arg) {
                 sleep(1);
             }
         }
-
+        if(reset_weight){
+            set_com_weight();
+            cur_weight=0;
+        }
+            
         pthread_mutex_lock(&lv_task_mutex);
-        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, heartBeat.signal,server_connect);
+        set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, 1, heartBeat.signal,server_connect);
         // 关门,发关门消息
         pthread_mutex_unlock(&lv_task_mutex);
-        if(reset_weight)
-            set_com_weight();
         openDoor.openType = 0;
     }
     opendoor_thread_id=NULL;
