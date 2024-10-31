@@ -24,7 +24,6 @@
 #define DISP_BUF_SIZE (600 * 1024 * 4)
 #define MAX_WEIGHT 200
 #define MAX_BUF_SIZE 512
-
 extern char trans_Id[64];
 
 // 登录界面的4G信号更新时间 单位：s
@@ -70,9 +69,9 @@ int phone_login_update=0;
 char phone_number[12];
 int phone_number_count;
 
-int ntp_update(){
-    system("ntpdate 114.118.7.161");
-    system("ntpdate ntp1.aliyun.com");
+int time_update(){
+    module_get_time(); // 获取时间
+    // system("ntpdate ntp1.aliyun.com");
 }
 
 extern pthread_t opendoor_thread_id;
@@ -221,7 +220,7 @@ int is_file_exist(char *filename){
 }
 
 int get_network_status() {
-    if(system("ping -c 1 8.8.8.8 > /dev/null") == 0)
+    if(system("ping -c 1 api.nwrecycle.com > /dev/null") == 0)
         return 1;
     else
         return 0;
@@ -245,13 +244,13 @@ void upload_close_door(char *time){
         inside_light(1);
         sleep(1);
         get_cam_video(0,device);
-        capture_jpg_compass_osd(device,10,640,480,in_video_close_path,1);
+        capture_jpg_compass_osd(device,10,640,480,in_video_close_path,1,1);
         inside_light(0);
     }
 
     if(is_file_exist(out_video_close_path) == -1){
         get_cam_video(1,device);
-        capture_jpg_compass_osd(device,10,640,480,out_video_close_path,1);
+        capture_jpg_compass_osd(device,10,640,480,out_video_close_path,1,1);
     }
 
     upload_photo("http://api.nwrecycle.com/api/device/upload/photo", 1, out_video_open_path);
@@ -395,7 +394,7 @@ void* aux_task_thread(void* arg) {
         }
 
         if(ntp_count > NTP_UPDATE_COUNT){
-            ntp_update();
+            time_update();
             ntp_count=0;
         }
         
@@ -508,13 +507,12 @@ int main(void) {
     indev_drv.read_cb = evdev_read;
     lv_indev_drv_register(&indev_drv);
 
-    // 同步时间
-    ntp_update();
     // 获取4G模块信息
-
     module_info();
     heartBeat.signal = module_signal();
 
+    // 同步时间
+    time_update();
     /* ui_init(); */
     setup_ui(&guider_ui);
     events_init(&guider_ui);

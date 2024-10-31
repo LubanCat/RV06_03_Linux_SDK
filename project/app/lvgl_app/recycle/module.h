@@ -34,5 +34,6 @@ int module_restart();
 
 // 获取模块所有信息
 int module_info(void);
+int module_get_time();
 
 #endif // MODULE_H

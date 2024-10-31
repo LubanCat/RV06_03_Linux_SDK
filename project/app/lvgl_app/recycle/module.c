@@ -6,6 +6,8 @@
 #include <errno.h>
 #include "module.h"
 #include <stdlib.h>
+#include <sys/time.h>
+#include <time.h> // 添加这行以
 
 ModuleInfo moduleInfo;
 
@@ -248,5 +250,79 @@ int module_info(void) {
 
     close(fd);
 
+    return 0;
+}
+
+int module_get_time() {
+    int ret;
+    int fd = open("/dev/ttyUSB2", O_RDWR | O_NOCTTY );
+    if (fd < 0) {
+        perror("Cannot open serial port device /dev/ttyUSB2");
+        return -1;
+    }
+
+    // 发送AT+CCLK?命令更新时间
+    ret = write(fd, "AT+CCLK?\r\n", 11);
+    if (ret < 0) {
+        perror("Failed to send AT+CCLK? command");
+    }
+    char buf[256];
+    for (int i=0;i<5;i++){
+        // 初始化读取缓冲区
+        memset(buf, 0, sizeof(buf));
+
+        // 读取AT+CSQ命令的响应
+        ret = read(fd, buf, sizeof(buf));
+        if (ret < 0) {
+            if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                printf("No data available to read\n");
+            } else {
+                perror("Failed to read AT+CCLK? response");
+            }
+            close(fd);
+            return 99;
+        }
+        // 读到换行符就跳过继续读
+        if(ret > 1){
+            close(fd);
+            break;
+        }
+            
+    }
+
+    //将时间str转换成时间，str的格式是+CCLK: "24/10/30,08:24:31+32"
+    int year, month, day, hour, minute, second, timezone;
+    char *start = strstr(buf, "+CCLK: ");
+    if (start) {
+        printf("start: %s\n", start+8);
+        //将"24/10/30,08:57:57+32"转化为时间
+        sscanf(start+8, "%d/%d/%d,%d:%d:%d+%d", &year, &month, &day, &hour, &minute, &second, &timezone);
+        printf("get UTC time: %04d-%02d-%02d %02d:%02d:%02d\n", year += 2000, month, day, hour, minute, second);
+    } else {
+        printf("No +CCLK response found\n");
+    }
+
+    struct tm new_time;
+    struct timeval tv;
+
+    // 将年份转换为从1900年开始的年数
+    new_time.tm_year = year - 1900;
+    new_time.tm_mon = month - 1;  // tm_mon是从0开始的
+    new_time.tm_mday = day;
+    new_time.tm_hour = hour;
+    new_time.tm_min = minute;
+    new_time.tm_sec = second;
+
+    // 将tm结构转换为time_t，并设置时区为本地时区
+    new_time.tm_isdst = -1;  // 让库函数决定是否使用夏令时
+    tv.tv_sec = mktime(&new_time);
+    tv.tv_usec = 0;  // 微秒部分设置为0
+    tv.tv_sec += timezone/4*3600;  // 东八区，UTC+8:00
+
+    // 设置系统时间
+    if (settimeofday(&tv, NULL) == -1) {
+        perror("settimeofday");
+        return -1;
+    }
     return 0;
 }

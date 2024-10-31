@@ -24,7 +24,7 @@ extern int settlement,password_2,password_3,password_1,rod_hinder_value,peels_en
 extern video_device_t out_video_device;
 extern video_device_t in_video_device;
 #include "server.h"
-extern int phone_login_flag;
+extern int phone_login_flag,vol;
 extern char key_input[5];
 extern int key_input_count;
 
@@ -391,24 +391,9 @@ static void screen_cleaning_settlement_event_handler (lv_event_t *e)
 		break;
 	}
 }
-static void screen_cleaning_settlement_2_event_handler (lv_event_t *e)
-{
-	lv_event_code_t code = lv_event_get_code(e);
-
-	switch (code) {
-	case LV_EVENT_CLICKED:
-	{
-		settlement=2;
-		break;
-	}
-	default:
-		break;
-	}
-}
 void events_init_screen_cleaning(lv_ui *ui)
 {
 	lv_obj_add_event_cb(ui->screen_cleaning_settlement, screen_cleaning_settlement_event_handler, LV_EVENT_ALL, ui);
-	lv_obj_add_event_cb(ui->screen_cleaning_settlement_2, screen_cleaning_settlement_2_event_handler, LV_EVENT_ALL, ui);
 }
 static void screen_test_rod_push_key_event_handler (lv_event_t *e)
 {
@@ -623,6 +608,8 @@ static void screen_test_quit_event_handler (lv_event_t *e)
 	char str[20];
 	sprintf(str, "%d", rod_hinder_value);
 	write_device_info("rod_hinder",str);
+	sprintf(str, "%d", vol);
+	write_device_info("vol",str);
 	set_screen_login_qrcode(loginRes.qrCode);
 	screen_login_flag = 1;
 		break;
@@ -749,6 +736,46 @@ static void screen_test_cal_25_key_event_handler (lv_event_t *e)
 		break;
 	}
 }
+static void screen_test_vol_down_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_press=1;
+	vol--;
+	if(vol<1)
+	  vol=1;
+	char str[10];
+	sprintf(str,"%d",vol);
+	lv_label_set_text(guider_ui.screen_test_vol,str);
+		break;
+	}
+	default:
+		break;
+	}
+}
+static void screen_test_vol_up_event_handler (lv_event_t *e)
+{
+	lv_event_code_t code = lv_event_get_code(e);
+
+	switch (code) {
+	case LV_EVENT_CLICKED:
+	{
+		key_press=1;
+	vol++;
+	if(vol>5)
+	  vol=5;
+	char str[10];
+	sprintf(str,"%d",vol);
+	lv_label_set_text(guider_ui.screen_test_vol,str);
+		break;
+	}
+	default:
+		break;
+	}
+}
 void events_init_screen_test(lv_ui *ui)
 {
 	lv_obj_add_event_cb(ui->screen_test_rod_push_key, screen_test_rod_push_key_event_handler, LV_EVENT_ALL, ui);
@@ -767,6 +794,8 @@ void events_init_screen_test(lv_ui *ui)
 	lv_obj_add_event_cb(ui->screen_test_peels_key, screen_test_peels_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_cal_100_key, screen_test_cal_100_key_event_handler, LV_EVENT_ALL, ui);
 	lv_obj_add_event_cb(ui->screen_test_cal_25_key, screen_test_cal_25_key_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_test_vol_down, screen_test_vol_down_event_handler, LV_EVENT_ALL, ui);
+	lv_obj_add_event_cb(ui->screen_test_vol_up, screen_test_vol_up_event_handler, LV_EVENT_ALL, ui);
 }
 static void screen_test_cam_btn_1_event_handler (lv_event_t *e)
 {

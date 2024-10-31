@@ -54,6 +54,7 @@ void set_screen_cleaning_weigth(double weigth);
 void set_screen_cleaned_weigth(double before_clean_weigth,double after_clean_weigth,double clean_weigth);
 void set_screen_cleaned_time(int time);
 void set_screen_test_rod_hinder_value(int rod_hinder_value);
+void set_screen_test_vol(int vol);
 
 void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int net_status,int singal,int server_status);
 void set_screen_full(bool *screen_del,double price,int time);

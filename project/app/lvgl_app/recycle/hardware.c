@@ -11,6 +11,7 @@ Recycle_Box_Cnf g_sRecycle_Box_Cnf;
 int rod_hinder_value = 200;
 int stop_music = 0;
 extern int ir_open_flag;
+extern int vol;
 
 // 初始化GPIO
 gpio_init(int gpio, int dir, int value) 
@@ -274,6 +275,11 @@ void set_post_door_open()
 // 音乐播放线程函数
 void *play_music(void *arg) 
 {
+    //setting music vol
+    char str[64];
+    sprintf(str,"/oem/usr/bin/rk_mpi_amix_test --control=23 --value=%d",vol*6);
+    system(str);
+    
     while (1) 
     {
         system("/usr/bin/aplay -Dhw:0 /oem/usr/share/closedoor.wav");

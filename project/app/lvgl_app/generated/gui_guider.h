@@ -139,8 +139,6 @@ typedef struct
 	lv_obj_t *screen_cleaning_settlement;
 	lv_obj_t *screen_cleaning_settlement_label;
 	lv_obj_t *screen_cleaning_label_4;
-	lv_obj_t *screen_cleaning_settlement_2;
-	lv_obj_t *screen_cleaning_settlement_2_label;
 	lv_obj_t *screen_cleaned;
 	bool screen_cleaned_del;
 	lv_obj_t *screen_cleaned_img_2;
@@ -197,6 +195,13 @@ typedef struct
 	lv_obj_t *screen_test_cal_25_key_label;
 	lv_obj_t *screen_test_weight;
 	lv_obj_t *screen_test_label_12;
+	lv_obj_t *screen_test_btn_22;
+	lv_obj_t *screen_test_btn_22_label;
+	lv_obj_t *screen_test_vol_down;
+	lv_obj_t *screen_test_vol_down_label;
+	lv_obj_t *screen_test_vol;
+	lv_obj_t *screen_test_vol_up;
+	lv_obj_t *screen_test_vol_up_label;
 	lv_obj_t *screen_test_cam;
 	bool screen_test_cam_del;
 	lv_obj_t *screen_test_cam_btn_1;

@@ -25,7 +25,7 @@ int open_clean_door_flag;
 int hand_close_door_flag;
 // 在登录页面
 int screen_login_flag;
-extern int rod_hinder_value;
+extern int rod_hinder_value,vol;
 extern int local_version;
 extern char sn[32];
 
@@ -199,6 +199,10 @@ void set_screen_test_rod_hinder_value(int rod_hinder_value){
     set_lv_label_text_int(guider_ui.screen_test_rod_hinder_value,rod_hinder_value);
 }
 
+void set_screen_test_vol(int vol){
+    set_lv_label_text_int(guider_ui.screen_test_vol,vol);
+}
+
 void set_screen_login(bool *screen_del,double price,double weigth,char *time,char *qrcode,int net_status,int singal,int server_status){
     ui_load_scr_animation(&guider_ui, &guider_ui.screen_login, 
                         guider_ui.screen_login_del, screen_del, 
@@ -281,6 +285,8 @@ void set_screen_test(bool *screen_del){
     char str[20];
     sprintf(str,"%d",rod_hinder_value);
     lv_label_set_text(guider_ui.screen_test_rod_hinder_value,str);
+    sprintf(str,"%d",vol);
+    lv_label_set_text(guider_ui.screen_test_vol,str);
 }
 
 void custom_init(lv_ui *ui)

@@ -80,6 +80,7 @@ extern int phone_number_count;
 int heartbeat_num=0;
 int updating_flag=0;
 int settlement=0;
+int vol;
 
 int ir_open_flag;
 
@@ -187,6 +188,7 @@ void* debug_count_thread(void* arg) {
                     pthread_mutex_lock(&lv_task_mutex);
                     ui_load_scr_animation(&guider_ui, &guider_ui.screen_test, guider_ui.screen_test_del, &guider_ui.screen_test_cam_del, setup_scr_screen_test, LV_SCR_LOAD_ANIM_NONE, 0, 0, false, true);
                     set_screen_test_rod_hinder_value(rod_hinder_value);
+                    set_screen_test_vol(vol);
                     pthread_mutex_unlock(&lv_task_mutex);
                 }
 
@@ -382,10 +384,10 @@ void* capture_out_thread(void* arg) {
                 //判断是不是开门拍照
                 if(out_video_device.photo_opendoor)
                     //开门拍照
-                    capture_rgb_to_jpg(&out_video_device.video_frame,data,out_video_open_path);
+                    capture_rgb_to_jpg(&out_video_device.video_frame,data,out_video_open_path,0);
                 else
                     //关门拍照
-                    capture_rgb_to_jpg(&out_video_device.video_frame,data,out_video_close_path);
+                    capture_rgb_to_jpg(&out_video_device.video_frame,data,out_video_close_path,1);
 
                 out_video_device.photo_flag=0;
             }
@@ -505,10 +507,10 @@ void* capture_in_thread(void* arg) {
                 //判断是不是开门拍照
                 if(in_video_device.photo_opendoor)
                     //开门拍照
-                    capture_rgb_to_jpg(&in_video_device.video_frame,data,in_video_open_path);
+                    capture_rgb_to_jpg(&in_video_device.video_frame,data,in_video_open_path,0);
                 else
                     //关门拍照
-                    capture_rgb_to_jpg(&in_video_device.video_frame,data,in_video_close_path);
+                    capture_rgb_to_jpg(&in_video_device.video_frame,data,in_video_close_path,1);
 
                 in_video_device.photo_flag=0;
                 printf("in_video_device photo_flag=0\n");
@@ -713,6 +715,7 @@ int read_device_info() {
     cJSON *self_weight_item = cJSON_GetObjectItem(root, "self_weight");
     cJSON *rat_item = cJSON_GetObjectItem(root, "rat");
     cJSON *rod_hinder_item = cJSON_GetObjectItem(root, "rod_hinder");
+    cJSON *vol_item = cJSON_GetObjectItem(root, "vol");
 
     if (cJSON_IsString(sn_item)) {
         strncpy(sn, sn_item->valuestring, 32 - 1); // 复制 sn 字符串到 sn 数组
@@ -736,6 +739,11 @@ int read_device_info() {
         rod_hinder_value = atof(rod_hinder_item->valuestring);
         printf("推杆阻力阈值 rat: %d\n", rod_hinder_value);
     }
+    if (cJSON_IsString(vol_item)) {
+        vol = atoi(vol_item->valuestring);
+        printf("设置音乐音量为: %d\n", vol);
+    }
+
     // 释放内存
     cJSON_Delete(root);
     free(file_content);
@@ -2032,8 +2040,8 @@ void* opendoor_thread(void* arg) {
         get_cam_video(1,out_device);
 
         pthread_mutex_lock(&camara_mutex);
-        capture_jpg_compass_osd(in_device,30,640,480,in_video_clean_open_path,0);
-        capture_jpg_compass_osd(out_device,30,640,480,out_video_clean_open_path,0);
+        capture_jpg_compass_osd(in_device,30,640,480,in_video_clean_open_path,0,0);
+        capture_jpg_compass_osd(out_device,30,640,480,out_video_clean_open_path,0,0);
         pthread_mutex_unlock(&camara_mutex);
 
         set_clear_door_open();
@@ -2070,11 +2078,11 @@ void* opendoor_thread(void* arg) {
                         close_door(cur_weight, diff_weight); // 发送关门信息
                         hand_close_door_flag=0;
                         clearing = 2;
-                        if(settlement == 1)
-                            reset_weight=1;
-                        else
-                            reset_weight=0;
                         settlement=0;
+                        cur_weight = get_current_weight();
+                        if(cur_weight < 0.5){
+                            set_com_weight();
+                        }
                         break;
                     }
                 }
@@ -2083,10 +2091,12 @@ void* opendoor_thread(void* arg) {
             }
         }
 
+
+
         // 判断进入清运完成状态
         if (clearing == 2) {
-            capture_jpg_compass_osd(in_device,10,640,480,in_video_clean_close_path,0);
-            capture_jpg_compass_osd(out_device,10,640,480,out_video_clean_close_path,0);
+            capture_jpg_compass_osd(in_device,10,640,480,in_video_clean_close_path,0,1);
+            capture_jpg_compass_osd(out_device,10,640,480,out_video_clean_close_path,0,1);
             inside_light(0);
             // 更新清运完成页面
             pthread_mutex_lock(&lv_task_mutex);
@@ -2107,10 +2117,7 @@ void* opendoor_thread(void* arg) {
                 sleep(1);
             }
         }
-        if(reset_weight){
-            set_com_weight();
-            cur_weight=0;
-        }
+
             
         pthread_mutex_lock(&lv_task_mutex);
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, 1, heartBeat.signal,server_connect);
