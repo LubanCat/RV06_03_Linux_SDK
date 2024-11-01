@@ -27,7 +27,7 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.36";
+char *local_version = "1.37";
 const char *userdata_path = "/userdata/device_info.json";
 const char *root_path = "/root/device_info.json";
 
@@ -2050,12 +2050,11 @@ void* opendoor_thread(void* arg) {
         // 判断是否进入清运状态，显示正在清运
         if (clearing == 1) {
             i = 0;
-
             // 清运操作页面2
             pthread_mutex_lock(&lv_task_mutex);
             set_screen_cleaning(&guider_ui.screen_login_del,sub_weight);
             pthread_mutex_unlock(&lv_task_mutex);
-
+            
             while (1) {
                 if ((i % REFRESH_RATE) == 0) {
                     cur_weight = get_current_weight();
@@ -2074,17 +2073,20 @@ void* opendoor_thread(void* arg) {
 
                 // 检测清理门关闭状态
                 if (get_clear_door_status() == 0) {
-                    if(settlement){
+                    if(settlement==1){
+                        settlement=0;
                         close_door(cur_weight, diff_weight); // 发送关门信息
                         hand_close_door_flag=0;
                         clearing = 2;
-                        settlement=0;
                         cur_weight = get_current_weight();
                         if(cur_weight < 0.5){
                             set_com_weight();
                         }
                         break;
                     }
+                }else{
+                    if(settlement)
+                        settlement=0;
                 }
                 usleep(1000000 / REFRESH_RATE);
                 i++;
@@ -2118,7 +2120,6 @@ void* opendoor_thread(void* arg) {
             }
         }
 
-            
         pthread_mutex_lock(&lv_task_mutex);
         set_screen_login(&guider_ui.screen_cleaned_del, loginRes.recyclePrice, cur_weight, cleantime_str, loginRes.qrCode, 1, heartBeat.signal,server_connect);
         // 关门,发关门消息
@@ -2133,6 +2134,10 @@ int close_door(double cur_weight, double diff_weight)
 {
     char recv_buf[MAX_BUF_SIZE];
     int ret=0;
+    for(int i=0;i<10;i++)
+        for(int j=0;j<20;j++)
+            printf("-");
+            printf("\n");
 
     // 创建 JSON 请求
     closeDoor.curWeight = cur_weight;
