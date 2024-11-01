@@ -17,11 +17,8 @@ PKG_BUILD ?= build
 CURRENT_DIR := $(shell pwd)
 
 # Set the path to the CMake toolchain file
-ifeq ($(RK_ROOTFS_TYPE), ubuntu)
-	TOOLCHAIN_FILE := ../cmake/toolchainfile-rv1106-glibc.cmake
-else
-	TOOLCHAIN_FILE := ../cmake/toolchainfile-rv1106.cmake
-endif
+SERVER_TOOLCHAIN_FILE := ../cmake/toolchainfile-rv1106.cmake
+CLIENT_TOOLCHAIN_FILE := ../client/cmake/toolchainfile-rv1106.cmake
 
 # Set the install prefix
 INSTALL_PREFIX := $(PKG_BIN)
@@ -36,10 +33,11 @@ endif
 all: $(PKG_TARGET)
 	@echo "build $(PKG_NAME) done"
 
-lvgl_app-build:
+lvgl_app-build: lvgl_app_client-build
 	@echo "Creating output directory..."
+	@echo "$(PWD)"
 	@mkdir -p output
-	@cd output && cmake -DCMAKE_TOOLCHAIN_FILE=$(TOOLCHAIN_FILE) -DCMAKE_INSTALL_PREFIX="$(CURRENT_DIR)/$(PKG_BIN)" $(SOURCE_DIR)
+	@cd output && cmake -DCMAKE_TOOLCHAIN_FILE=$(SERVER_TOOLCHAIN_FILE) -DCMAKE_INSTALL_PREFIX="$(CURRENT_DIR)/$(PKG_BIN)" $(SOURCE_DIR)
 	@make -C output -j $(nproc)
 	@make -C output install
 	@mkdir -p $(PKG_BIN)/usr/share && cp -vf $(CURRENT_DIR)/files/* $(PKG_BIN)/usr/share
@@ -47,11 +45,21 @@ lvgl_app-build:
 	@cp -vf $(CURRENT_DIR)/network.sh $(PKG_BIN)/usr/bin
 	$(call MAROC_COPY_PKG_TO_APP_OUTPUT, $(RK_APP_OUTPUT), $(PKG_BIN))
 
+lvgl_app_client-build:
+	@echo "Creating output directory..."
+	@mkdir -p client_output
+	@cd client_output && cmake -DCMAKE_TOOLCHAIN_FILE=$(CLIENT_TOOLCHAIN_FILE) -DCMAKE_INSTALL_PREFIX="$(CURRENT_DIR)/$(PKG_BIN)" $(SOURCE_DIR)/client
+	@make -C client_output -j $(nproc)
+	@make -C client_output install
+	$(call MAROC_COPY_PKG_TO_APP_OUTPUT, $(RK_APP_OUTPUT), $(PKG_BIN))
+
 install:
 	@make -C output install
+	@make -C client_output install
 
 clean:
 	@rm -rf output
+	@rm -rf client_output
 	@rm -rf $(CURRENT_DIR)/$(PKG_BIN)
 
 
