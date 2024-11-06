@@ -7,10 +7,48 @@
 #include <termios.h>
 #include <cjson/cJSON.h>
 #include "hardware.h"
+#include <sys/stat.h>
 
 #define SERIAL_PORT "/dev/ttyS0"
 #define BUFFER_SIZE 1024
 int serial_fd;
+
+#define CLIENT_VERSION "1.0"
+
+int calculate_md5(const char *filename, char *md5_str) {
+    printf("Calculating MD5 for %s\n", filename);
+    char command[128];
+    sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
+    FILE *fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("Error opening pipe for MD5 calculation.\n");
+        return 1;
+    }
+    fgets(md5_str, 64, fp);
+    pclose(fp);
+    // Remove the trailing newline character
+    md5_str[strcspn(md5_str, "\n")] = 0;
+    printf("Calculated MD5: %s\n", md5_str);
+    return 0;
+}
+
+
+void delete_file(const char *filename) {
+    if (remove(filename) != 0) {
+        perror("Error deleting file");
+    } else {
+        printf("File %s successfully deleted\n", filename);
+    }
+}
+
+
+void set_file_executable(const char *filename) {
+    if (chmod(filename, S_IRWXU) != 0) {
+        perror("Error setting file executable");
+    } else {
+        printf("File %s is now executable\n", filename);
+    }
+}
 
 int setup_serial_port(const char *port) {
     int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
@@ -47,7 +85,7 @@ int send_json_number(char *str,int num)        //发送json数据
 {
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", str);
-    cJSON_AddNumberToObject(root, "num", num);
+    cJSON_AddNumberToObject(root, "reCode", num);
     char *json_str = cJSON_Print(root);
     int len = strlen(json_str);
     write(serial_fd, json_str, len);
@@ -57,97 +95,281 @@ int send_json_number(char *str,int num)        //发送json数据
 }
 
 
-void handle_door_ctrl(const char *json_str) {
-    cJSON *root = cJSON_Parse(json_str);
+void handle_post_door_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
     if (root == NULL) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
         return;
     }
-    cJSON *state_item = cJSON_GetObjectItem(root, "state");
-    if (cJSON_IsNumber(state_item)) {
-        int state = state_item->valueint;
-        printf("Door state: %d\n", state);
-        if(state){
-            // set_post_door_open();   
-            printf("opendoor\n");
-        }else{
-            // set_post_door_close(); 
-            printf("closedoor\n");
+
+    int rod_value;
+    int ret_code=0;
+
+    cJSON *rod_value_item = cJSON_GetObjectItem(root, "rod_value");
+    if (cJSON_IsNumber(rod_value_item)) {
+        rod_value = rod_value_item->valueint;
+    }else {
+        printf("Error: rod_value is not a number\n");
+    }
+
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "open") == 0) {
+            set_post_door_open(rod_value);
+        } else if (strcmp(str, "close") == 0) {
+            set_post_door_close(rod_value);
+        } else {
+            printf("Error: unknown state: %s\n", str);
+            ret_code=1;
         }
-        
-        send_json_number("DoorCtrl", 0);
     }
+    send_json_number("InLightCtrl", ret_code);
+    cJSON_Delete(root);
 }
 
-void handle_out_light_ctrl(const char *json_str) {
-    cJSON *root = cJSON_Parse(json_str);
+void handle_out_light_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
     if (root == NULL) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
         return;
     }
 
-    cJSON *state_item = cJSON_GetObjectItem(root, "state");
-    if (cJSON_IsNumber(state_item)) {
-        int state = state_item->valueint;
-        printf("Out light state: %d\n", state);
-        if(state){
-            // outside_light(1);
-            printf("turnonlight\n");
-        }else{
-            // outside_light(0);
-            printf("turnofflight\n");
+    int ret_code=0;
+
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "open") == 0) {
+            outside_light(1);
+        } else if (strcmp(str, "close") == 0) {
+            outside_light(0);
+        } else {
+            printf("Error: unknown state: %s\n", str);
+            ret_code=1;
+            return;
         }
-        
-        send_json_number("OutLightCtrl", 0);
     }
+    send_json_number("InLightCtrl", ret_code);
+    cJSON_Delete(root);
 }
 
-void handle_in_light_ctrl(const char *json_str) {
-    cJSON *root = cJSON_Parse(json_str);
+void handle_in_light_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
     if (root == NULL) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
         return;
     }
 
-    cJSON *state_item = cJSON_GetObjectItem(root, "state");
-    if (cJSON_IsNumber(state_item)) {
-        int state = state_item->valueint;
-        printf("In light state: %d\n", state);
-        if(state){
-            // inside_light(1);
-            printf("turnonlight\n");
-        }else{
-            // inside_light(0);
-            printf("turnofflight\n");
+    int ret_code=0;
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "open") == 0) {
+            inside_light(1);
+        } else if (strcmp(str, "close") == 0) {
+            inside_light(0);
+        } else {
+            printf("Error: unknown state: %s\n", str);
+            ret_code=1;
         }
-        
-        send_json_number("InLightCtrl", 0);
     }
+    send_json_number("InLightCtrl", ret_code);
+    cJSON_Delete(root);
 }
 
-void handle_get_overflow(const char *json_str) {
-    cJSON *root = cJSON_Parse(json_str);
+void handle_ir_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
     if (root == NULL) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
         return;
     }
 
-    // int overflow = get_overflow_status();
-    int overflow =1;
-    printf("Overflow: %d\n", overflow);
-    send_json_number("get_overflow", overflow);
+    int state=0;
+    int ret_code=0;
+
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "get_state") == 0) {
+            state=get_overflow_status();
+        }else{
+            printf("Error: unknown state: %s\n", str);
+            ret_code=1;
+        }
+    }
+
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "IRCtrl");
+    cJSON_AddNumberToObject(send_root, "state", state);
+    cJSON_AddNumberToObject(send_root, "reCode", ret_code);
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    write(serial_fd, json_str, len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    cJSON_Delete(root);
+    return ;
 }
-void handle_get_weight(const char *json_str) {
-    cJSON *root = cJSON_Parse(json_str);
+
+void handle_weight_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
     if (root == NULL) {
         fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
         return;
     }
-    double weight =0.99;
-    // double weight = get_current_weight();
-    printf("Weight: %f\n", weight);
-    // send_json_number("get_weight", weight);
+
+    int adc0=0;
+    int adc1=0;
+    int ret_code=0;
+
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "get_raw_data") == 0) {
+            adc0=read_weight_adc(0);
+            adc1=read_weight_adc(1);
+        }else{
+            printf("Error: unknown ctrl: %s\n", str);
+            ret_code=1;
+        }
+    }
+
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "WeightCtrl");
+    cJSON_AddNumberToObject(send_root, "adc0", adc0);
+    cJSON_AddNumberToObject(send_root, "adc1", adc1);
+    cJSON_AddNumberToObject(send_root, "reCode", ret_code);
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    write(serial_fd, json_str, len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    return ;
 }
+
+void handle_clean_door_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
+    if (root == NULL) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+
+    int ret_code=0;
+    int state=0;
+
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "CleanDoorCtrl");
+
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "open") == 0) {
+            set_clear_door_open();
+        }else if (strcmp(str, "get_state") == 0) {
+            state=get_clear_door_status();
+            cJSON_AddNumberToObject(send_root, "state", ret_code);
+        }else{
+            printf("Error: unknown ctrl: %s\n", str);
+            ret_code=1;
+        }
+    }
+
+    cJSON_AddNumberToObject(send_root, "reCode", ret_code);
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    write(serial_fd, json_str, len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    return;
+}
+
+void handle_update_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
+    if (root == NULL) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+
+    int ret_code=0;
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "UpdateCtrl");
+
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
+    if (cJSON_IsString(ctrl_item)) {
+        char str[20];
+        strncpy(str, ctrl_item->valuestring, sizeof(str) - 1);
+        str[sizeof(str) - 1] = '\0';
+        if (strcmp(str, "get_version") == 0) {
+            cJSON_AddStringToObject(send_root, "version", CLIENT_VERSION);
+        }else if (strcmp(str, "update") == 0) {
+            printf("update\n");
+        }else {
+            printf("Error: unknown state: %s\n", str);
+        }
+    }
+    cJSON_AddNumberToObject(send_root, "reCode", ret_code);
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    write(serial_fd, json_str, len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    return;
+}
+
+void handle_speaker_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
+    if (root == NULL) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+    int ret_code=0;
+    cJSON *ctrl_item = cJSON_GetObjectItem(root, "volume");
+    if (cJSON_IsNumber(ctrl_item)) {
+        printf("MUSIC SET %d\n",ctrl_item->valueint);
+    }else{
+        printf("Error: ctrl is not a number\n");
+        ret_code=1;
+    }
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "SpeakerCtrl");
+    cJSON_AddNumberToObject(send_root, "reCode", ret_code);
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    write(serial_fd, json_str, len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    return;
+}
+
+void handle_file_transfer(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
+    if (root == NULL) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    } 
+}
+
+void handle_machine_ctrl(const char *main_json_str) {
+    cJSON *root = cJSON_Parse(main_json_str);
+    if (root == NULL) {
+        fprintf(stderr, "Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+}
+
 void process_json(const char *json_str) {
     cJSON *root = cJSON_Parse(json_str);
     if (root == NULL) {
@@ -162,16 +384,26 @@ void process_json(const char *json_str) {
         char str[20];
         strncpy(str, cmd_item->valuestring, sizeof(str) - 1);
         str[sizeof(str) - 1] = '\0';
-        if (strcmp(str, "DoorCtrl") == 0) {
-            handle_door_ctrl(json_str);
+        if (strcmp(str, "PostDoorCtrl") == 0) {
+            handle_post_door_ctrl(json_str);
         }else if (strcmp(str, "OutLightCtrl") == 0) {
             handle_out_light_ctrl(json_str);
         }else if (strcmp(str, "InLightCtrl") == 0) {
             handle_in_light_ctrl(json_str);
-        }else if (strcmp(str, "get_overflow") == 0) {
-            handle_get_overflow(json_str);
-        }else if (strcmp(str, "get_weight") == 0) {
-            handle_get_weight(json_str);
+        }else if (strcmp(str, "IRCtrl") == 0) {
+            handle_ir_ctrl(json_str);
+        }else if (strcmp(str, "WeightCtrl") == 0) {
+            handle_weight_ctrl(json_str);
+        }else if (strcmp(str, "CleanDoorCtrl") == 0) {
+            handle_clean_door_ctrl(json_str);
+        }else if (strcmp(str, "UpdateCtrl") == 0) {
+            handle_update_ctrl(json_str);
+        }else if (strcmp(str, "SpeakerCtrl") == 0) {
+            handle_speaker_ctrl(json_str);
+        }else if (strcmp(str, "FileTransfer") == 0) {
+            handle_file_transfer(json_str);
+        }else if (strcmp(str, "MachineCtrl") == 0) {
+            handle_machine_ctrl(json_str);
         }else{
             printf("Error: unknown command: %s\n", str);
         }
@@ -224,3 +456,20 @@ int server_start() {
     close(serial_fd);
     return 0;
 }
+
+
+int test_json() {
+//读取json文件
+    FILE *fp = fopen("test.json", "r");
+    if (fp == NULL) {
+        printf("open file failed\n");
+        return 1;
+    }
+    char json_str[1024];
+    fread(json_str, 1, 1024, fp);
+    fclose(fp);
+    printf("json_str:%s\n", json_str);
+    process_json(json_str);
+    return 0;
+}
+

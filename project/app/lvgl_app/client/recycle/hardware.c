@@ -6,7 +6,6 @@
 #include <math.h>
 
 Recycle_Box_Cnf g_sRecycle_Box_Cnf;
-int rod_hinder_value = 200;
 int stop_music = 0;
 extern int ir_open_flag;
 
@@ -48,12 +47,12 @@ int recycle_gpio_init()
     //gpio_init(GPIO_PEOPLE_CHECK, GPIO_DIRECTION_INPUT, 1);
 }
 
-int read_weight_adc()
+int read_weight_adc(int channel)
 {
     char path[64] = {0};
     char buffer[16] = {0};
 
-    sprintf(path, "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", 0);
+    sprintf(path, "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", channel);
     
     int fd = open(path, O_RDONLY);
     if (fd < 0) 
@@ -80,7 +79,7 @@ void get_self_weight()
     char str[32] = {0};
     
     // 从adc读取数据
-    g_sRecycle_Box_Cnf.self_adc_var = read_weight_adc();
+    g_sRecycle_Box_Cnf.self_adc_var = read_weight_adc(0);
     
     printf("称重去皮值：%d\n", g_sRecycle_Box_Cnf.self_adc_var);
 
@@ -99,7 +98,7 @@ void set_rat_weight(double rat_weight)
 
     for (int i = 0; i < 5; i++) 
     {
-        sum += (read_weight_adc() - g_sRecycle_Box_Cnf.self_adc_var);//去皮
+        sum += (read_weight_adc(0) - g_sRecycle_Box_Cnf.self_adc_var);//去皮
 
         msleep(50);
     }
@@ -118,7 +117,7 @@ void set_rat_weight(double rat_weight)
 double set_com_weight() 
 {
     // 从adc读取数据
-    int adc_read = read_weight_adc();
+    int adc_read = read_weight_adc(0);
     int diff_adc_value = adc_read - g_sRecycle_Box_Cnf.self_adc_var;
     
     // 重量转换
@@ -132,7 +131,7 @@ double set_com_weight()
 double get_current_weight() 
 {      
     // 从adc读取数据
-    int adc_read = read_weight_adc();
+    int adc_read = read_weight_adc(0);
     int diff_adc_value = adc_read - g_sRecycle_Box_Cnf.self_adc_var;
     
     // 重量转换
@@ -148,19 +147,15 @@ double get_current_weight()
 // 获取溢出状态
 int get_overflow_status() 
 {
-    int overflow_status = 1;
+    int overflow_status = 0;
 
-    if(ir_open_flag){
-        // 有阻挡，输入0
-        if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0)
-        {
-            overflow_status = 2;
-        }
+    // 有阻挡，输入0
+    if (rk_gpio_get_value(GPIO_IR1_STATUS) == 0){
+        overflow_status = 2;
+    }
 
-        if (rk_gpio_get_value(GPIO_IR2_STATUS) == 0)
-        {
-            overflow_status = 3;
-        }
+    if (rk_gpio_get_value(GPIO_IR2_STATUS) == 0){
+        overflow_status = 3;
     }
 
     return overflow_status; // 1-3
@@ -183,20 +178,18 @@ int get_clear_door_status()
     return rk_gpio_get_value(GPIO_LOCK_INT);
 }
 
-int get_rod_status() 
+int get_rod_status(int rod_hinder_value) 
 {
     FILE *fd = NULL;
     int voltage = 0;
     int nRet = 0;
 
     fd = fopen("/sys/bus/iio/devices/iio:device1/in_voltage1_raw", "r");
-    if (fd == NULL) 
-    {
+    if (fd == NULL) {
         return -1;
     }
 
-    if (fscanf(fd, "%d", &voltage) != 1) 
-    {
+    if (fscanf(fd, "%d", &voltage) != 1) {
         fclose(fd);
         return -1;
     }
@@ -249,7 +242,7 @@ void rod_stop()
 
 
 // 设置推杆开启投递门
-void set_post_door_open() 
+void set_post_door_open(int rod_hinder_value) 
 {
     int status;
     int rod_retry = 0;
@@ -260,7 +253,7 @@ void set_post_door_open()
 
     while (1)
     {
-        status = get_rod_status();
+        status = get_rod_status(rod_hinder_value);
         if (status == 0) 
         {
             rod_stop();
@@ -292,7 +285,7 @@ void *play_music(void *arg)
 }
 
 // 设置推杆关闭投递门
-void set_post_door_close()
+void set_post_door_close(int rod_hinder_value)
 {
     int status;
     int rod_retry = 0;
@@ -311,7 +304,7 @@ void set_post_door_close()
     
     while (1) 
     {
-        status = get_rod_status();
+        status = get_rod_status(rod_hinder_value);
         if (status == 2) 
         {
             rod_push();
