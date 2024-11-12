@@ -271,7 +271,6 @@
 {
     "cmd": "FileTransfer",
     "ctrl": "upload",
-    "filename": "test.txt",
     "filesize": 1024,
     "filepath": "/root/test.txt",
     "md5": "1234567890",
@@ -282,8 +281,6 @@
 "ctrl" -> 字符串
 
 * "upload" 上传文件
-
-"filename" -> 字符串 文件名
 
 "filesize" -> 整形数据 文件大小
 
@@ -299,23 +296,7 @@
 ```
 
 * ready
-* resend
 * success
-* conntinue
-
-
-```json
-{
-    "cmd": "FileTransfer",
-    "retCode": 0
-}
-```
-
-描述：文件传输指令返回
-"retCode" -> 整形数据
-
-* 0为成功
-* 1为失败
 
 ### 机器控制指令
 
@@ -329,7 +310,9 @@
 描述：机器控制指令
 "ctrl" -> 字符串
 
-* "reset" 重置设备
+* "reboot" 重启
+* "update" 更新版本
+
 
 ```json
 {

@@ -8,28 +8,28 @@
 #include <termios.h>
 #include <cjson/cJSON.h>
 #include <sys/stat.h>
+#include "server.h"
 
 #define SERIAL_PORT "/dev/ttyS5"
 #define BUFFER_SIZE 256
 int serial_fd;
 
-
-int calculate_md5(const char *filename, char *md5_str) {
-    printf("Calculating MD5 for %s\n", filename);
-    char command[128];
-    sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
-    FILE *fp = popen(command, "r");
-    if (fp == NULL) {
-        printf("Error opening pipe for MD5 calculation.\n");
-        return 1;
-    }
-    fgets(md5_str, 64, fp);
-    pclose(fp);
-    // Remove the trailing newline character
-    md5_str[strcspn(md5_str, "\n")] = 0;
-    printf("Calculated MD5: %s\n", md5_str);
-    return 0;
-}
+// int calculate_md5(const char *filename, char *md5_str) {
+//     printf("Calculating MD5 for %s\n", filename);
+//     char command[128];
+//     sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
+//     FILE *fp = popen(command, "r");
+//     if (fp == NULL) {
+//         printf("Error opening pipe for MD5 calculation.\n");
+//         return 1;
+//     }
+//     fgets(md5_str, 64, fp);
+//     pclose(fp);
+//     // Remove the trailing newline character
+//     md5_str[strcspn(md5_str, "\n")] = 0;
+//     printf("Calculated MD5: %s\n", md5_str);
+//     return 0;
+// }
 
 int send_message(char *str ,int len) {
     write(serial_fd, str, len);
@@ -596,93 +596,93 @@ int second_box_update(){
 
 }
 
-int main(int argc ,char *argv[])  
-{
-    serial_fd = setup_serial_port(SERIAL_PORT);
-    if (serial_fd < 0) {
-        return -1;
-    }
-    int state=0;
-    char version[20];
-    int adc[2];
+// int main(int argc ,char *argv[])  
+// {
+//     serial_fd = setup_serial_port(SERIAL_PORT);
+//     if (serial_fd < 0) {
+//         return -1;
+//     }
+//     int state=0;
+//     char version[20];
+//     int adc[2];
 
     
-    // // 设置第二个盒子的后门状态打开
-    // printf("set post door state open\n");
-    // set_second_box_post_door(1,260);
-    // // 设置第二个盒子的后门状态关闭
-    // printf("set post door state close\n");
-    // set_second_box_post_door(0,260);
+//     // // 设置第二个盒子的后门状态打开
+//     // printf("set post door state open\n");
+//     // set_second_box_post_door(1,260);
+//     // // 设置第二个盒子的后门状态关闭
+//     // printf("set post door state close\n");
+//     // set_second_box_post_door(0,260);
 
-    // // 设置第二个盒子的外部灯光状态，参数1表示激活状态
-    // printf("set out light state on\n");
-    // set_second_box_out_light(1);
-    // // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
-    // sleep(1);
-    // printf("set out light state off\n");
-    // set_second_box_out_light(0);
-    // sleep(1);
-    // // 设置第二个盒子的内部灯光状态，参数1表示激活状态
-    // printf("set in light state on\n");
-    // set_second_box_in_light(1);
-    // // 设置第二个盒子的内部灯光状态，参数1表示非激活状态
-    // sleep(1);
-    // printf("set in light state off\n");
-    // set_second_box_in_light(0);
-    // sleep(1);
+//     // // 设置第二个盒子的外部灯光状态，参数1表示激活状态
+//     // printf("set out light state on\n");
+//     // set_second_box_out_light(1);
+//     // // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
+//     // sleep(1);
+//     // printf("set out light state off\n");
+//     // set_second_box_out_light(0);
+//     // sleep(1);
+//     // // 设置第二个盒子的内部灯光状态，参数1表示激活状态
+//     // printf("set in light state on\n");
+//     // set_second_box_in_light(1);
+//     // // 设置第二个盒子的内部灯光状态，参数1表示非激活状态
+//     // sleep(1);
+//     // printf("set in light state off\n");
+//     // set_second_box_in_light(0);
+//     // sleep(1);
 
-    // // 执行清洁第二个盒子的操作，打开
-    // printf("clean second box\n");
-    // set_second_box_spk_volume(3);
-    // // 设置第二个盒子的扬声器音量，参数1表示音量级别
-    // printf("set speaker volume 1\n");
-    // set_second_box_spk_volume(1);
-    // printf("set speaker volume 2\n");
-    // set_second_box_spk_volume(2);
-    // printf("set speaker volume 3\n");
-    // set_second_box_spk_volume(3);
-    // // 设置第二个盒子的扬声器音量，参数1表示音量级别
-    // printf("set speaker volume 4\n");
-    // set_second_box_spk_volume(4);
-    // printf("set speaker volume 5\n");
-    // set_second_box_spk_volume(5);
+//     // // 执行清洁第二个盒子的操作，打开
+//     // printf("clean second box\n");
+//     // set_second_box_spk_volume(3);
+//     // // 设置第二个盒子的扬声器音量，参数1表示音量级别
+//     // printf("set speaker volume 1\n");
+//     // set_second_box_spk_volume(1);
+//     // printf("set speaker volume 2\n");
+//     // set_second_box_spk_volume(2);
+//     // printf("set speaker volume 3\n");
+//     // set_second_box_spk_volume(3);
+//     // // 设置第二个盒子的扬声器音量，参数1表示音量级别
+//     // printf("set speaker volume 4\n");
+//     // set_second_box_spk_volume(4);
+//     // printf("set speaker volume 5\n");
+//     // set_second_box_spk_volume(5);
 
-    // // 获取第二个盒子的IR状态
-    // get_second_box_ir_status(&state);
-    // printf("IR state: %d\n", state);
+//     // // 获取第二个盒子的IR状态
+//     // get_second_box_ir_status(&state);
+//     // printf("IR state: %d\n", state);
 
-    // // 获取第二个盒子的ADC数据
-    // get_second_box_raw_weight(adc);
-    // printf("ADC0: %d, ADC1: %d\n", adc[0], adc[1]);
-    // // 获取第二个盒子的清洁门状态
-    // get_second_box_cleandoor_status(&state);
-    // printf("Clean door state: %d\n", state);
-    // // 获取第二个盒子的版本号
-    // get_second_box_version(version);
-    // printf("Version: %s\n", version);
+//     // // 获取第二个盒子的ADC数据
+//     // get_second_box_raw_weight(adc);
+//     // printf("ADC0: %d, ADC1: %d\n", adc[0], adc[1]);
+//     // // 获取第二个盒子的清洁门状态
+//     // get_second_box_cleandoor_status(&state);
+//     // printf("Clean door state: %d\n", state);
+//     // // 获取第二个盒子的版本号
+//     // get_second_box_version(version);
+//     // printf("Version: %s\n", version);
 
-    printf("set out light state on\n");
-    set_second_box_out_light(1);
-    // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
-    sleep(1);
-    printf("set out light state off\n");
-    set_second_box_out_light(0);
+//     printf("set out light state on\n");
+//     set_second_box_out_light(1);
+//     // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
+//     sleep(1);
+//     printf("set out light state off\n");
+//     set_second_box_out_light(0);
 
-    char filename[20];
-    if(argc > 1){
-        strcpy(filename,argv[1]);
-    }else{
-        char filename[20] = "/root/ss.jpg";
-    }
+//     char filename[20];
+//     if(argc > 1){
+//         strcpy(filename,argv[1]);
+//     }else{
+//         char filename[20] = "/root/ss.jpg";
+//     }
 
-    second_box_file_transfer(filename);
-    sleep(2);
-    second_box_update();
-    // sleep(15);
-    // second_box_reboot();
-    close(serial_fd);
-    return 0;
-}
+//     second_box_file_transfer(filename);
+//     sleep(2);
+//     second_box_update();
+//     // sleep(15);
+//     // second_box_reboot();
+//     close(serial_fd);
+//     return 0;
+// }
 
 
 
