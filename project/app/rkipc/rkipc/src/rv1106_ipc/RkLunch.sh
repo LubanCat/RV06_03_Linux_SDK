@@ -47,7 +47,7 @@ network_init()
 	ifconfig eth0 up && udhcpc -i eth0
 }
 
-lvgl_init()
+recycle_init()
 {
 	while [ ! -e /dev/ttyUSB2 ]; do
 		echo "等待 /dev/ttyUSB2 设备..."
@@ -59,7 +59,7 @@ lvgl_init()
 
 	/oem/usr/bin/network.sh &
 
-	/oem/usr/bin/lvgl_app.sh &
+	/oem/usr/bin/recycle_app.sh &
 }
 
 post_chk()
@@ -88,7 +88,7 @@ post_chk()
 		cd $default_ko_dir && sh insmod_ko.sh && cd -
 	fi
 
-	lvgl_init &
+	recycle_init &
 	network_init &
 	check_linker /userdata   /oem/usr/www/userdata
 	check_linker /media/usb0 /oem/usr/www/usb0

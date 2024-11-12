@@ -27,9 +27,9 @@
 #define COUNT_DOWN10 10
 #define REFRESH_RATE 10
 #define DIR_NUM 20
-char *local_version = "1.37";
-const char *userdata_path = "/userdata/device_info.json";
-const char *root_path = "/root/device_info.json";
+char *local_version = "1.38";
+const char *userdata_path = "/userdata/device.json";
+const char *root_path = "/root/device.json";
 
 char in_video_open_path[64];
 char out_video_open_path[64];
@@ -675,7 +675,7 @@ int read_device_info() {
     check_and_move_file(root_path, userdata_path);
 
     // 打开文件
-    FILE *file = fopen("/userdata/device_info.json", "r");
+    FILE *file = fopen("/userdata/device.json", "r");
     if (file == NULL) {
         perror("无法打开设备配置文件");
         return -1;
@@ -757,7 +757,7 @@ int write_device_info(const char *key_name, const char *value) {
     cJSON *root = NULL;
 
     // 尝试打开现有配置文件
-    FILE *file = fopen("/userdata/device_info.json", "r");
+    FILE *file = fopen("/userdata/device.json", "r");
     if (file == NULL) {
         // 如果文件不存在，创建一个空的 JSON 对象
         root = cJSON_CreateObject();
@@ -824,7 +824,7 @@ int write_device_info(const char *key_name, const char *value) {
     }
 
     // 将字符串写入配置文件
-    int fd = open("/userdata/device_info.json", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int fd = open("/userdata/device.json", O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1) {
         perror("无法打开设备配置文件");
         cJSON_Delete(root);
@@ -1040,13 +1040,24 @@ int server_login() {
     int recv_len;
 
     // 创建 JSON 请求
+    // cJSON *root = cJSON_CreateObject();
+    // cJSON_AddStringToObject(root, "cmd", "login");
+    // cJSON_AddStringToObject(root, "imsi", moduleInfo.imsi);
+    // cJSON_AddStringToObject(root, "imei", moduleInfo.imei);
+    // cJSON_AddStringToObject(root, "version", local_version);
+    // cJSON_AddStringToObject(root, "iccid", moduleInfo.iccid);
+    // cJSON_AddStringToObject(root, "sn", sn);
+
+    // char *json_str = cJSON_PrintUnformatted(root);
+
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "cmd", "login");
-    cJSON_AddStringToObject(root, "imsi", moduleInfo.imsi);
-    cJSON_AddStringToObject(root, "imei", moduleInfo.imei);
-    cJSON_AddStringToObject(root, "version", local_version);
-    cJSON_AddStringToObject(root, "iccid", moduleInfo.iccid);
+    cJSON_AddStringToObject(root, "imsi", "460113349100088");
+    cJSON_AddStringToObject(root, "imei", "20214M0023544X157420");
+    cJSON_AddStringToObject(root, "version", "1.37");
+    cJSON_AddStringToObject(root, "iccid", "89861124201037852781");
     cJSON_AddStringToObject(root, "sn", sn);
+
     char *json_str = cJSON_PrintUnformatted(root);
 
     // 发送登录请求
@@ -1688,6 +1699,30 @@ void *heartbeat_thread(void *arg)
         sleep(10);
 
         if(heartbeat_num == 1){
+            printf("can not reviced heartBeat return\n");
+
+            for(int i=0;i<10;i++){
+                if(heartbeat_num==0)
+                    break;
+
+                heartBeat.curWeight = get_current_weight();
+                cJSON *root = cJSON_CreateObject();
+                cJSON_AddStringToObject(root, "cmd", "heartBeat");
+                cJSON_AddNumberToObject(root, "signal", heartBeat.signal);
+                cJSON_AddNumberToObject(root, "curWeight", heartBeat.curWeight);
+                
+                char *json_str = cJSON_PrintUnformatted(root);
+
+                // 发送心跳上传请求
+                printf("Sending heartBeat request: %s\n", json_str);
+                send_tcp_packet(json_str, strlen(json_str));
+                free(json_str);
+                
+                cJSON_Delete(root);
+
+                sleep(2);
+            }
+
             heartbeat_num=0;
             printf("heartbeat cause server_connect\n");
             server_connect=0;
@@ -2398,57 +2433,53 @@ void* socket_task_thread(void* arg)
     int ret;
 
     // 获取登录配置
-    while (g_main_run_) 
-    {
+    while (g_main_run_) {
         // 获取登录配置
         ret = get_login_config(&loginConfig);
-        if (ret == 0) 
-        {
+        if (ret == 0) {
             printf("Login configuration:\n");
             printf("IP: %s\n", loginConfig.ip);
             printf("TCP Port: %d\n", loginConfig.tcpPort);
             
             break; // 成功获取配置后退出循环
-        } 
-        else 
-        {
-            printf("Failed to get login configuration. Retrying in 60 seconds...\n");
-            sleep(60); // 获取失败时，等待60秒后重试
+        }else {
+            printf("Failed to get login configuration. Retrying in 20 seconds...\n");
+            sleep(20); // 获取失败时，等待20秒后重试
         }
     }
 
-    while (g_main_run_) 
-    {
-        if (0 == server_connect) 
-        {
+    while (g_main_run_) {
+        if (0 == server_connect) {
             printf("network disconnect,try to connect...\n");
             struct sockaddr_in server_addr;
             // 创建套接字
-            if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-            {
+            if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
                 perror("Socket creation failed");
                 return NULL;
             }
-                
+            
             // 设置服务器地址
             server_addr.sin_family = AF_INET;
             server_addr.sin_port = htons(loginConfig.tcpPort);
             server_addr.sin_addr.s_addr = inet_addr(loginConfig.ip);
 
-            // 连接到服务器 
-            if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
-            {
+            // int flags = fcntl(sock, F_GETFL, 0);
+            // fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+            // 连接到服务器,超时时间设置为10秒
+            printf("try to Connectto server\n");
+            if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                 perror("Connection to server failed");
                 
                 close(sock);
-                sleep(60);
+                sleep(5);
                 
                 continue;
             }
-
+            // flags = fcntl(sock, F_GETFL, 0);
+            // fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
             struct timeval tv;
             // 设置接收超时时间为5秒
-            tv.tv_sec = 5;  // 秒
+            tv.tv_sec = 2;  // 秒
             tv.tv_usec = 0; // 微秒
 
             if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
@@ -2457,11 +2488,9 @@ void* socket_task_thread(void* arg)
             }
             
             // 登录服务器
-            while (g_main_run_) 
-            {
+            while (g_main_run_) {
                 ret = server_login();
-                if (ret == 0) 
-                {
+                if (ret == 0) {
                     printf("Login successful:\n");
                     printf("QR Code: %s\n", loginRes.qrCode);
                     printf("Recycle Price: %.2f\n", loginRes.recyclePrice);
@@ -2469,27 +2498,27 @@ void* socket_task_thread(void* arg)
                     server_connect = 1;           
                     break;
                 }
-                else 
-                {
-                    printf("Failed to get login configuration. Retrying in 60 seconds...\n");
-                    sleep(60); // 获取失败时，等待60秒后重试
+                else {
+                    printf("Failed to get login configuration. Retrying in 10 seconds...\n");
+                    sleep(10); // 获取失败时，等待60秒后重试
                 }
             }
         }
 
-        if (NULL == heartbeat_thread_id) 
-        {
+        if (NULL == heartbeat_thread_id) {
             // 创建心跳线程
-            if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) 
-            {
+            if (pthread_create(&heartbeat_thread_id, NULL, heartbeat_thread, NULL) != 0) {
                 perror("Failed to create heartbeat thread");
 
                 return NULL;
             }
         }
-        usleep(50*1000);
+
+        sleep(1);
     }
     
     return NULL;
 }
+
+
 

@@ -7,10 +7,29 @@
 #include <errno.h>
 #include <termios.h>
 #include <cjson/cJSON.h>
+#include <sys/stat.h>
 
 #define SERIAL_PORT "/dev/ttyS5"
 #define BUFFER_SIZE 256
 int serial_fd;
+
+
+int calculate_md5(const char *filename, char *md5_str) {
+    printf("Calculating MD5 for %s\n", filename);
+    char command[128];
+    sprintf(command, "md5sum %s | awk '{ print $1 }'", filename);
+    FILE *fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("Error opening pipe for MD5 calculation.\n");
+        return 1;
+    }
+    fgets(md5_str, 64, fp);
+    pclose(fp);
+    // Remove the trailing newline character
+    md5_str[strcspn(md5_str, "\n")] = 0;
+    printf("Calculated MD5: %s\n", md5_str);
+    return 0;
+}
 
 int send_message(char *str ,int len) {
     write(serial_fd, str, len);
@@ -107,7 +126,8 @@ int process_json(const char *json_str) {
             strcmp(str, "CleanDoorCtrl") == 0 ||
             strcmp(str, "InLightCtrl") == 0 ||
             strcmp(str, "OutLightCtrl") == 0 ||
-            strcmp(str, "SpeakerCtrl") == 0 
+            strcmp(str, "SpeakerCtrl") == 0 ||
+            strcmp(str, "MachineCtrl") == 0
             ) {
             cJSON *ctrl_item = cJSON_GetObjectItem(root, "retCode");
             if (cJSON_IsNumber(ctrl_item)) {
@@ -171,7 +191,7 @@ int set_second_box_out_light(int state){
 
 int set_second_box_in_light(int state){
     cJSON *send_root = cJSON_CreateObject();
-    cJSON_AddStringToObject(send_root, "cmd", "inLightCtrl");
+    cJSON_AddStringToObject(send_root, "cmd", "InLightCtrl");
     if(state)
         cJSON_AddStringToObject(send_root, "ctrl", "open");
     else
@@ -224,7 +244,7 @@ int set_second_box_spk_volume(int volume){
 int get_second_box_ir_status(int *state){
     int ret;
     cJSON *send_root = cJSON_CreateObject();
-    cJSON_AddStringToObject(send_root, "cmd", "CleanDoorCtrl");
+    cJSON_AddStringToObject(send_root, "cmd", "IRCtrl");
     cJSON_AddStringToObject(send_root, "ctrl", "get_state");
 
     char *json_str = cJSON_Print(send_root);
@@ -253,13 +273,6 @@ int get_second_box_ir_status(int *state){
         if (strcmp(str, "IRCtrl") == 0) {
             cJSON *ctrl_item = cJSON_GetObjectItem(root, "retCode");
             if (cJSON_IsNumber(ctrl_item)) {
-                cJSON *state_item = cJSON_GetObjectItem(root, "state");
-                if (cJSON_IsNumber(state_item)) {
-                    state[0]=state_item->valueint;
-                }else{
-                    printf("control result: unknown\n");
-                    ret= -1;
-                }
                 ret=ctrl_item->valueint;
             }else{
                 printf("control result: unknown\n");
@@ -396,7 +409,7 @@ int get_second_box_version(char *version){
 
     cJSON *send_root = cJSON_CreateObject();
     cJSON_AddStringToObject(send_root, "cmd", "UpdateCtrl");
-    cJSON_AddStringToObject(send_root, "ctrl", "get_state");
+    cJSON_AddStringToObject(send_root, "ctrl", "get_version");
 
     char *json_str = cJSON_Print(send_root);
     int len = strlen(json_str);
@@ -422,7 +435,7 @@ int get_second_box_version(char *version){
         if (strcmp(str, "UpdateCtrl") == 0) {
             cJSON *ctrl_item = cJSON_GetObjectItem(root, "retCode");
             if (cJSON_IsNumber(ctrl_item)) {
-                cJSON *state_item = cJSON_GetObjectItem(root, "get_version");
+                cJSON *state_item = cJSON_GetObjectItem(root, "version");
                 if (cJSON_IsString(state_item)) {
                     strcpy(version,state_item->valuestring);
                     ret=ctrl_item->valueint;
@@ -445,14 +458,26 @@ int get_second_box_version(char *version){
 }
 
 
-int second_box_file_transfer(char *filename, int filesize,char *filepath, char* md5){
+int second_box_file_transfer(char *filename){
     
     int ret;
+    char filepath[40] = "send_file";
+    char temp_file[20] = "/root/tempfile";
+    char base64_str[64];
+    sprintf(base64_str, "base64 %s > %s", filename,temp_file);
+    system(base64_str);
+
+    char md5[33];
+    calculate_md5(temp_file, md5);
+    //计算文件大小
+    struct stat st;
+    stat(temp_file, &st);
+    int filesize = st.st_size;
+    printf("filesize: %d\n", filesize);
 
     cJSON *send_root = cJSON_CreateObject();
-    cJSON_AddStringToObject(send_root, "cmd", "FileCtrl");
+    cJSON_AddStringToObject(send_root, "cmd", "FileTransfer");
     cJSON_AddStringToObject(send_root, "ctrl", "upload");
-    cJSON_AddStringToObject(send_root, "filename", filename);
     cJSON_AddNumberToObject(send_root, "filesize", filesize);
     cJSON_AddStringToObject(send_root, "filepath", filepath);
     cJSON_AddStringToObject(send_root, "md5", md5);
@@ -481,18 +506,43 @@ int second_box_file_transfer(char *filename, int filesize,char *filepath, char* 
             char str[20];
             strncpy(str, cmd_item->valuestring, sizeof(str) - 1);
             str[sizeof(str) - 1] = '\0';
-            if (strcmp(str, "FileCtrl") == 0) {
+            if (strcmp(str, "FileTransfer") == 0) {
                 cJSON *ctrl_item = cJSON_GetObjectItem(root, "ctrl");
                 if (cJSON_IsString(ctrl_item)) {
-                    if(strcmp(ctrl_item->valuestring, "ready")==0){
-                        printf("ready to send file\n");
-                    }else if(strcmp(ctrl_item->valuestring, "resend")==0){
-                        printf("resend file\n");
+                    if(strcmp(ctrl_item->valuestring, "ready")==0 || strcmp(ctrl_item->valuestring, "resend")==0){
+                        //读取/root/3.jpg文件，循环读取512字节内容，发送给盒子
+                        printf("%s file\n",ctrl_item->valuestring);
+                        int fd = open(temp_file, O_RDONLY);
+                        if(fd<0){
+                            printf("open file failed\n");
+                            return -1;
+                        }
+                        char buffer[512];
+                        int len = 0;
+                        int total_len = 0;
+
+                        while(1){
+                            len = read(fd, buffer, 512);
+                            if(len<=0){
+                                if(total_len==filesize){
+                                    printf("read file success\n");
+                                    break;
+                                }else{
+                                    printf("read file failed\n");
+                                    break;
+                                }
+                            }
+                            send_message(buffer,len);
+                            total_len += len;
+                            printf("send %d bytes, total %d bytes\n", len, total_len);
+                        }
+                        close(fd);
                     }else if(strcmp(ctrl_item->valuestring, "success")==0){
                         printf("file upload success\n");
                         an=1;
                         ret=1;
                     }
+                    
                 }else{
                     printf("control result: unknown\n");
                     ret= -1;
@@ -504,78 +554,135 @@ int second_box_file_transfer(char *filename, int filesize,char *filepath, char* 
             }
         }
         cJSON_Delete(root);
+        // c语言删除temp_file
+        
     }
-
+    remove(temp_file);
     return ret;
 }
 
+int second_box_reboot(){
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "MachineCtrl");
 
-// int main()  
-// {
-//     serial_fd = setup_serial_port(SERIAL_PORT);
-//     if (serial_fd < 0) {
-//         return -1;
-//     }
-//     int state=0;
-//     char version[20];
-//     int adc[2];
+    cJSON_AddStringToObject(send_root, "ctrl", "reboot");
+
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    send_message(json_str,len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    // 等待，收到信号后执行下一步
+    char json_buffer[BUFFER_SIZE];
+    receive_message(json_buffer);
+    return process_json(json_buffer);
+}  
+
+int second_box_update(){
+    cJSON *send_root = cJSON_CreateObject();
+    cJSON_AddStringToObject(send_root, "cmd", "MachineCtrl");
+
+    cJSON_AddStringToObject(send_root, "ctrl", "update");
+
+    char *json_str = cJSON_Print(send_root);
+    int len = strlen(json_str);
+    send_message(json_str,len);
+    cJSON_Delete(send_root);
+    free(json_str);
+    // 等待，收到信号后执行下一步
+    char json_buffer[BUFFER_SIZE];
+    receive_message(json_buffer);
+    return process_json(json_buffer);
+
+}
+
+int main(int argc ,char *argv[])  
+{
+    serial_fd = setup_serial_port(SERIAL_PORT);
+    if (serial_fd < 0) {
+        return -1;
+    }
+    int state=0;
+    char version[20];
+    int adc[2];
 
     
-//     // 设置第二个盒子的后门状态打开
-//     printf("set post door state open\n");
-//     set_second_box_post_door(1,200);
-//     // 设置第二个盒子的后门状态关闭
-//     printf("set post door state close\n");
-//     set_second_box_post_door(0,200);
+    // // 设置第二个盒子的后门状态打开
+    // printf("set post door state open\n");
+    // set_second_box_post_door(1,260);
+    // // 设置第二个盒子的后门状态关闭
+    // printf("set post door state close\n");
+    // set_second_box_post_door(0,260);
 
-//     // 设置第二个盒子的外部灯光状态，参数1表示激活状态
-//     printf("set out light state on\n");
-//     set_second_box_out_light(1);
-//     // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
-//     printf("set out light state off\n");
-//     set_second_box_out_light(0);
+    // // 设置第二个盒子的外部灯光状态，参数1表示激活状态
+    // printf("set out light state on\n");
+    // set_second_box_out_light(1);
+    // // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
+    // sleep(1);
+    // printf("set out light state off\n");
+    // set_second_box_out_light(0);
+    // sleep(1);
+    // // 设置第二个盒子的内部灯光状态，参数1表示激活状态
+    // printf("set in light state on\n");
+    // set_second_box_in_light(1);
+    // // 设置第二个盒子的内部灯光状态，参数1表示非激活状态
+    // sleep(1);
+    // printf("set in light state off\n");
+    // set_second_box_in_light(0);
+    // sleep(1);
 
-//     // 设置第二个盒子的内部灯光状态，参数1表示激活状态
-//     printf("set in light state on\n");
-//     set_second_box_in_light(1);
-//     // 设置第二个盒子的内部灯光状态，参数1表示非激活状态
-//     printf("set in light state off\n");
-//     set_second_box_in_light(0);
+    // // 执行清洁第二个盒子的操作，打开
+    // printf("clean second box\n");
+    // set_second_box_spk_volume(3);
+    // // 设置第二个盒子的扬声器音量，参数1表示音量级别
+    // printf("set speaker volume 1\n");
+    // set_second_box_spk_volume(1);
+    // printf("set speaker volume 2\n");
+    // set_second_box_spk_volume(2);
+    // printf("set speaker volume 3\n");
+    // set_second_box_spk_volume(3);
+    // // 设置第二个盒子的扬声器音量，参数1表示音量级别
+    // printf("set speaker volume 4\n");
+    // set_second_box_spk_volume(4);
+    // printf("set speaker volume 5\n");
+    // set_second_box_spk_volume(5);
 
-//     // 执行清洁第二个盒子的操作，打开
-//     printf("clean second box\n");
-//     set_second_box_clean_door();
+    // // 获取第二个盒子的IR状态
+    // get_second_box_ir_status(&state);
+    // printf("IR state: %d\n", state);
 
-//     // 设置第二个盒子的扬声器音量，参数1表示音量级别
-//     printf("set speaker volume 20\n");
-//     set_second_box_spk_volume(20);
-//     // 设置第二个盒子的扬声器音量，参数1表示音量级别
-//     printf("set speaker volume 50\n");
-//     set_second_box_spk_volume(50);;
+    // // 获取第二个盒子的ADC数据
+    // get_second_box_raw_weight(adc);
+    // printf("ADC0: %d, ADC1: %d\n", adc[0], adc[1]);
+    // // 获取第二个盒子的清洁门状态
+    // get_second_box_cleandoor_status(&state);
+    // printf("Clean door state: %d\n", state);
+    // // 获取第二个盒子的版本号
+    // get_second_box_version(version);
+    // printf("Version: %s\n", version);
 
+    printf("set out light state on\n");
+    set_second_box_out_light(1);
+    // 设置第二个盒子的外部灯光状态，参数1表示非激活状态
+    sleep(1);
+    printf("set out light state off\n");
+    set_second_box_out_light(0);
 
-//     // 获取第二个盒子的IR状态
-//     get_second_box_ir_status(&state);
-//     printf("IR state: %d\n", state);
+    char filename[20];
+    if(argc > 1){
+        strcpy(filename,argv[1]);
+    }else{
+        char filename[20] = "/root/ss.jpg";
+    }
 
-//     // 获取第二个盒子的ADC数据
-//     get_second_box_raw_weight(adc);
-//     printf("ADC0: %d, ADC1: %d\n", adc[0], adc[1]);
-//     // 获取第二个盒子的清洁门状态
-//     get_second_box_cleandoor_status(&state);
-//     printf("Clean door state: %d\n", state);
-//     // 获取第二个盒子的版本号
-//     get_second_box_version(version);
-//     printf("Version: %s\n", version);
-//     char filename[20] = "test.txt";
-//     char filepath[20] = "/root/test.txt";
-//     char md5[33] = "d41d8cd98f00b204e9800998ecf8427e";
-//     int filesize = 1023;
-//     second_box_file_transfer(filename, filesize, filepath, md5);
-
-//     close(serial_fd);
-//     return 0;
-// }
+    second_box_file_transfer(filename);
+    sleep(2);
+    second_box_update();
+    // sleep(15);
+    // second_box_reboot();
+    close(serial_fd);
+    return 0;
+}
 
 
 

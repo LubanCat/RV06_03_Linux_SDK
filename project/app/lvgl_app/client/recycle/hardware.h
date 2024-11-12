@@ -6,18 +6,18 @@
 
 #define msleep(x) 				usleep(x * 1000)
 
-#define GPIO_LOCK_CEN           5
-#define GPIO_PUSH_ROD0          3
-#define GPIO_PUSH_ROD1          2
-#define GPIO_LIGHT_INSIDE       1
-#define GPIO_LIGHT_OUTSIDE      0
+#define GPIO_LOCK_CEN           283
+#define GPIO_PUSH_ROD0          5
+#define GPIO_PUSH_ROD1          4
+#define GPIO_LIGHT_INSIDE       2
+#define GPIO_LIGHT_OUTSIDE      40
 //#define GPIO_FAN                118
 
-#define GPIO_LOCK_INT           4
+#define GPIO_LOCK_INT           287
 // 红外1
-#define GPIO_IR1_STATUS         133
+#define GPIO_IR1_STATUS         284
 // 红外2
-#define GPIO_IR2_STATUS         135
+#define GPIO_IR2_STATUS         285
 
 //#define GPIO_PEOPLE_CHECK     123
 
@@ -67,5 +67,6 @@ void inside_light(int status);
 
 // 外部灯光操作
 void outside_light(int status);
+void *play_music(void *arg);
 
 #endif // HARDWARE_H

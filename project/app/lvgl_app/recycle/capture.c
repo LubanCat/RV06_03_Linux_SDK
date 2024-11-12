@@ -2876,19 +2876,12 @@ int get_cam_video(int ch,char *video_path){
     DIR *d;
     struct dirent *dir;
     char path[64];
-    if(ch)
-        //外摄像头
-        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.4/1-1.4:1.0/video4linux");
-    else{
-        d=opendir("/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
-        if(d){
-            sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
-            closedir(d);
-        }
-        else
-            //内摄像头
-            sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.2/1-1.2:1.0/video4linux");
-    }
+    if(ch==0)
+        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.1/1-1.1:1.0/video4linux");
+	if(ch==1)
+        sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.2/1-1.2:1.0/video4linux");
+    else
+		sprintf(path,"%s","/sys/bus/usb/devices/1-1/1-1.3/1-1.3:1.0/video4linux");
 
     d = opendir(path); // 请替换为你要列出的目录路径
     if (d) {

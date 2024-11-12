@@ -23,7 +23,7 @@
 
 /* gain to pulse and scale conversion */
 #define HX711_GAIN_MAX		3
-#define HX711_RESET_GAIN	128
+#define HX711_RESET_GAIN	64
 
 struct hx711_gain_to_scale {
 	int			gain;
@@ -529,8 +529,8 @@ static int hx711_probe(struct platform_device *pdev)
 		hx711_gain_to_scale[i].scale =
 			ret / hx711_gain_to_scale[i].gain / 1678;
 
-	hx711_data->gain_set = 128;
-	hx711_data->gain_chan_a = 128;
+	hx711_data->gain_set = 64;
+	hx711_data->gain_chan_a = 64;
 
 	hx711_data->clock_frequency = 400000;
 	ret = of_property_read_u32(np, "clock-frequency",

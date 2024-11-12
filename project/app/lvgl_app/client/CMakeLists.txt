@@ -27,7 +27,7 @@ add_compile_options(-Wno-unused-variable
     -Wformat-security -Wno-ignored-qualifiers -Wno-sign-compare
     )
 
-PROJECT(lvgl_app_client)
+PROJECT(recycle_app_client)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}
@@ -48,16 +48,16 @@ set(CXX_SRCS
 file(GLOB_RECURSE RECYCLE_SOURCES recycle/*.c)
 
 
-ADD_EXECUTABLE(lvgl_app_client ${RECYCLE_SOURCES} ${CXX_SRCS})
+ADD_EXECUTABLE(recycle_app_client ${RECYCLE_SOURCES} ${CXX_SRCS})
 
 # Add linker flags for rpath and rpath-link
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${LIB_DIR}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath-link,${LIB_DIR}")
 
-target_link_libraries(lvgl_app_client
+target_link_libraries(recycle_app_client
     pthread
     m
     libcjson.so
 )
 
-install(TARGETS lvgl_app_client DESTINATION usr/bin/)
+install(TARGETS recycle_app_client DESTINATION usr/bin/)

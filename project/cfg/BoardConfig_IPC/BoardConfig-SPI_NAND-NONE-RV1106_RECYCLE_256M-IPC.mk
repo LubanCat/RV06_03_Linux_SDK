@@ -25,7 +25,7 @@ export RK_UBOOT_DEFCONFIG_FRAGMENT=rk-sfc.config
 export RK_KERNEL_DEFCONFIG=rv1106_lbc_defconfig
 
 # Kernel dts
-export RK_KERNEL_DTS=rv1106g-lubancat-recycle.dts
+export RK_KERNEL_DTS=rv1106g-lubancat-recycle2.dts
 
 # buildroot defconfig
 export RK_BUILDROOT_DEFCONFIG=rv1106_lbc_defconfig

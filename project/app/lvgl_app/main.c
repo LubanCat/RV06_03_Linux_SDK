@@ -271,6 +271,7 @@ void* aux_task_thread(void* arg) {
     int curCapacity,curCapacityBefore;
     long ntp_count=0;
     pthread_t module_restart_thread_id;
+    int server_loss_count=0;
     loginRes.turnOnLight.tm_hour = 19;
     loginRes.turnOnLight.tm_min = 0;
     loginRes.turnOffLight.tm_hour = 7;
@@ -311,6 +312,18 @@ void* aux_task_thread(void* arg) {
                 pthread_mutex_unlock(&lv_task_mutex);
             }
             server_count=0;
+
+            if(server_connect == 0){
+                server_loss_count++;
+                if(server_loss_count % 5 == 0){
+                    module_restart();
+                    if(server_loss_count / 10 == 1){
+                        system("reboot");
+                    }
+                }
+            }else
+                server_loss_count=0;
+                
         }
 
         // 灯光更新

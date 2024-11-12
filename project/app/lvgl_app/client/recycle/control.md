@@ -269,7 +269,7 @@
 
 ```json
 {
-    "cmd": "FileCtrl",
+    "cmd": "FileTransfer",
     "ctrl": "upload",
     "filename": "test.txt",
     "filesize": 1024,
@@ -293,7 +293,7 @@
 
 ```json
 {
-    "cmd": "FileCtrl",
+    "cmd": "FileTransfer",
     "ctrl": "ready"
 }
 ```
@@ -301,11 +301,12 @@
 * ready
 * resend
 * success
+* conntinue
 
 
 ```json
 {
-    "cmd": "FileCtrl",
+    "cmd": "FileTransfer",
     "retCode": 0
 }
 ```

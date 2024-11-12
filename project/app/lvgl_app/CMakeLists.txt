@@ -68,13 +68,13 @@ file(GLOB_RECURSE RECYCLE_SOURCES recycle/*.c)
 add_subdirectory(lvgl)
 add_subdirectory(lv_drivers)
 
-ADD_EXECUTABLE(lvgl_app ${RECYCLE_SOURCES} ${CUSTOM_SOURCES} ${GENERATED_SOURCES} ${CXX_SRCS})
+ADD_EXECUTABLE(recycle_app ${RECYCLE_SOURCES} ${CUSTOM_SOURCES} ${GENERATED_SOURCES} ${CXX_SRCS})
 
 # Add linker flags for rpath and rpath-link
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${LIB_DIR}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath-link,${LIB_DIR}")
 
-target_link_libraries(lvgl_app
+target_link_libraries(recycle_app
     PRIVATE lvgl::lvgl
     PRIVATE lvgl::drivers
     PRIVATE lvgl::demos
@@ -93,4 +93,4 @@ target_link_libraries(lvgl_app
     m
 )
 
-install(TARGETS lvgl_app DESTINATION usr/bin/)
+install(TARGETS recycle_app DESTINATION usr/bin/)

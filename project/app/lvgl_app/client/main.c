@@ -12,8 +12,8 @@
 int main(int argc, char **argv){
 // printf hello world
 	// printf("Hello World!\n");
-	// server_start();
-	recycle_gpio_init();
-	test_json();
+	server_start();
+	// recycle_gpio_init();
+	// test_json();
 	return 0;
 }
