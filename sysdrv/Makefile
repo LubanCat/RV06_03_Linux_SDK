@@ -114,6 +114,8 @@ endif
 
 ifneq ($(findstring $(TARGET_ROOTFS),buildroot),)
    ROOTFS_BUILD_ENV := rootfs_prepare pctools buildroot boardtools drv
+else ifneq ($(findstring $(TARGET_ROOTFS),ubuntu),)
+   ROOTFS_BUILD_ENV := ubuntu_drv ubuntu
 else
    ROOTFS_BUILD_ENV := rootfs_prepare pctools busybox boardtools drv
 endif
@@ -267,6 +269,10 @@ SYSDRV_BUSYBOX_OBJS_OUTPUT_DIR ?= $(BUSYBOX_DIR)/objs_$(BUSYBOX_CFG)
 
 BUILDROOT_VER ?= buildroot-2024.02.2
 BUILDROOT_DIR := $(SYSDRV_DIR)/source/buildroot
+
+UBUNTU_DIR := $(SYSDRV_DIR)/source/ubuntu
+UBUNTU_ARCH := armhf
+UBUNTU_VER := jammy
 
 TOOLCHAIN_RUNTIME_LIB_C:=lib.tar.bz2
 
@@ -603,6 +609,26 @@ buildroot_clean:
 	$(MAKE) distclean -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)
 
 ##########################################################################################
+#	build ubuntu
+##########################################################################################
+ubuntu: prepare
+	@echo -e "$(C_GREEN) ==sysdrv== build ubuntu   $(C_NORMAL)"
+	test -f "$(UBUNTU_DIR)/ubuntu-$(UBUNTU_VER)-rootfs-$(UBUNTU_ARCH).tar.gz" || (\
+		cd $(UBUNTU_DIR) ;\
+		$(UBUNTU_DIR)/mk-ubuntu-rootfs.sh ;\
+	);
+
+	rm -rf $(SYSDRV_DIR_OUT_ROOTFS)
+	mkdir -p $(SYSDRV_DIR_OUT_ROOTFS)
+	tar xzf $(UBUNTU_DIR)/ubuntu-$(UBUNTU_VER)-rootfs-$(UBUNTU_ARCH).tar.gz -C $(SYSDRV_DIR_OUT_ROOTFS)/
+
+	cp -rfv $(KERNEL_DIR_DRV_KO)/* $(SYSDRV_DIR_OUT_ROOTFS)/usr
+	cp -rfv $(SYSDRV_KERNEL_MOD_PATH)/* $(SYSDRV_DIR_OUT_ROOTFS)/usr/lib/modules/*
+
+ubuntu_clean:
+	 rm -rf $(UBUNTU_DIR)/ubuntu-$(UBUNTU_VER)-rootfs-$(UBUNTU_ARCH).tar.gz
+
+##########################################################################################
 #	build pc tools
 ##########################################################################################
 include $(SYSDRV_DIR)/tools/pc/Makefile.tools.pc.mk
@@ -627,6 +653,19 @@ boardtools_clean: tools_board-clean
 ##########################################################################################
 #	build driver ko
 ##########################################################################################
+ubuntu_drv: prepare
+	@echo -e "$(C_GREEN) ==sysdrv== build ubuntu drv $(C_NORMAL)"
+	@-rm -rf $(SYSDRV_KERNEL_MOD_PATH) $(KERNEL_DIR_DRV_KO)
+	@-mkdir -p $(SYSDRV_KERNEL_MOD_PATH)
+	$(MAKE) -C $(KERNEL_DIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -j$(SYSDRV_JOBS) \
+		O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) \
+		modules
+	$(MAKE) -C $(KERNEL_DIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -j$(SYSDRV_JOBS) \
+		O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) \
+		modules_install \
+		INSTALL_MOD_PATH=$(KERNEL_DIR_DRV_KO)
+	@test ! -d drv_ko || ($(MAKE) O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) -C $(SYSDRV_DIR)/drv_ko KERNEL_DRV_KO_INSTALL_PATH=$(SYSDRV_KERNEL_MOD_PATH))
+
 drv: prepare
 	@echo -e "$(C_GREEN) ==sysdrv== build drv $(C_NORMAL)"
 	@-rm -rf $(SYSDRV_KERNEL_MOD_PATH) $(KERNEL_DIR_DRV_KO)
@@ -703,7 +742,7 @@ rootfs_initramfs:
 	@echo -e "$(C_GREEN) ==sysdrv== build initramfs rootfs  $(C_NORMAL)"
 	$(SYSDRV_DIR_OUT_PC)/$(INITRAMFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE)
 
-rootfs_clean:
+rootfs_clean: ubuntu_clean
 	$(AT)rm $(SYSDRV_DIR_OUT_ROOTFS)/ -rf
 
 ##########################################################################################
