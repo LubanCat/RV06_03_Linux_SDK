@@ -267,7 +267,7 @@ BUSYBOX_VER ?= busybox-1.27.2
 BUSYBOX_DIR := $(SYSDRV_DIR)/source/busybox
 SYSDRV_BUSYBOX_OBJS_OUTPUT_DIR ?= $(BUSYBOX_DIR)/objs_$(BUSYBOX_CFG)
 
-BUILDROOT_VER ?= buildroot-2024.02.2
+BUILDROOT_VER ?= buildroot-2024.02.10
 BUILDROOT_DIR := $(SYSDRV_DIR)/source/buildroot
 
 UBUNTU_DIR := $(SYSDRV_DIR)/source/ubuntu
