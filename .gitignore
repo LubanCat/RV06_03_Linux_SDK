@@ -1,6 +1,6 @@
 .vscode/
 
 output/
+sysdrv/source/ubuntu/ubuntu*.tar.gz
 
-rv1106_ipc_linux_v1.7.0_20240122.tgz
 .BoardConfig.mk
