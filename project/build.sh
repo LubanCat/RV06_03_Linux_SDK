@@ -201,6 +201,16 @@ function build_select_board()
 				RK_BUILD_TARGET_BOARD=$item
 			fi
 		done
+
+		if [ -z "$RK_BUILD_TARGET_BOARD" ];then
+			RK_TARGET_BOARD_ARRAY=( $(cd ${TARGET_PRODUCT_DIR}/; ls BoardConfig_*/.BoardConfig*.mk | sort) )
+			for item in "${RK_TARGET_BOARD_ARRAY[@]}"; do
+				if echo $item |grep $(basename $2); then
+					RK_BUILD_TARGET_BOARD=$item
+				fi
+			done
+		fi
+
 		if [ -z "$RK_BUILD_TARGET_BOARD" ];then
 			msg_error "$0 :Not found [$2]"
 			exit 1
