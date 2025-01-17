@@ -161,4 +161,6 @@ x509.genkey
 # Documentation toolchain
 sphinx_*/
 
-drv_ko/
+/drv_ko/
+/drivers/kmpp
+/drivers/rockit-ko

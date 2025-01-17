@@ -1,6 +1,7 @@
 out
 source/busybox/
 source/buildroot/buildroot-*
+source/ubuntu/ubuntu*.tar.gz
 tools/board/android-tools/android-tools/
 tools/board/dosfstools/dosfstools*
 tools/board/e2fsprogs/e2fsprogs*
