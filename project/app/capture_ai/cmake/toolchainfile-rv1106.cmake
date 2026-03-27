@@ -1,0 +1,35 @@
+# RV1106 交叉编译工具链配置
+
+# 获取当前源码和二进制目录
+SET(CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+SET(CURRENT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+# 工具链路径
+SET(TOOLCHAIN_PATH ../../../tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf)
+
+# 设置交叉编译工具链
+SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_PROCESSOR arm)
+
+SET(CMAKE_C_COMPILER ${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
+SET(CMAKE_CXX_COMPILER ${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
+
+SET(CMAKE_FIND_ROOT_PATH ${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/arm-rockchip830-linux-uclibcgnueabihf/sysroot)
+
+SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+# 编译标志
+SET(CMAKE_C_FLAGS "--sysroot=${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/arm-rockchip830-linux-uclibcgnueabihf/sysroot -Wall")
+SET(CMAKE_CXX_FLAGS "--sysroot=${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/arm-rockchip830-linux-uclibcgnueabihf/sysroot -Wall")
+
+# 链接器设置
+SET(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath-link,${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/runtime_lib")
+
+# 包含目录
+INCLUDE_DIRECTORIES(${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/include)
+
+# 库目录
+LINK_DIRECTORIES(${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/lib)
+LINK_DIRECTORIES(${CURRENT_SOURCE_DIR}/${TOOLCHAIN_PATH}/runtime_lib)
