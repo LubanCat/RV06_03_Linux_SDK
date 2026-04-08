@@ -39,7 +39,7 @@ pack-sdk:
     # 删除原来的源码包
     - rm -rf $NAS_URL1/${FILE_NAME}*.tgz
     # 发布
-    - cp -v $TAR_NAME $NAS_URL1
+    - cp -v $TAR_NAME $NAS_URL1/4-SDK源码压缩包及虚拟机
     # 清理
     - cd .. && rm -rf SDK-DIR
 
