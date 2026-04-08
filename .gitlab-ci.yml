@@ -1,7 +1,7 @@
 variables:
   #NAS地址
-  NAS_URL1: /mnt/百度云对外发布资料/Linux产品线/鲁班猫_瑞芯微RV系列/3-Linux镜像/
-  # NAS_URL1: /mnt/百度云内部资料/测试/鲁班猫_瑞芯微RV系列/3-Linux镜像/
+  NAS_URL1: /mnt/百度云对外发布资料/Linux产品线/鲁班猫_瑞芯微RV系列/
+  # NAS_URL1: /mnt/百度云内部资料/测试/鲁班猫_瑞芯微RV系列/
   GIT_BRANCH: main
   GIT_DEPTH: 1
   URL_GITLAB: git@gitlab.ebf.local:rockchip/linux_ipc/rv1106_rv1103/rv1106_ipc_linux.git
@@ -62,4 +62,4 @@ build-sdk:
 
     #发布
     - mkdir -p $NAS_URL1
-    - cp -rfv $SDK_PATH/output-release/* $NAS_URL1/
+    - cp -rfv $SDK_PATH/output-release/* $NAS_URL1/3-Linux镜像/
