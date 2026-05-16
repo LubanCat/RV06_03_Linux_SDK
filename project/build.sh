@@ -34,7 +34,9 @@ GLOBAL_INITRAMFS_BOOT_NAME=""
 GLOBAL_PARTITIONS=""
 GLOBAL_SDK_VERSION=""
 
-export RK_JOBS=$((`getconf _NPROCESSORS_ONLN` - 1 ))
+RK_JOBS=$(($(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2) - 1))
+[ "$RK_JOBS" -lt 1 ] && RK_JOBS=1
+export RK_JOBS
 export RK_BUILD_VERSION_TYPE=RELEASE
 
 export SDK_ROOT_DIR=$SDK_ROOT_DIR
