@@ -1,78 +1,99 @@
 function 1: modify ddr.bin file from ddrbin_param.txt.
 	1) modify 'ddrbin_param.txt', set ddr frequency, uart info etc what you want.
 	   If want to keep items default, please keep these items blank.
-	2) run 'ddrbin_tool' with argument 1: chip_name, argument 2: ddrbin_param.txt, argument 3: ddr bin file.
-	   like: ./ddrbin_tool px30 ddrbin_param.txt px30_ddr_333MHz_v1.13.bin
+	2) run 'ddrbin_tool.py' with argument 1: chip_name, argument 2: ddrbin_param.txt, argument 3: ddr bin file,
+	   argument 4: ddr_type, argument 5: adc value to ddr config.
+	   like: ./ddrbin_tool.py rk3572 ddrbin_param.txt rk3572_ddr_lp4_1848MHz_lp5_2400MHz_v1.01.bin [LPDDR4 adc_value_to_ddr_config=5]
+
+	Note: The argument 4 and argument 5 are only some rk platforms supported(RK3572 etc.).
+	      Use the corresponding DDR software configuration based on the ADC value (referred to as adc_value_to_ddr_config).
+	      For details, see the 'DDR Template Config' table in the platform schematic.
+	      If this table is not available, it indicates that this platform is not supported.
+	      Platforms that are not supported can be ignored argument 4 and argument 5.
 
 function 2: get ddr.bin file config to gen_param.txt file
 	If want to get ddrbin file config, please run like that:
-	./ddrbin_tool px30 -g gen_param.txt px30_ddr_333MHz_v1.15.bin
+	./ddrbin_tool.py rk3572 -g gen_param.txt rk3572_ddr_lp4_1848MHz_lp5_2400MHz_v1.01.bin LPDDR4 adc_value_to_ddr_config=5
 	The config will show in gen_param.txt.
+
+	Note: The argument 5 and argument 6 are only some rk platforms supported(RK3572 etc.).
+	      Use the corresponding DDR software configuration based on the ADC value (referred to as adc_value_to_ddr_config).
+	      For details, see the 'DDR Template Config' table in the platform schematic.
+	      If this table is not available, it indicates that this platform is not supported.
+	      Platforms that are not supported can be ignored argument 5 and argument 6.
 
 The detail information as following:
 
 * support ddrbin version
 	The 'X' means not support change those parameters by tool.
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|   platform    | uart info | ddr freq | ssmod | DDR 2T | sr pd | drv, odt, Vref etc| dis print training info | dis CBT | ddr2/3/4, lp2/3 Vref |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RV1108     |   V1.08   |   V1.08  | V1.10 |  V1.08 | V1.08 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|  PX30/RK3326  |   V1.11   |     X    |   X   |  V1.12 |   X   |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK1808     |   V1.03   |   V1.03  | V1.05 |  V1.03 | V1.04 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK322x     |   V1.08   |   V1.08  |   X   |  V1.09 |   X   |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK322xh    |   V1.14   |     X    | V1.17 |  V1.16 | V1.17 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3288     |   V1.11   |     X    |   X   |  V1.11 |   X   |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3308     |   V1.28   |   V1.28  | V1.31 |  V1.29 | V1.30 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3308S    |   V2.05   |   V2.05  | V2.05 |  V2.05 | V2.05 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3368     |   V2.04   |   V2.04  |   X   |  V2.05 |   X   |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3328     |   V1.14   |     X    | V1.17 |  V1.16 | V1.17 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3399     |   V1.25   |     X    | V1.25 |    X   |   X   |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	| RK3399PRO NPU |   V1.03   |   V1.03  | V1.05 |  V1.03 | V1.04 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	| RV1126/RV1109 |   V1.00   |   V1.00  | V1.05 |  V1.00 | V1.05 |        V1.05      |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	| RK3566/RK3568 |   V1.00   |   V1.00  | V1.06 |  V1.00 | V1.00 |        V1.06      |          V1.07          |    X    |        V1.19         |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3588     |   V1.00   |   V1.00  |   X   |  V1.00 | V1.00 |        V1.00      |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3528     |   V1.00   |   V1.00  | V1.00 |  V1.00 | V1.00 |        V1.00      |          V1.00          |    X    |        V1.08         |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	|    RK3562     |     X     |   V1.00  | V1.00 |  V1.00 | V1.00 |        V1.00      |          V1.00          |    X    |        V1.05         |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-	| RV1106/RV1103 |   V1.10   |   V1.10  | V1.10 |  V1.10 | V1.10 |          X        |            X            |    X    |          X           |
-	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------+----------------------+
-
-| function                              | platform and ddrbin version                |
-| ------------------------------------- | ------------------------------------------ |
-| first scan channel/channel mask       | RK3588 V1.00/RK3399 V1.25/RK3288 V1.11     |
-| stride type                           | RK3588 V1.00/RK3399 V1.25/RK3288 V1.11     |
-| ext_temp_ref                          | RK356x V1.16/RK3528 V1.07/RK1808 V1.06     |
-| link_ecc_en                           | Null                                       |
-| per_bank_ref_en                       | RK3588 V1.09                               |
-| derate_en                             | RK3588 V1.09/RK356x V1.19/RK3528 V1.07     |
-| auto_precharge_en                     | Null                                       |
-| res_space_remap_portion               | RK3588 V1.09                               |
-| res_space_remap_all                   | RK3588 V1.09                               |
-| rd_vref_scan_en                       | RK3588 V1.08                               |
-| wr_vref_scan_en                       | RK3588 V1.08                               |
-| eye_2d_scan_en                        | RK3588 V1.08                               |
-| ch/bank/rank_mask                     | RK3588 V1.00                               |
-| pstore base_addr/buf_size             | RK3588 V1.09                               |
-| uboot/atf/optee/spl/tpl log en        | RK3588 V1.09                               |
-| boot_fsp                              | RK3588 V1.09                               |
-| pageclose                             | RK3588 V1.10                               |
-| first_init_dram_type/dfs_disable      | RK3588 V1.11                               |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|   platform    | uart info | ddr freq | ssmod | DDR 2T | sr pd | drv, odt, Vref etc| dis print training info | template info | ddr2/3/4, lp2/3 Vref |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RV1108     |   V1.08   |   V1.08  | V1.10 |  V1.08 | V1.08 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|  PX30/RK3326  |   V1.11   |     X    |   X   |  V1.12 |   X   |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK1808     |   V1.03   |   V1.03  | V1.05 |  V1.03 | V1.04 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK322x     |   V1.08   |   V1.08  |   X   |  V1.09 |   X   |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK322xh    |   V1.14   |     X    | V1.17 |  V1.16 | V1.17 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3288     |   V1.11   |     X    |   X   |  V1.11 |   X   |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3308     |   V1.28   |   V1.28  | V1.31 |  V1.29 | V1.30 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3308S    |   V2.05   |   V2.05  | V2.05 |  V2.05 | V2.05 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3368     |   V2.04   |   V2.04  |   X   |  V2.05 |   X   |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3328     |   V1.14   |     X    | V1.17 |  V1.16 | V1.17 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3399     |   V1.25   |     X    | V1.25 |    X   |   X   |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	| RK3399PRO NPU |   V1.03   |   V1.03  | V1.05 |  V1.03 | V1.04 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	| RV1126/RV1109 |   V1.00   |   V1.00  | V1.05 |  V1.00 | V1.05 |        V1.05      |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	| RK3566/RK3568 |   V1.00   |   V1.00  | V1.06 |  V1.00 | V1.00 |        V1.06      |          V1.07          |       X       |        V1.19         |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3588     |   V1.00   |   V1.00  |   X   |  V1.00 | V1.00 |        V1.00      |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3528     |   V1.00   |   V1.00  | V1.00 |  V1.00 | V1.00 |        V1.00      |          V1.00          |       X       |        V1.08         |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3562     |     X     |   V1.00  | V1.00 |  V1.00 | V1.00 |        V1.00      |          V1.00          |       X       |        V1.05         |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	| RV1106/RV1103 |   V1.10   |   V1.10  | V1.10 |  V1.10 | V1.10 |          X        |            X            |       X       |          X           |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|  RV1126B/BP   |   V1.00   |   V1.00  | V1.00 |  V1.00 | V1.00 |        V1.00      |          V1.00          |       X       |        V1.00         |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3538     |   V1.04   |   V1.00  | V1.00 |  V1.00 | V1.00 |        V1.00      |          V1.00          |       X       |        V1.00         |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+	|    RK3572     |     X     |   V1.03  | V1.03 |  V1.03 | V1.03 |        V1.03      |          V1.03          |     V1.03     |        V1.03         |
+	+---------------+-----------+----------+-------+--------+-------+-------------------+-------------------------+---------------+----------------------+
+| function                              | platform and ddrbin version                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------ |
+| first scan channel/channel mask       | RK3588 V1.00/RK3399 V1.25/RK3288 V1.11                                         |
+| stride type                           | RK3588 V1.00/RK3399 V1.25/RK3288 V1.11                                         |
+| ext_temp_ref                          | RK356x V1.16/RK3528 V1.07/RK1808 V1.06/RV1126B V1.00                           |
+| link_ecc_en                           | Null                                                                           |
+| per_bank_ref_en                       | RK3588 V1.09/RV1126B V1.00/RK3572 V1.03                                        |
+| derate_en                             | RK3588 V1.09/RK356x V1.19/RK3528 V1.07/RV1126B V1.00/RK3572 V1.03              |
+| auto_precharge_en                     | Null                                                                           |
+| res_space_remap_portion               | RK3588 V1.09                                                                   |
+| res_space_remap_all                   | RK3588 V1.09                                                                   |
+| rd_vref_scan_en                       | RK3588 V1.08/RV1126B V1.00/RK3572 V1.03                                        |
+| wr_vref_scan_en                       | RK3588 V1.08/RV1126B V1.00/RK3572 V1.03                                        |
+| eye_2d_scan_en                        | RK3588 V1.08/RK3572 V1.03                                                      |
+| ch/bank/rank_mask                     | RK3588 V1.00                                                                   |
+| pstore base_addr/buf_size             | RK3588 V1.09                                                                   |
+| uboot/atf/optee/spl/tpl log en        | RK3588 V1.09                                                                   |
+| boot_fsp                              | RK3588 V1.09                                                                   |
+| pageclose                             | RK3588 V1.10/RV1126B V1.00/RK3572 V1.03                                        |
+| first_init_dram_type/dfs_disable      | RK3588 V1.11/RV1126B V1.00/RK3572 V1.03                                        |
+| zq check                              | RK3588 V1.22/RK3576 V1.11/RK356x V1.25/RK3562 V1.09/RK3528 V1.13/RV1126B V1.07/|
+|                                       | RK3572 V1.03                                                                   |
+| lp5_vdd2_rail                         | RK3588 V1.22/RK3576 V1.13/RK3572 V1.03                                         |
 
 * UART info
 
@@ -158,6 +179,23 @@ It is define the addr and size to save ddrbin log for last log.
 * boot_fsp
 To choose the which DDR freq to boot system. 0 means fsp0_freq, 1 means fsp1_freq, 2 means fsp2_freq, 3 means fsp3_freq, the default is 0.
 
+* lp5_vdd2_rail
+0: Dual VDD2 rail (1.05V & 0.9V)
+1: Single VDD2 rail (1.05V)
+
+* zq check
+0: enable zq check
+1: disable zq check
+
+* periodic interval
+The 0 means disable periodic training, others means enable. Unit: 100ms.
+
+* trfc_mode
+0: use default trfc
+1: use next density trfc
+2: use max trfc
+3: use min trfc
+
 * first_init_dram_type
 The define first init dram type to saving initial time.
 |----------------------------|-----------------|
@@ -238,6 +276,14 @@ The 'X' as follows means not support change frequencies by tool.
 +---------------+-----------------------------------------------------------------+
 | RV1106/RV1103 |         DDR2: 528MHz;         DDR3: 324,660,792,924;            |
 +---------------+-----------------------------------------------------------------+
+|    RV1126B    | DDR3/LP3: [324MHz - 1056MHz]; LP4/LP4X/DDR4: [324MHz - 1392MHz] |
+|               |                 LP4/LP4X f1: [324MHz - 400MHz]                  |
++---------------+-----------------------------------------------------------------+
+|    RV1126BP   |                       [324MHz - 1056MHz]                        |
+|               |                 LP4/LP4X f1: [324MHz - 400MHz]                  |
++---------------+-----------------------------------------------------------------+
+|    RK3538     | DDR3/LP3: [324MHz - 1056MHz]; LP4/LP4X/DDR4: [324MHz - 1184MHz] |
++---------------+-----------------------------------------------------------------+
 
 * DDR frequencies(add more)
 
@@ -296,10 +342,12 @@ Please refer to "Rockchip_Developer_Guide_Pll_Ssmod_Clock_CN" for more informati
 
 phy_ddr*_dq_drv_when_odten_ohm: The PHY DQ/DQS driver strength(write direction) when DRAM odt on. unit: ohm.
 phy_ddr*_ca_drv_when_odten_ohm: The PHY CMD/ADDR driver strength when DRAM odt on. unit: ohm.
+phy_ddr*_cs_drv_when_odten_ohm: The PHY CS driver strength when DRAM odt on. unit: ohm.
 phy_ddr*_clk_drv_when_odten_ohm: The PHY clock driver strength when DRAM odt on. unit: ohm.
 ddr*_dq_drv_when_odten_ohm: The DRAM DQ/DQS driver strength(read direction) when PHY odt on. unit: ohm.
 phy_ddr*_dq_drv_when_odtoff_ohm: The PHY DQ/DQS driver strength(write direction) when DRAM odt off. unit: ohm.
 phy_ddr*_ca_drv_when_odtoff_ohm: The PHY CMD/ADDR driver strength when DRAM odt off. unit: ohm.
+phy_ddr*_cs_drv_when_odtoff_ohm: The PHY CS driver strength when DRAM odt off. unit: ohm.
 phy_ddr*_clk_drv_when_odtoff_ohm: The PHY clock driver strength when DRAM odt off. unit: ohm.
 ddr*_dq_drv_when_odtoff_ohm: The DRAM DQ/DQS driver strength(read direction) when PHY odt off. unit: ohm.
 
@@ -325,10 +373,17 @@ The phy side driver strength support value as follows:
 +---------------+-------------------+-------------------+--------------+-----------------+----------------+----------------+-------------+
 |               | 572,289,195,145,  | 595,300,202,151,  |              | 654,328,221,165,| 585,297,202,   | 585,297,202,   |             |
 |               | 117,99,85,73,66,  | 122,102,89,76,68, |              |133,112,97,83,74,| 150,122,103,90,| 150,122,103,90,|             |
-|    RK3528     | 60,55,50,47,44,41,| 62,57,52,49,45,43,|  follow DDR4 | 67,62,57,53,49, | 77,69,63,58,53,| 77,69,63,58,53,|      X      |
-|               | 38,36,34,33,31,30,| 39,37,35,34,32,31,|              | 46,43,40,38,37, | 50,47,44,40,38,| 50,47,44,40,38,|             |
+|    RK3528/    | 60,55,50,47,44,41,| 62,57,52,49,45,43,|  follow DDR4 | 67,62,57,53,49, | 77,69,63,58,53,| 77,69,63,58,53,|      X      |
+|    RK3538     | 38,36,34,33,31,30,| 39,37,35,34,32,31,|              | 46,43,40,38,37, | 50,47,44,40,38,| 50,47,44,40,38,|             |
 |               | 29,28             | 30,29             |              | 35,33,32,31     | 37,35,33,32,31,| 37,35,33,32,31,|             |
 |               |                   |                   |              |                 | 30             | 30             |             |
++---------------+-------------------+-------------------+--------------+-----------------+----------------+----------------+-------------+
+|               | 573,289,195,145,  | 595,300,202,151,  |              | 654,328,221,165,| 586,297,202,   | 558,282,190,   |             |
+|               | 117,99,85,73,66,  | 122,102,89,76,68, |              |133,112,97,83,74,| 150,122,103,90,| 142,115,96,84, |             |
+|  RV1126B/BP   | 60,55,50,47,44,41,| 62,57,52,49,46,43,|  follow DDR4 | 67,62,57,53,49, | 76,69,63,58,53,| 72,64,58,54,49,|      X      |
+|               | 38,36,35,33,32,30,| 40,38,36,34,33,31,|              | 46,43,41,39,37, | 49,47,44,41,39,| 46,43,40,38,36,|             |
+|               | 29,28             | 30,29             |              | 35,34,33,31     | 37,35,34,33,31,| 34,32,31,30,29,|             |
+|               |                   |                   |              |                 | 30             | 28             |             |
 +---------------+-------------------+-------------------+--------------+-----------------+----------------+----------------+-------------+
 
 The DRAM side driver strength support value as follows:
@@ -374,11 +429,19 @@ The ODT "0" means disabled ODT.
 +---------------+-------------------+--------------------+--------------+-------------------+----------------+----------------+-------------+
 |               | 572,289,195,145,  | 595,300,202,151,   |              | 654,328,221,165,  | 585,297,202,   | 585,297,202,   |             |
 |               | 117,99,85,73,66,  | 122,102,89,76,68,  |              |133,112,97,83,74,  | 150,122,103,90,| 150,122,103,90,|             |
-|    RK3528     | 60,55,50,47,44,41,| 62,57,52,49,45,43, |  follow DDR4 | 67,62,57,53,49,   | 77,69,63,58,53,| 77,69,63,58,53,|      X      |
-|               | 38,36,34,33,31,30,| 39,37,35,34,32,31, |              | 46,43,40,38,37,   | 50,47,44,40,38,| 50,47,44,40,38,|             |
+|    RK3528/    | 60,55,50,47,44,41,| 62,57,52,49,45,43, |  follow DDR4 | 67,62,57,53,49,   | 77,69,63,58,53,| 77,69,63,58,53,|      X      |
+|    RK3538     | 38,36,34,33,31,30,| 39,37,35,34,32,31, |              | 46,43,40,38,37,   | 50,47,44,40,38,| 50,47,44,40,38,|             |
 |               | 29,28             | 30,29              |              | 35,33,32,31       | 37,35,33,32,31,| 37,35,33,32,31,|             |
 |               |                   |                    |              |                   | 30             | 30             |             |
 +---------------+-------------------+--------------------+--------------+-------------------+----------------+----------------+-------------+
+|               | 573,289,195,145,  | 595,300,202,151,   |              | 654,328,221,165,  | 586,297,202,   | 558,282,190,   |             |
+|               | 117,99,85,73,66,  | 122,102,89,76,68,  |              |133,112,97,83,74,  | 150,122,103,90,| 142,115,96,84, |             |
+|  RV1126B/BP   | 60,55,50,47,44,41,| 62,57,52,49,46,43, |  follow DDR4 | 67,62,57,53,49,   | 76,69,63,58,53,| 72,64,58,54,49,|      X      |
+|               | 38,36,35,33,32,30,| 40,38,36,34,33,31, |              | 46,43,41,39,37,   | 49,47,44,41,39,| 46,43,40,38,36,|             |
+|               | 29,28             | 30,29              |              | 35,34,33,31       | 37,35,34,33,31,| 34,32,31,30,29,|             |
+|               |                   |                    |              |                   | 30             | 28             |             |
++---------------+-------------------+--------------------+--------------+-------------------+----------------+----------------+-------------+
+
 The DRAM side ODT support value as follows:
 +---------------+-------------------+-------------------+--------------+-----------------------+----------------+---------------+
 |   platform    |        DDR3       |        DDR4       |     LP3      | LP4(include DQ and CA)|      LP4X      |      LP5      |
@@ -396,6 +459,13 @@ phy_ddr*_ca_sr_when_odtoff: The PHY CMD/ADDR slew rate when odt off.
 phy_ddr*_clk_sr_when_odtoff: The PHY clock slew rate when odt off.
 
 The max value is 0x1f, the min is 0x0.
+
+* clk compensate phase
+
+phy_ddr*_clk_compensate_phase_odten_ps: The phy compensation phase of CLK relative to all CA when odt on.
+phy_ddr*_clk_compensate_phase_odtoff_ps: The phy compensation phase of CLK relative to all CA when odt off.
+This is with positive and negative signs. It is recommended that the step size be 5.
+Positive numbers indicate that the clk output is later than ca, while negative numbers indicate that the clk output is earlier than ca.
 
 * byte map
 
@@ -421,6 +491,10 @@ ddr*_ca_vref_when_odtoff: The DRAM VrefCA when DRAM CA odt off. uint: parts per 
 
 For DDR2/3/4 and LPDDR2/3, if the configuration value is "0", Vref is automatically calculated by the code.
 
+* Support for Multiple DRAM Configuration Sets
+The DDR bin tool now supports multiple configuration sets for LPDDR4, LPDDR4X, and LPDDR5
+through the *_config_si_template parameters. The field definitions remain the same as before.
+
 * hash info
 ch/bank/rank_mask*: is used to DDR address hash mask.
 
@@ -435,7 +509,66 @@ The support platform:
 |          platform         |   ddrbin version   |      calculate one step delay(ps)          |
 |          RK3528           |        V1.06       |    1000000 / ddr*_skew_freq_mhz / 128      |
 |---------------------------|--------------------|--------------------------------------------|
+|          RK3538           |        V1.03       |    1000000 / ddr*_skew_freq_mhz / 128      |
+|---------------------------|--------------------|--------------------------------------------|
 
 For RK3528, the skew one step is 7.398ps when ddr*_skew_freq_mhz is 1056.
 
 Before modify skew, it is recommended to read every CA skew from the bin file and then adjust the CA skew which want to change.
+
+* template info
+The DDR bin tool supports template configuration parameters for LPDDR4/LPDDR4X/LPDDR5/LPDDR5X.
+Template info contains hardware-specific configuration for CA/DQ swap and byte mapping.
+
+**LP4_4X Template Info / LP5_5X Template Info field definitions:**
+
+1. template_available
+   - 0: Template configuration disabled
+   - 1: Template configuration enabled
+
+2. template_quad_channel
+   - 0: Not Quad channel mode
+   - 1: Quad channel mode
+
+3. template_pcb_layer
+   - PCB layer count configuration
+
+4. template_dram_ball
+   - DRAM ball mapping configuration
+
+5. template_max_rank
+   - Maximum rank support configuration
+
+6. ca_swap_cha_a0 to ca_swap_cha_a5
+   - Channel A CA[0:5] signal swap configuration
+   - Used to remap CA pins on Channel A side
+
+7. ca_swap_chb_a0 to ca_swap_chb_a5
+   - Channel B CA[0:5] signal swap configuration
+   - Used to remap CA pins on Channel B side
+
+8. byte0_swap to byte3_swap
+   - Byte lane swap configuration for BYTE0-BYTE3
+   - Used to remap byte positions
+
+9. byte0_dq0_swap to byte7_dq7_swap
+   - DQ pin swap configuration within each byte lane
+   - byte[0:7]_dq[0:7]_swap: 8 bytes x 8 DQs = 64 parameters
+   - Used to remap individual DQ pins within each byte
+
+Note: LP4_4X and LP5_5X template structures are identical.
+      The actual swap values depend on PCB routing and must match hardware design.
+      Consult schematic "DDR Template Config" table for correct values.
+
+* Multi-group configuration (adc_value_to_ddr_config):
+For platforms with multiple ADC-based DDR configurations, use the adc_value_to_ddr_config
+argument to specify which group to read/modify. The group numbering starts from 1.
+
+Example for RK3572 with 12 groups:
+  ./ddrbin_tool.py rk3572 ddrbin_param.txt rk3572_ddr_v1.02.bin LPDDR4 adc_value_to_ddr_config=5
+  ./ddrbin_tool.py rk3572 -g gen_param.txt rk3572_ddr_v1.02.bin LPDDR5 adc_value_to_ddr_config=10
+
+Note: The total number of groups and ADC value mapping should refer to the platform schematic
+"DDR Template Config" table.
+
+* Important: ddrbin_param.txt must include "start tag=0x12345678" and "end".

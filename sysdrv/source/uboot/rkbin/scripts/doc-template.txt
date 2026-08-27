@@ -1,0 +1,33 @@
+#
+# doc/release/* 模板文件
+#
+# 请勿修改":"左侧的元素名。
+#
+
+# RK3572_CN/EN.md
+Plat: rk3572
+
+File: rk3572_bl32_v1.05.bin
+
+Build_commit: 827c6ad41
+
+# Severity: critical(严重) > important(重要) > moderate(普通)
+Severity: important
+
+
+# 如果没有更新项，可以全部删除。
+New: 支持物理重定位功能
+New: 支持安全地址校验
+New: Add support for physical relocation
+New: Add secure address verify
+
+
+# 1. 如果没有更新项，可以全部删除。
+# 2. 用分号作为分隔符，对应表格项："Severity | Update | Issue description | Issue source"。
+# 3. Severity: critical(严重) > important(重要) > moderate(普通)。
+Fixed: important; 修复 TZDRAM 配置; 物理重定位时 TZDRAM 配置错误; -
+Fixed: important; 修复内存映射; 物理重定位时非安全共享内存映射问题; -
+Fixed: important; 修复 tee_ree_fs set_name 重入崩溃问题; tee_ree_fs set_name 在 lookup 失败时可能发生重入崩溃; -
+Fixed: important; Fix TZDRAM configuration; TZDRAM configuration error during physical relocation; -
+Fixed: important; Fix nsec shared memory mapping; Non-secure shared memory mapping issue during physical relocation; -
+Fixed: important; Fix re-entrancy crash in tee_ree_fs set_name; Re-entrancy crash on lookup failure in tee_ree_fs set_name; -
