@@ -1,5 +1,22 @@
 # RV1103B Release Note
 
+## rv1103b_ddr_864MHz{_tb}_v1.08.bin
+
+| Date       | File                              | Build commit | Severity  |
+| ---------- | :-------------------------------- | ------------ | --------- |
+| 2026-08-27 | rv1103b_ddr_864MHz{_tb}_v1.08.bin | fd3fd307c5   | important |
+
+### Fixed
+
+| Index | Severity  | Update                                                | Issue description           | Issue source |
+| ----- | --------- | ----------------------------------------------------- | --------------------------- | ------------ |
+| 1     | important | Disable auto sr and pd by default                     | Improve stability           | -            |
+| 2     | important | Adjust DDR3 default frequency to 864MHz and optimize SI configuration | Improve stability | -            |
+| 3     | important | Optimize rd/wr training parameters and flow           | Improve stability           | -            |
+| 4     | important | Optimize gate training flow for 8-bit DDR             | Improve 8-bit DDR stability | -            |
+
+------
+
 ## rv1103b_ddr_924MHz{_tb}_v1.07.bin
 
 | Date       | File                              | Build commit | Severity  |
