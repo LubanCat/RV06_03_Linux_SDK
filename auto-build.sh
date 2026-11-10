@@ -47,11 +47,19 @@ function build {
     # release路径整理
     BOARD_NAME=$(echo $1 | awk -F'_' '{print $3}' | awk -F'.' '{print $1}')
 
+    # 区分硬件变体（如 EXDDR），避免与默认配置的产物互相覆盖
+    # LubanCat-RV06 -> rv06，LubanCat-RV06_EXDDR -> rv06_exddr
+    BOARD_VARIANT=$(echo $1 | awk -F'_' '{print $4}' | awk -F'.' '{print $1}')
+    BOARD_TYPE=$(echo $BOARD_NAME | awk -F'-' '{print $NF}' | tr 'A-Z' 'a-z')
+    if [ -n "$BOARD_VARIANT" ] && [ "$BOARD_VARIANT" != "10-inch" ]; then
+        BOARD_TYPE=${BOARD_TYPE}_$(echo $BOARD_VARIANT | tr 'A-Z' 'a-z')
+    fi
+
     # 判断是不是10寸屏
     if [ $(echo $1 | grep "10-inch") ]; then
-        RELEASE_DIR=output-release/$BOARD_NAME/buildroot镜像/$NOW_DATE/${BOOT_MEDIUM}/10_inch
+        RELEASE_DIR=output-release/$BOARD_NAME/buildroot镜像/$NOW_DATE/${BOARD_TYPE}/${BOOT_MEDIUM}/10_inch
     else
-        RELEASE_DIR=output-release/$BOARD_NAME/buildroot镜像/$NOW_DATE/${BOOT_MEDIUM}
+        RELEASE_DIR=output-release/$BOARD_NAME/buildroot镜像/$NOW_DATE/${BOARD_TYPE}/${BOOT_MEDIUM}
     fi
 
     # 复制镜像文件到release目录
@@ -65,4 +73,6 @@ rm -rf output-release
 # 按配置文件构建镜像
 build BoardConfig-SD_CARD-NONE-RV1106_LubanCat-RV06.mk
 build BoardConfig-SPI_NAND-NONE-RV1106_LubanCat-RV06.mk
+build BoardConfig-SD_CARD-NONE-RV1106_LubanCat-RV06_EXDDR.mk
+build BoardConfig-SPI_NAND-NONE-RV1106_LubanCat-RV06_EXDDR.mk
 build BoardConfig-SPI_NAND-NONE-RV1106_LubanCat-RV06_10-inch.mk
